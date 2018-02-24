@@ -3,9 +3,6 @@ MAINTAINER kometchtech <kometch@gmail.com>
 WORKDIR /
 ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
-ADD echo /bin/echo
-RUN echo "Acquire::http {No-Cache=True;};" > /etc/apt/apt.conf.d/no-cache
-RUN echo "force-unsafe-io" > /etc/dpkg/dpkg.cfg.d/02apt-speedup
 RUN apt-get update \
     && apt-get -qq install -y --no-install-recommends apt-utils \
       openssl \
