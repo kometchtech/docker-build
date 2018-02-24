@@ -1,4 +1,4 @@
-FROM arm64v8/debian:9.3-slim
+FROM arm64v8/debian:9.3
 MAINTAINER kometchtech <kometch@gmail.com>
 WORKDIR /
 ENV NSD_VERSION 4.1.20
@@ -7,7 +7,6 @@ RUN apt-get update \
     && apt-get -qq install --no-install-recommends \
       openssl \
       libevent-2.0-5 \
-    && apt-get -qq install --no-install-recommends \
       build-essential \
       libssl-dev \
       libevent-dev \
