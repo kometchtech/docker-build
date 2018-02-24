@@ -1,9 +1,9 @@
 FROM arm64v8/debian:9.3-slim
 MAINTAINER kometchtech <kometch@gmail.com>
 WORKDIR /
-ENV NSD_VERSION 4.1.20
+ENV DIBBLER_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update  
+RUN apt-get -qq update  
 RUN apt-get -qq install -y --no-install-recommends apt-utils \
       openssl \
       libevent-2.0-5 \
