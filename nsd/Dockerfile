@@ -3,8 +3,10 @@ MAINTAINER kometchtech <kometch@gmail.com>
 WORKDIR /
 ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update  
-RUN apt-get -qq install -y --no-install-recommends apt-utils \
+RUN echo "Acquire::http {No-Cache=True;};" > /etc/apt/apt.conf.d/no-cache
+RUN echo "force-unsafe-io" > /etc/dpkg/dpkg.cfg.d/02apt-speedup
+RUN apt-get update \
+    && apt-get -qq install -y --no-install-recommends apt-utils \
       openssl \
       libevent-2.0-5 \
     && apt-get -y -qq install --no-install-recommends \
