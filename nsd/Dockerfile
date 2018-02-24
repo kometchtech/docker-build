@@ -9,7 +9,6 @@ RUN apt-get update \
       libevent-2.0-5 \
     && apt-get -y -qq install --no-install-recommends \
       build-essential \
-#      ldnsutils \
       libssl-dev \
       libevent-dev \
       coreutils \
