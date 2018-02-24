@@ -1,10 +1,9 @@
 FROM arm64v8/debian:9.3
 MAINTAINER kometchtech <kometch@gmail.com>
 ENV PDNS_REC_VERSION 4.1.1
-ENV DEBIAN_FRONTEND noninteractive
-RUN echo "deb http://httpredir.debian.org/debian testing main" >> /etc/apt/sources.list.d/testing.list 
+CMD 'echo "deb http://httpredir.debian.org/debian testing main" >> /etc/apt/sources.list.d/testing.list' 
 RUN apt-get update \
-    && apt-get -qq install --no-install-recommends \
+    && apt-get -qq install \
       pdns-recursor/testing 
 WORKDIR /pdns-recursor-${PDNS_REC_VERSION}
 RUN rm -rf /var/lib/apt/lists/*
