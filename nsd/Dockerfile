@@ -4,10 +4,10 @@ WORKDIR /
 ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
-    && apt-get -qq install -y --no-install-recommends apt-utils \
+    && apt-get -qq install --no-install-recommends \
       openssl \
       libevent-2.0-5 \
-    && apt-get -y -qq install --no-install-recommends \
+    && apt-get -qq install --no-install-recommends \
       build-essential \
       libssl-dev \
       libevent-dev \
