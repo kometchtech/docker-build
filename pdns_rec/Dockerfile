@@ -3,7 +3,9 @@ MAINTAINER kometchtech <kometch@gmail.com>
 WORKDIR /
 ENV PDNS_REC_VERSION 4.1.1
 ENV DEBIAN_FRONTEND noninteractive
-RUN echo "deb http://httpredir.debian.org/debian testing main" > /etc/apt/sources.list.d/testing.list 
+RUN echo 'deb http://httpredir.debian.org/debian testing main' > /etc/apt/sources.list.d/testing.list 
+RUN echo "Acquire::http {No-Cache=True;};" > /etc/apt/apt.conf.d/no-cache
+RUN echo "force-unsafe-io" > /etc/dpkg/dpkg.cfg.d/02apt-speedup
 RUN apt-get -qq update  
 RUN apt-get -qq install -y --no-install-recommends apt-utils \
     && apt-get -y -qq install --no-install-recommends \
