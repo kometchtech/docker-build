@@ -11,3 +11,10 @@ Basically we will check the operation of the following application.
 - PowerDNS recursor (https://www.powerdns.com/recursor.html)
 - Knot DNS resolver (https://www.knot-resolver.cz/)
 - CoreDNS (https://coredns.io/)
+
+Tips
+configuration IPv6
+```
+$ echo '{"ipv6":true, "fixed-cidr-v6":"2001:db8:1::/64"}' sudo tee -a /etc/docker/daemon.json
+$ sudo systemctl restart docker.service
+```
