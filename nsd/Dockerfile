@@ -23,9 +23,9 @@ RUN apt-get update \
       curl \
       automake \
       autoconf \
-    && curl -fSL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o "nsd-${NSD_VERSION}.tar.gz" \
-    && ls -l \
-    && tar xf "nsd-${NSD_VERSION}.tar.gz" \
+    && curl -fSL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o "nsd-${NSD_VERSION}.tar.gz" 
+WORKDIR /usr/local/etc
+RUN tar xf "nsd-${NSD_VERSION}.tar.gz" \
     && rm -f "nsd-${NSD_VERSION}.tar.gz" 
 WORKDIR /usr/local/etc/nsd-${NSD_VERSION}
 RUN autoreconf -if \
@@ -41,6 +41,7 @@ RUN autoreconf -if \
   && rm -rf \
       "/usr/local/etc/nsd-${NSD_VERSION}" \
       /var/lib/apt/lists/* \
+  && apt-get purge -y build-essential \
   && apt-get clean \
   && apt-get autoremove -y \
   && useradd -s /usr/sbin/nologin -d /usr/local/etc/nsd nsd \
