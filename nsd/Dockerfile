@@ -23,9 +23,9 @@ RUN apt-get update \
       curl \
       automake \
       autoconf \
-    && curl -fSL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o "nsd-${NSD_VERSION}.tar.gz" \
-    && tar xf "nsd-${NSD_VERSION}.tar.gz" \
-    && rm -f "nsd-${NSD_VERSION}.tar.gz" 
+    && curl -fSL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o "/usr/local/etc/nsd/nsd-${NSD_VERSION}.tar.gz" \
+    && tar xf "/usr/local/etc/nsd/nsd-${NSD_VERSION}.tar.gz" \
+    && rm -f "/usr/local/etc/nsd/nsd-${NSD_VERSION}.tar.gz" 
 WORKDIR /usr/local/etc/nsd/nsd-${NSD_VERSION}
 RUN autoreconf -if \
   && ./configure \
