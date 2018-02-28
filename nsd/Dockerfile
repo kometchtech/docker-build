@@ -44,6 +44,6 @@ RUN autoreconf -if \
   && apt-get autoremove -y \
   && useradd -s /usr/sbin/nologin -d /usr/local/etc/nsd nsd \
   && chown nsd:nsd /usr/local/var/db/nsd \
-  && chmod 0700 /usr/localvar/db/nsd
-  && cd /usr/local/etc/nsd
+  && chmod 0700 /usr/localvar/db/nsd \
+  && cd /usr/local/etc/nsd \
   && mv nsd.conf.sample nsd.conf
