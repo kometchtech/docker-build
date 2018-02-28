@@ -4,7 +4,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
-ENV BUILD_PKGS build-essential coreutils curl automake autoconf
+ENV BUILD_PKGS build-essential curl automake autoconf
 ENV RUN_PKGS openssl libevent-2.0-5 libssl-dev libevent-dev
 
 # Application execution related information
