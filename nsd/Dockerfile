@@ -1,6 +1,6 @@
 # Environment
 FROM arm64v8/debian:9.3
-MAINTAINER kometchtech <kometch@gmail.com>
+LABEL maintainer="kometchtech <kometch@gmail.com>"
 ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
 
