@@ -1,6 +1,7 @@
 # Environment
 FROM arm64v8/debian:9.3
-LABEL maintainer="kometchtech <kometch@gmail.com>"
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="aarch64"
 ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -25,7 +26,7 @@ RUN apt-get update \
     && curl -fSL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o "nsd-${NSD_VERSION}.tar.gz" \
     && tar xf "nsd-${NSD_VERSION}.tar.gz" \
     && rm -f "nsd-${NSD_VERSION}.tar.gz" 
-WORKDIR nsd-${NSD_VERSION}
+WORKDIR /usr/local/etc/nsd/nsd-${NSD_VERSION}
 RUN autoreconf -if \
   && ./configure \
       --prefix=/usr/local \
@@ -37,7 +38,7 @@ RUN autoreconf -if \
 	&& make -j "$(nproc)" \
   && make install \
   && rm -rf \
-      "nsd-${NSD_VERSION}" \
+      "/usr/local/etc/nsd/nsd-${NSD_VERSION}" \
       /var/lib/apt/lists/* \
   && apt-get clean \
   && apt-get autoremove -y \
