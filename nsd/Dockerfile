@@ -11,7 +11,7 @@ EXPOSE 53/TCP 53/UDP 8952/TCP
 CMD ["/usr/local/sbin/nsd", "-d"]
 
 # source build and install
-WORKDIR /usr/local/etc/nsd
+WORKDIR /usr/local/etc
 RUN apt-get update \
     && apt-get -qq install --no-install-recommends \
       openssl \
@@ -23,10 +23,10 @@ RUN apt-get update \
       curl \
       automake \
       autoconf \
-    && curl -fSL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o "/usr/local/etc/nsd/nsd-${NSD_VERSION}.tar.gz" \
-    && tar xf "/usr/local/etc/nsd/nsd-${NSD_VERSION}.tar.gz" \
-    && rm -f "/usr/local/etc/nsd/nsd-${NSD_VERSION}.tar.gz" 
-WORKDIR /usr/local/etc/nsd/nsd-${NSD_VERSION}
+    && curl -fSL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o "nsd-${NSD_VERSION}.tar.gz" \
+    && tar xf "nsd-${NSD_VERSION}.tar.gz" \
+    && rm -f "nsd-${NSD_VERSION}.tar.gz" 
+WORKDIR /usr/local/etc/nsd-${NSD_VERSION}
 RUN autoreconf -if \
   && ./configure \
       --prefix=/usr/local \
@@ -38,7 +38,7 @@ RUN autoreconf -if \
 	&& make -j "$(nproc)" \
   && make install \
   && rm -rf \
-      "/usr/local/etc/nsd/nsd-${NSD_VERSION}" \
+      "/usr/local/etc/nsd-${NSD_VERSION}" \
       /var/lib/apt/lists/* \
   && apt-get clean \
   && apt-get autoremove -y \
