@@ -23,7 +23,7 @@ RUN apt-get update \
       curl \
       automake \
       autoconf \
-    && curl -fSL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -O
+    && curl -fsL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -O
 WORKDIR /usr/local/etc
 RUN tar xf "nsd-${NSD_VERSION}.tar.gz" \
     && rm -f "nsd-${NSD_VERSION}.tar.gz" 
