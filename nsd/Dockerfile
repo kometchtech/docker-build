@@ -34,6 +34,7 @@ RUN apt-get update \
     && rm -rf \
         "nsd-${NSD_VERSION}" \
         /var/lib/apt/lists/* \
+        /usr/local/share/man \
     && apt-get purge -y $BUILD_PKGS \
     && apt-get clean \
     && apt-get autoremove -y \
