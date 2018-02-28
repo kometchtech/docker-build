@@ -1,7 +1,8 @@
 # docker-build
 personal docker build
 
-It exists to check the operation of container in the ARM environment (arm32, arm64).
+It exists to check the operation of container in the ARM environment (arm64).  
+> For arm32, tackle depending on the mood.
 
 Basically we will check the operation of the following application.
 
