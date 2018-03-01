@@ -6,10 +6,12 @@ ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
 ENV BUILD_PKGS build-essential curl automake autoconf
 ENV RUN_PKGS openssl libevent-2.0-5 libssl-dev libevent-dev
+ENV TZ Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc
-RUN apt-get update \
+RUN echo $TZ > /etc/localtime \
+    && apt-get update \
     && apt-get -qq install -y --no-install-recommends $BUILD_PKGS $RUN_PKGS \
     && curl -fLO "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" \
     && tar xf "nsd-${NSD_VERSION}.tar.gz" \
@@ -41,5 +43,4 @@ RUN apt-get update \
 COPY conf/ /usr/local/etc/nsd/
 VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd"]
 EXPOSE 53/TCP 53/UDP
-RUN nsd-control-setup 
 CMD ["/usr/local/sbin/nsd", "-d"]
