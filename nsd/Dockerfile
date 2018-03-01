@@ -10,7 +10,7 @@ ENV TZ Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc
-RUN echo $TZ > /etc/localtime \
+RUN echo $TZ > /etc/timezone \
     && apt-get update \
     && apt-get -qq install -y --no-install-recommends $BUILD_PKGS $RUN_PKGS \
     && curl -fLO "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" \
@@ -37,7 +37,8 @@ RUN echo $TZ > /etc/localtime \
     && useradd -s /usr/sbin/nologin -d /usr/local/etc/nsd nsd \
     && mkdir -p /var/cache/nsd4 /var/run/nsd4 /usr/local/etc/nsd/zones \
     && chown -R nsd:nsd /usr/local/var/db/nsd /usr/local/etc/nsd/ /var/run/nsd4 /var/cache/nsd4 \
-    && chmod 0700 /usr/local/var/db/nsd /var/run/nsd4 /var/cache/nsd4  
+    && chmod 0700 /usr/local/var/db/nsd /var/run/nsd4 /var/cache/nsd4 \
+    && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 # Application execution related information
 COPY conf/ /usr/local/etc/nsd/
