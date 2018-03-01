@@ -7,15 +7,10 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV BUILD_PKGS build-essential curl automake autoconf
 ENV RUN_PKGS openssl libevent-2.0-5 libssl-dev libevent-dev
 
-# Application execution related information
-VOLUME ["/usr/local/etc/nsd"]
-EXPOSE 53/TCP 53/UDP 8952/TCP
-CMD ["/usr/local/sbin/nsd", "-d"]
-
 # source build and install
 WORKDIR /usr/local/etc
 RUN apt-get update \
-    && apt-get -qq install --no-install-recommends $BUILD_PKGS $RUN_PKGS \
+    && apt-get -qq install -y --no-install-recommends $BUILD_PKGS $RUN_PKGS \
     && curl -fLO "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" \
     && tar xf "nsd-${NSD_VERSION}.tar.gz" \
     && rm -f "nsd-${NSD_VERSION}.tar.gz" \ 
@@ -31,14 +26,20 @@ RUN apt-get update \
       --enable-packed \
 	  && make -j "$(nproc)" \
     && make install \
+    && cd ../ \
     && rm -rf \
-        "nsd-${NSD_VERSION}" \
+        "../nsd-${NSD_VERSION}" \
         /var/lib/apt/lists/* \
         /usr/local/share/man \
-    && apt-get purge -y $BUILD_PKGS \
-    && apt-get clean \
-    && apt-get autoremove -y \
+    && apt-get purge --auto-remove -y $BUILD_PKGS \
     && useradd -s /usr/sbin/nologin -d /usr/local/etc/nsd nsd \
-    && chown nsd:nsd /usr/local/var/db/nsd \
-    && chmod 0700 /usr/local/var/db/nsd \
-    && mv /usr/local/etc/nsd/nsd.conf.sample /usr/local/etc/nsd/nsd.conf
+    && mkdir -p /var/cache/nsd4 /var/run/nsd4 /usr/local/etc/nsd/zones \
+    && chown -R nsd:nsd /usr/local/var/db/nsd /usr/local/etc/nsd/ /var/run/nsd4 /var/cache/nsd4 \
+    && chmod 0700 /usr/local/var/db/nsd /var/run/nsd4 /var/cache/nsd4  
+
+# Application execution related information
+COPY conf/ /usr/local/etc/nsd/
+VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd"]
+EXPOSE 53/TCP 53/UDP
+RUN nsd-control-setup 
+CMD ["/usr/local/sbin/nsd", "-d"]
