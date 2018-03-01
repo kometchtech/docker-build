@@ -4,9 +4,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV PDNS_REC_VERSION 4.1.1
 RUN 'echo "deb http://httpredir.debian.org/debian testing main" >> /etc/apt/sources.list.d/testing.list' 
 RUN apt-get update \
-      && apt-get -qq install pdns-recursor/testing 
-WORKDIR /pdns-recursor-${PDNS_REC_VERSION}
-RUN apt-get clean \
+      && apt-get -qq install pdns-recursor/testing \
+      && apt-get clean \
       && apt-get autoremove -y \
       rm -rf /var/lib/apt/lists/*
 WORKDIR /etc/powerdns
