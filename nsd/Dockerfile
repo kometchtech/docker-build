@@ -43,5 +43,7 @@ RUN echo $TZ > /etc/timezone \
 # Application execution related information
 COPY conf/ /usr/local/etc/nsd/
 VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd"]
+
+# export TCP and UDP
 EXPOSE 53/TCP 53/UDP
 CMD ["/usr/local/sbin/nsd", "-d"]

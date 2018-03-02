@@ -14,6 +14,8 @@ ENV LDFLAGS ""
 # config
 WORKDIR /etc/dibbler
 VOLUME ["/etc/dibbler"]
+
+# export TCP and UDP
 EXPOSE 547/TCP 547/UDP
 CMD ["/usr/local/sbin/dibbler-server", "run"]
 
@@ -29,9 +31,8 @@ RUN apt-get -qq update \
       --enable-maintainer-mode \
   && make -j "$(nproc)" \ 
   && make install \ 
-  && apt-get purge -y ${BUILD_PKGS} \
+  && apt-get purge --auto-remove -y ${BUILD_PKGS} \
   && apt-get clean \ 
-  && apt-get autoremove -y \ 
   && rm -rf \ 
       "dibbler-master" \ 
       /var/lib/apt/lists/* \
