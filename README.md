@@ -1,7 +1,7 @@
 # docker-build
 personal docker build
 
-It exists to check the operation of container in the ARM environment (arm64).  
+It exists to check the operation of container in the ARM environment (arm64).
 > For arm32, tackle depending on the mood.
 
 Basically we will check the operation of the following application.
@@ -14,7 +14,7 @@ Basically we will check the operation of the following application.
 - CoreDNS (https://coredns.io/)
 
 Tips
-configuration IPv6
+- configuration IPv6
 ```
 $ echo '{"ipv6":true, "fixed-cidr-v6":"2001:db8:1::/64"}' | sudo tee -a /etc/docker/daemon.json
 $ sudo systemctl restart docker.service
