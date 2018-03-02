@@ -4,6 +4,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="Knot resolver team's things are modified and used."
 
 # Environment
+ENV TZ Asia/Tokyo
 ENV BUILD_PKGS build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev gnutls-dev jansson-dev userspace-rcu-dev curl vim bsd-compat-headers
 ENV RUN_PKGS luajit libuv gnutls jansson bash libstdc++ lua-cqueues lua-http lua-sec lua-socket
 ENV BUILD_IGNORE gmp nettle jansson gnutls lua libuv cmocka
@@ -32,4 +33,5 @@ make -j ${nproc} install && \
 # Trim down the image
 cd / && \
 apk del --purge build-dep && \
-rm -rf /var/cache/apk/* /tmp/build
+rm -rf /var/cache/apk/* /tmp/build \
+&& ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime

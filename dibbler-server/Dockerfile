@@ -5,6 +5,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       version="github-master"
 ENV DIBBLER 1.0.1
 ENV DEBIAN_FRONTEND noninteractive
+ENV TZ Asia/Tokyo
 ENV BUILD_PKGS build-essential ca-certificates coreutils curl automake autoconf unzip
 ENV RUN_PKGS ""
 ENV CFLAGS ""
@@ -35,4 +36,5 @@ RUN apt-get -qq update \
       "dibbler-master" \ 
       /var/lib/apt/lists/* \
   && cp /usr/local/share/doc/dibbler/examples/server.conf /etc/dibbler/server.conf \
-  && mkdir /var/lib/dibbler
+  && mkdir /var/lib/dibbler \
+  && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
