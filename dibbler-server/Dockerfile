@@ -6,9 +6,9 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV DIBBLER 1.0.1
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ Asia/Tokyo
-ENV BUILD_PKGS build-essential ca-certificates coreutils curl automake autoconf unzip
-ENV RUN_PKGS ""
-ENV CFLAGS ""
+ENV BUILD_PKGS build-essential ca-certificates curl automake autoconf unzip
+ENV RUN_PKGS coreutils
+ENV CFLAGS "-Ofast -fPIC"
 ENV LDFLAGS ""
 
 # config
@@ -26,7 +26,7 @@ RUN apt-get -qq update \
     && unzip "master.zip" \ 
     && rm -f "master.zip" \
     && cd dibbler-master \
-    && ./configure ${CFLAGS} ${LDFLAGS} \ 
+    && ./configure CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \ 
       --sysconfdir=/etc/dibbler \ 
       --enable-maintainer-mode \
   && make -j "$(nproc)" \ 
