@@ -10,7 +10,7 @@ ENV VERSION 1.2.1
 # Select entrypoint
 EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/dnsdist"]
-CMD ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
+ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
 # install
 RUN apk add --no-cache --virtual .build-deps \
