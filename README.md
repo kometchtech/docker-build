@@ -7,6 +7,11 @@ It exists to check the operation of container in the ARM environment (arm64).
 
 Basically we will check the operation of the following application.
 
+## base images
+- Debian stretch/testing
+- alpine
+
+## chech software
 - dibbler-server <http://klub.com.pl/dhcpv6/>
 - NSD <https://www.nlnetlabs.nl/projects/nsd/>
 - Unbound <https://www.nlnetlabs.nl/projects/unbound/>
