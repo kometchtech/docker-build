@@ -11,7 +11,7 @@ Basically we will check the operation of the following application.
 - Debian stretch/testing
 - alpine
 
-## chech software
+## check software
 - dibbler-server <http://klub.com.pl/dhcpv6/>
 - NSD <https://www.nlnetlabs.nl/projects/nsd/>
 - Unbound <https://www.nlnetlabs.nl/projects/unbound/>
