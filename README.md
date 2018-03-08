@@ -13,6 +13,7 @@ Basically we will check the operation of the following application.
 - PowerDNS recursor <https://www.powerdns.com/recursor.html>
 - Knot DNS resolver <https://www.knot-resolver.cz/>
 - CoreDNS <https://coredns.io/>
+- dnsdist <https://dnsdist.org/>
 
 ## Tips
 
