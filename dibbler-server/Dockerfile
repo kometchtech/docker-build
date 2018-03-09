@@ -17,6 +17,8 @@ VOLUME ["/etc/dibbler"]
 
 # export TCP and UDP
 EXPOSE 547/TCP 547/UDP
+
+# Select entrypoint
 CMD ["/usr/local/sbin/dibbler-server", "run"]
 
 # compile and install
