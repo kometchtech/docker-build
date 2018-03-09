@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TZ Asia/Tokyo
 ENV BUILD_PKGS build-essential ca-certificates curl automake autoconf unzip
 ENV RUN_PKGS coreutils
-ENV CFLAGS "-Ofast -fPIC"
+ENV CFLAGS "-Os -fPIC"
 ENV LDFLAGS ""
 
 # config
