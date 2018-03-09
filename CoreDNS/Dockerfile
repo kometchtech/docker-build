@@ -3,7 +3,7 @@ FROM golang:alpine AS build-env
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
     arch="aarch64" \
     version="1.0.6"
-ENV DIBBLER 1.0.6
+ENV COREDNS 1.0.6
 ENV TZ Asia/Tokyo
 
 # 1st build
