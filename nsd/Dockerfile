@@ -33,6 +33,7 @@ RUN echo $TZ > /etc/timezone \
         /var/lib/apt/lists/* \
         /usr/local/share/man \
     && apt-get purge --auto-remove -y $BUILD_PKGS \
+    && apt-get clean \
     && useradd -s /usr/sbin/nologin -d /usr/local/etc/nsd nsd \
     && mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones \
     && chown -R nsd:nsd /usr/local/var/db/nsd /usr/local/etc/nsd /var/run/nsd /var/cache/nsd \
