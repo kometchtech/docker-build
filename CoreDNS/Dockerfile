@@ -1,8 +1,8 @@
 # Environment
 FROM arm64v8/debian:9.3-slim
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="aarch64" \
-      version="1.0.6"
+    arch="aarch64" \
+    version="1.0.6"
 ENV DIBBLER 1.0.6
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ Asia/Tokyo
@@ -12,7 +12,6 @@ ENV CFLAGS "-Os -fPIC"
 ENV LDFLAGS ""
 
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
-EXPOSE 53/UDP 53/TCP
-
+EXPOSE 53/UDP 53
 # Select entrypoint
 CMD ["coredns", "-c", "/etc/coredns/corefile"]
