@@ -1,17 +1,20 @@
+FROM golang:alpine AS build-env
 # Environment
-FROM arm64v8/debian:9.3-slim
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
     arch="aarch64" \
     version="1.0.6"
 ENV DIBBLER 1.0.6
-ENV DEBIAN_FRONTEND noninteractive
 ENV TZ Asia/Tokyo
-ENV BUILD_PKGS build-essential ca-certificates curl automake autoconf unzip
-ENV RUN_PKGS coreutils
-ENV CFLAGS "-Os -fPIC"
-ENV LDFLAGS ""
 
-# export DNS over UDP & TCP, DNS-over-TLS, web interface
-EXPOSE 53/UDP 53
+# 1st build
+ADD . /work
+WORKDIR /work
+RUN go build -o hello main.go
+
+# multi-stage build
+FROM budybox
+COPY --from=build-env /work/coredns /usr/local/bin/coredns
+# export DNS over UDP & TCP
+EXPOSE 53 53/UDP
 # Select entrypoint
 CMD ["coredns", "-c", "/etc/coredns/corefile"]
