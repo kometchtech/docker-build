@@ -7,7 +7,6 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV TZ Asia/Tokyo
 
 # package install 
-#RUN 'echo "deb http://httpredir.debian.org/debian testing main" >> /etc/apt/sources.list.d/testing.list' 
 RUN apt-get update \
       && apt-get -qq install pdns-recursor/testing \
       && apt-get clean \
