@@ -46,9 +46,11 @@ RUN echo $TZ > /etc/timezone \
     && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 # Application execution related information
+ADD ./run.sh /usr/local/sbin/
+RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 VOLUME ["/etc/unbound"]
 
 # export TCP and UDP
 EXPOSE 53/tcp 53/udp 
-CMD ["/usr/local/sbin/unbound", "-d", "-c","/etc/unbound/unbound.conf"]
-#ENTRYPOINT ["/usr/local/sbin/unbound", "-d", "-c","/etc/unbound/unbound.conf"]   
+#CMD ["/usr/local/sbin/unbound", "-d", "-c","/etc/unbound/unbound.conf"]
+CMD ["/usr/local/sbin/run.sh"]
