@@ -17,9 +17,6 @@ ZBX_SERVER_HOST=${ZBX_SERVER_HOST:-"zabbix-server"}
 # Default Zabbix server port number
 ZBX_SERVER_PORT=${ZBX_SERVER_PORT:-"10051"}
 
-# Default timezone for web interface
-PHP_TZ=${PHP_TZ:-"Asia/Tokyo"}
-
 # Default directories
 # User 'zabbix' home directory
 ZABBIX_USER_HOME_DIR="/var/lib/zabbix"
@@ -29,14 +26,7 @@ ZABBIX_ETC_DIR="/etc/zabbix"
 ZBX_FRONTEND_PATH="/usr/share/zabbix"
 
 prepare_system() {
-    local type=$1
-    local web_server=$2
-
     echo "** Preparing the system"
-
-    if [ "$type" != "dev" ]; then
-        return
-    fi
 }
 
 escape_spec_char() {
@@ -169,10 +159,6 @@ update_zbx_config() {
     fi
 
     update_config_var $ZBX_CONFIG "HousekeepingFrequency" "${ZBX_HOUSEKEEPINGFREQUENCY}"
-    if [ "$type" == "server" ]; then
-        update_config_var $ZBX_CONFIG "MaxHousekeeperDelete" "${ZBX_MAXHOUSEKEEPERDELETE}"
-        update_config_var $ZBX_CONFIG "SenderFrequency" "${ZBX_SENDERFREQUENCY}"
-    fi
 
     update_config_var $ZBX_CONFIG "CacheSize" "${ZBX_CACHESIZE}"
 
@@ -264,7 +250,7 @@ prepare_zbx_agent_config() {
     update_config_var $ZBX_AGENT_CONFIG "Timeout" "${ZBX_TIMEOUT}"
     update_config_var $ZBX_AGENT_CONFIG "Include" "/etc/zabbix/zabbix_agentd.d/"
     update_config_var $ZBX_AGENT_CONFIG "UnsafeUserParameters" "${ZBX_UNSAFEUSERPARAMETERS}"
-    update_config_var $ZBX_AGENT_CONFIG "LoadModulePath" "$ZABBIX_USER_HOME_DIR/modules/"
+    update_config_var $ZBX_AGENT_CONFIG "LoadModulePath" "${ZABBIX_USER_HOME_DIR}/modules/"
     update_config_multiple_var $ZBX_AGENT_CONFIG "LoadModule" "${ZBX_LOADMODULE}"
     update_config_var $ZBX_AGENT_CONFIG "TLSConnect" "${ZBX_TLSCONNECT}"
     update_config_var $ZBX_AGENT_CONFIG "TLSAccept" "${ZBX_TLSACCEPT}"
