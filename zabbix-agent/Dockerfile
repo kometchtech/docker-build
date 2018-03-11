@@ -25,6 +25,7 @@ RUN addgroup zabbix && \
     apk add ${APK_FLAGS_PERSISTANT} \
             bash \
             iputils \
+            libevent \
             pcre && \
     rm -rf /var/cache/apk/*
 
@@ -66,10 +67,10 @@ RUN apk add ${APK_FLAGS_DEV} --virtual build-dependencies \
     rm -rf /tmp/zabbix-${ZBX_VERSION}/ && \
     apk del ${APK_FLAGS_COMMON} --purge \
             build-dependencies && \
-    rm -rf /var/cache/apk/* \
+    rm -rf /var/cache/apk/*
 
+# service running
 EXPOSE 10050/TCP
-
 WORKDIR /var/lib/zabbix
 VOLUME ["/etc/zabbix/zabbix_agentd.d", "/var/lib/zabbix/enc", "/var/lib/zabbix/modules"]
 COPY ["docker-entrypoint.sh", "/usr/bin/"]
