@@ -14,7 +14,7 @@ EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/dnsdist"]
 ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
-# install
+# dev package install
 RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
   && mkdir -p /usr/src \
 ## build
