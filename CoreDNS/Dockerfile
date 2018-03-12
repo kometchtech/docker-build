@@ -8,7 +8,7 @@ ENV TZ Asia/Tokyo
 # 1st build
 ADD . /work
 WORKDIR /work
-RUN make
+RUN make -j ${nproc}
 
 # multi-stage build
 FROM alpine:latest
