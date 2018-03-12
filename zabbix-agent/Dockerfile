@@ -5,6 +5,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ARG APK_FLAGS_COMMON="-q"
 ARG APK_FLAGS_PERSISTANT="${APK_FLAGS_COMMON} --no-cache"
 ARG APK_FLAGS_DEV="${APK_FLAGS_COMMON} --no-cache"
+ENV BUILD_PKGS bash iputils libevent pcre
+ENV RUN_PKGS alpine-sdk autoconf automake openssl-dev pcre-dev coreutils libevent-dev
 ENV TERM=xterm \
     ZBX_TYPE=agent ZBX_OPT_TYPE=none
 
@@ -23,10 +25,7 @@ RUN addgroup zabbix && \
     chown --quiet -R zabbix:root /var/lib/zabbix && \
     apk update && \
     apk add ${APK_FLAGS_PERSISTANT} \
-            bash \
-            iputils \
-            libevent \
-            pcre && \
+            ${BUILD_PKGS} && \
     rm -rf /var/cache/apk/*
 
 ARG MAJOR_VERSION=3.4
@@ -35,13 +34,7 @@ ARG ZBX_SOURCES="https://sourceforge.net/projects/zabbix/files/ZABBIX%20Latest%2
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 
 RUN apk add ${APK_FLAGS_DEV} --virtual build-dependencies \
-            alpine-sdk \
-            autoconf \
-            automake \
-            openssl-dev \
-            pcre-dev \
-            coreutils \
-            libevent-dev && \
+            ${RUN_PKGS} && \
     cd /tmp/ && \
     curl -LO ${ZBX_SOURCES} && \
     tar xf zabbix-${ZBX_VERSION}.tar.gz && \
