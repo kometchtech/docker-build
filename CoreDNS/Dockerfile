@@ -8,10 +8,14 @@ ENV TZ Asia/Tokyo
 # 1st build
 ADD . /work
 WORKDIR /work
-#RUN go build -o hello main.go
+RUN make -j ${nproc}
 
 # multi-stage build
-FROM budybox
+FROM alpine:latest
+
+# Only need ca-certificates & openssl if want to use DNS over TLS (RFC 7858).
+RUN apk --no-cache add bind-tools ca-certificates openssl && update-ca-certificates
+
 COPY --from=build-env /work/coredns /usr/local/bin/coredns
 # export DNS over UDP & TCP
 EXPOSE 53 53/UDP

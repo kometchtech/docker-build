@@ -6,23 +6,16 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Env
 ENV TZ Asia/Tokyo
 ENV VERSION 1.2.1
+ENV BUILD_PKGS g++ make libressl boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev re2-dev
+ENV RUN_PKGS ""
 
 # Select entrypoint
 EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/dnsdist"]
 ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
-# install
-RUN apk add --no-cache --virtual .build-deps \
-    g++ \
-    make \
-    libressl \
-    boost-dev \
-    lua5.3-dev \
-    libedit-dev \
-    libsodium-dev \
-    protobuf-dev \
-    re2-dev \
+# dev package install
+RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
   && mkdir -p /usr/src \
 ## build
   && cd / \
