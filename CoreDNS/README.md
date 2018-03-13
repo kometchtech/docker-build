@@ -6,7 +6,7 @@ CoreDNS <https://coredns.io/>
 
 ### Baseimage
 
-alpine
+arm64v8/alpine
 
 ### minimum operating
 
