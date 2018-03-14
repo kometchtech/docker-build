@@ -47,5 +47,4 @@ VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd
 # export TCP and UDP
 EXPOSE 53/tcp 53/udp 8952/tcp
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
-#CMD ["/usr/local/sbin/nsd", "-d", "-p", "/var/run/nsd.pid"]
 CMD ["/usr/local/sbin/run.sh"]

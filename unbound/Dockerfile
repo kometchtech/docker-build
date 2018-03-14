@@ -52,5 +52,4 @@ VOLUME ["/etc/unbound"]
 
 # export TCP and UDP
 EXPOSE 53/tcp 53/udp 
-#CMD ["/usr/local/sbin/unbound", "-d", "-c","/etc/unbound/unbound.conf"]
 CMD ["/usr/local/sbin/run.sh"]

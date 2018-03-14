@@ -21,6 +21,7 @@ Basically we will check the operation of the following application.
 - Knot DNS resolver <https://www.knot-resolver.cz/>
 - CoreDNS <https://coredns.io/>
 - dnsdist <https://dnsdist.org/>
+- BIND9 <https://www.isc.org/downloads/bind/> alpine package (test)
 
 ## Tips
 

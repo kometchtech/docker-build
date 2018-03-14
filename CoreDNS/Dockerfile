@@ -1,4 +1,9 @@
 FROM arm64v8/alpine:edge
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+    arch="aarch64" \
+    version="1.1.0"
+ENV COREDNS 1.1.0
+ENV TZ Asia/Tokyo
 
 # Only need ca-certificates & openssl if want to use DNS over TLS (RFC 7858).
 RUN apk --no-cache add bind-tools ca-certificates openssl && update-ca-certificates

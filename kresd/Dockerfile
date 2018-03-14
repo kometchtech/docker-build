@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="Knot resolver team's things are modified and used."
