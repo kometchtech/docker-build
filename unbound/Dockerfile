@@ -2,7 +2,7 @@
 FROM arm64v8/debian:9.3-slim
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
-ENV UNBOUND_VERSION 1.6.8
+ENV UNBOUND_VERSION 1.7.0
 ENV DEBIAN_FRONTEND noninteractive
 ENV BUILD_PKGS build-essential curl automake autoconf libexpat1-dev
 ENV RUN_PKGS openssl libevent-2.0-5 libssl-dev libevent-dev ca-certificates ldnsutils
