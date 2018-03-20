@@ -11,7 +11,7 @@ ENV GOOS=linux GOARCH=arm64 GOROOT=/root GOPATH=${HOME}
 RUN apk --no-cache add ${BUILD_PKGS} \
     && mkdir dnscrypt-proxy-src \
     && cd dnscrypt-proxy-src \
-    && go get github.com/jedisct1/dnscrypt-proxy \
+    && git clone https://github.com/jedisct1/dnscrypt-proxy \
     && cd dnscrypt-proxy \
     && go clean \
     && go build -ldflags="-s -w" -o $GOPATH/linux-amd64/dnscrypt-proxy \
