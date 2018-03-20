@@ -6,13 +6,13 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 ENV BUILD_PKGS git 
-ENV GOPATH=/work GOOS=linux GOARCH=arm64 GOROOT=/root
+ENV GOOS=linux GOARCH=arm64 GOROOT=/root GOPATH=${HOME}
 
 RUN apk --no-cache add ${BUILD_PKGS} \
     && mkdir dnscrypt-proxy-src \
     && cd dnscrypt-proxy-src \
-    && git clone https://github.com/jedisct1/dnscrypt-proxy src \
-    && cd src/dnscrypt-proxy \
+    && go get https://github.com/jedisct1/dnscrypt-proxy \
+    && cd dnscrypt-proxy \
     && go clean \
     && go build -ldflags="-s -w" -o $GOPATH/linux-amd64/dnscrypt-proxy \
     && cp $GOPATH/src/dnscrypt-proxy/example-* $GOPATH/linux-arm64 \
@@ -20,10 +20,7 @@ RUN apk --no-cache add ${BUILD_PKGS} \
 
 # 2nd stage build
 FROM arm64v8/alpine:edge
-ENV GOPATH=/root/go
-
-# Only need ca-certificates & openssl if want to use DNS over TLS (RFC 7858).
-# RUN apk --no-cache add bind-tools ca-certificates openssl && update-ca-certificates
+ENV GOPATH=${HOME}
 
 COPY --from=build-env /work/coredns /root/go/linux-arm64
 # export DNS over UDP & TCP
