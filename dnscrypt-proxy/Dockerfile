@@ -5,10 +5,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ Asia/Tokyo
-ENV BUILD_PKGS build-base git 
+ENV BUILD_PKGS git 
 ENV GOPATH=/root/go GOOS=linux GOARCH=arm64
 
-RUN mkdir dnscrypt-proxy-src \
+RUN apk --no-cache add ${BUILD_PKGS} \
+    && mkdir dnscrypt-proxy-src \
     && cd dnscrypt-proxy-src \
     && git clone https://github.com/jedisct1/dnscrypt-proxy src \
     && cd src/dnscrypt-proxy \
