@@ -6,7 +6,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 ENV BUILD_PKGS git 
-ENV GOPATH=/root/go GOOS=linux GOARCH=arm64
+ENV GOPATH=/work GOOS=linux GOARCH=arm64 GOROOT=/root
 
 RUN apk --no-cache add ${BUILD_PKGS} \
     && mkdir dnscrypt-proxy-src \
