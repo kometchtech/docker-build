@@ -26,7 +26,7 @@ RUN echo $TZ > /etc/timezone \
       --disable-flto \
       --enable-ratelimit \
       --enable-packed \
-	  && make -j "$(nproc)" \
+	&& make -j "$(nproc)" \
     && make install \
     && rm -rf \
         "/usr/local/etc/nsd-${NSD_VERSION}" \

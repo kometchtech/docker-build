@@ -11,6 +11,5 @@ ENV CFLAGS ''
 ENV LDFLAGS ''
 
 WORKDIR /root
-RUN \
-apt-get -qq update && \
-apt-get -qq install -y ${BUILD_PKGS} 
+RUN apt-get -qq update \
+    && apt-get -qq install -y ${BUILD_PKGS} 

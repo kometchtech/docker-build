@@ -21,17 +21,16 @@ COPY "config.docker" "/etc/knot-resolver/kresd.conf"
 CMD ["/usr/local/sbin/kresd", "-c", "/etc/knot-resolver/kresd.conf"]
 
 # Install dependencies and sources
-RUN \
-apk add -t lua-compat53 && \
-apk --update add ${RUN_PKGS} && \
-apk add --virtual build-dep ${BUILD_PKGS} && \
-git clone --depth 1 --recurse-submodules=modules/policy/lua-aho-corasick \
-https://github.com/CZ-NIC/knot-resolver.git /tmp/build && \
-cd /tmp/build && \
-./scripts/bootstrap-depends.sh /usr/local && \
-make -j ${nproc} install && \
-# Trim down the image
-cd / && \
-apk del --purge build-dep && \
-rm -rf /var/cache/apk/* /tmp/build \
-&& ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+RUN apk add -t lua-compat53 \
+      && apk --update add ${RUN_PKGS} \
+      && apk add --virtual build-dep ${BUILD_PKGS} \
+      && git clone --depth 1 --recurse-submodules=modules/policy/lua-aho-corasick \
+            https://github.com/CZ-NIC/knot-resolver.git /tmp/build \
+      && cd /tmp/build \
+      && ./scripts/bootstrap-depends.sh /usr/local \
+      && make -j ${nproc} install \
+      # Trim down the image
+      && cd / \
+      && apk del --purge build-dep \
+      && rm -rf /var/cache/apk/* /tmp/build \
+      && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
