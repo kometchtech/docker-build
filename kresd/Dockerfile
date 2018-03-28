@@ -15,11 +15,6 @@ ENV LDFLAGS -Wl,--as-needed
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
 
-# Select entrypoint
-WORKDIR /etc/knot-resolver
-COPY "config.docker" "/etc/knot-resolver/kresd.conf"
-CMD ["/usr/local/sbin/kresd", "-c", "/etc/knot-resolver/kresd.conf"]
-
 # Install dependencies and sources
 RUN apk add -t lua-compat53 \
       && apk --update add ${RUN_PKGS} \
@@ -34,3 +29,8 @@ RUN apk add -t lua-compat53 \
       && apk del --purge build-dep \
       && rm -rf /var/cache/apk/* /tmp/build \
       && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+# Select entrypoint
+WORKDIR /etc/knot-resolver
+RUN cp /usr/local/etc/knot-resolver/config.personal /etc/knot-resolver/kresd.conf
+CMD ["/usr/local/sbin/kresd", "-c", "/etc/knot-resolver/kresd.conf"]
