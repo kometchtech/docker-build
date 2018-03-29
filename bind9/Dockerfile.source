@@ -1,0 +1,64 @@
+FROM arm64v8/alpine:edge
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="aarch64" \
+      description="BIND9 for Aarch64"
+
+# Environment
+ARG VERSION="9.12.1"
+ENV TZ Asia/Tokyo
+ENV BUILD_PKGS build-essential ca-certificates curl automake autoconf tar openssl
+ENV RUN_PKGS fstrim protobuf-c zlib
+ENV CFLAGS "-Os -fPIC"
+ENV LDFLAGS ""
+
+# dev package install
+RUN apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
+  && mkdir -p /usr/src \
+## build
+  && cd / \
+  && curl -L https://ftp.isc.org/isc/bind9/9.12.1/bind-9.12.1.tar.gz -o bind9.tar.gz \
+  && tar xf bind9.tar.gz --strip-components=1 -C /usr/src \
+  && rm bind9.tar.gz \
+  && cd /usr/src \
+  \
+  && CFLAGS='${CFLAGS}' CXXFLAGS='${CFLAGS}' ./configure \
+    --prefix=/usr/local \
+    --sysconfdir=/etc/bind \
+    --localstatedir=/var \
+    --enable-threads \
+    --enable-ipv6 \
+    --enable-getifaddrs \
+    --disable-chroot \
+    --enable-atomic \
+    --enable-dnsrps \
+    --enable-dnstap \
+    --with-pic \
+    --with-libtool \
+    --with-openssl \
+    --with-ecdsa \
+    --with-gost \
+    --with-eddsa \
+    --with-aes \
+    --with-zlib \
+    --with-tuning \
+    --with-make-clean \
+    && make -j "$(nproc)" \
+  && make install \
+  ## cleanup
+  && cd / \
+  && rm -rf /usr/src \
+  # Trim down the image
+  && cd / \
+  && apk del --purge build-dep \
+  && rm -rf /var/cache/apk/* /tmp/build \
+  && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+
+
+# Select entrypoint
+EXPOSE 53/tcp 53/udp
+CMD ["named", "-c", "/etc/bind/named.conf", "-g", "-u", "named"]
+
+
+# install
+RUN apk --no-cache --update add bind \
+    && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
