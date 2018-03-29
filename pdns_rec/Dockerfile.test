@@ -6,7 +6,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Env
 ENV TZ Asia/Tokyo
 ENV VERSION 4.1.2
-ENV BUILD_PKGS g++ make libressl boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev re2-dev
+ENV BUILD_PKGS g++ make openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl
 ENV RUN_PKGS ""
 ENV CFLAGS '-Os -fstack-protector-strong'
 ENV CXXFLAGS '-g -Os'
@@ -22,7 +22,7 @@ RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
   && mkdir -p /usr/src \
 ## build
   && cd / \
-  && wget -O pdns-recursor.tar.bz2 https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}}.tar.bz2 \
+  && curl -sfL https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}.tar.bz2 -o pdns-recursor.tar.bz2 \
   && tar xf pdns-recursor.tar.bz2 --strip-components=1 -C /usr/src \
   && rm pdns-recursor.tar.bz2 \
   && cd /usr/src \
@@ -31,10 +31,14 @@ RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
     --prefix=/usr/local \
     --sysconfdir=/etc/powerdns \
     --localstatedir=/var \
+    --libdir=${prefix}/lib/aarch64-linux-gnu \
+    --libexecdir=${prefix}/lib/aarch64-linux-gnu \
     --enable-libsodium \
     --disable-maintainer-mode \
     --with-lua \
     --with-protobuf=yes \
+    --disable-dependency-tracking \
+    --enable-reproducible \
   && make -j "$(nproc)" \
   && make install \
 ## cleanup
