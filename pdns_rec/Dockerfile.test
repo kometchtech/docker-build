@@ -1,0 +1,53 @@
+FROM arm64v8/alpine:edge
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="aarch64" \
+      description="PowerDNS recursor for Aarch64"
+
+# Env
+ENV TZ Asia/Tokyo
+ENV VERSION 4.1.2
+ENV BUILD_PKGS g++ make libressl boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev re2-dev
+ENV RUN_PKGS ""
+ENV CFLAGS '-Os -fstack-protector-strong'
+ENV CXXFLAGS '-g -Os'
+ENV LDFLAGS '-Wl,-z,relro -Wl,-z,now'
+
+# Select entrypoint
+EXPOSE 53/tcp 53/udp
+VOLUME ["/etc/powerdns"]
+CMD ["/usr/sbin/pdns_recursor", "--daemon=no", "--write-pid=no", "--disable-syslog", "--log-timestamp=yes"]
+
+# dev package install
+RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
+  && mkdir -p /usr/src \
+## build
+  && cd / \
+  && wget -O pdns-recursor.tar.bz2 https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}}.tar.bz2 \
+  && tar xf pdns-recursor.tar.bz2 --strip-components=1 -C /usr/src \
+  && rm pdns-recursor.tar.bz2 \
+  && cd /usr/src \
+  \
+  && CFLAGS=${CFLAGS} CXXFLAGS=${CXXFLAGS} LDFLAGS=${LDFLAGS} ./configure \
+    --prefix=/usr/local \
+    --sysconfdir=/etc/powerdns \
+    --localstatedir=/var \
+    --enable-libsodium \
+    --disable-maintainer-mode \
+    --with-lua \
+    --with-protobuf=yes \
+  && make -j "$(nproc)" \
+  && make install \
+## cleanup
+  && cd / \
+  && rm -rf /usr/src \
+  \
+  && runDeps="$( \
+    scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
+      | tr ',' '\n' \
+      | sort -u \
+      | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+  )" \
+  && apk add --virtual .rundeps $runDeps \
+  && apk del .build-deps \
+  && rm -rf /var/cache/apk/* /tmp/build \
+  && adduser -DH pdnsrec
