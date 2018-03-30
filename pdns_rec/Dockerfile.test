@@ -15,7 +15,7 @@ ENV LDFLAGS '-Wl,-z,relro -Wl,-z,now'
 # Select entrypoint
 EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/powerdns"]
-CMD ["/usr/sbin/pdns_recursor", "--daemon=no", "--write-pid=no", "--disable-syslog", "--log-timestamp=yes"]
+CMD ["/usr/local/sbin/pdns_recursor", "--daemon=no", "--write-pid=no", "--disable-syslog", "--log-timestamp=yes"]
 
 # dev package install
 RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \

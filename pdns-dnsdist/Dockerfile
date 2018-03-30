@@ -5,7 +5,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Env
 ENV TZ Asia/Tokyo
-ENV VERSION 1.2.1
+ENV VERSION 1.3.0
 ENV BUILD_PKGS g++ make libressl boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev re2-dev
 ENV RUN_PKGS ""
 
