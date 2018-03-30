@@ -21,7 +21,9 @@ Basically we will check the operation of the following application.
 - Knot DNS resolver <https://www.knot-resolver.cz/>
 - CoreDNS <https://coredns.io/>
 - dnsdist <https://dnsdist.org/>
-- BIND9 <https://www.isc.org/downloads/bind/> alpine package (test)
+- BIND9 (testing) <https://www.isc.org/downloads/bind/> alpine package
+- zabbix-agent (testing) <https://www.zabbix.com/>
+- mackerel-plugin (testing) <https://github.com/mackerelio/mackerel-agent-plugins>
 
 ## Tips
 
