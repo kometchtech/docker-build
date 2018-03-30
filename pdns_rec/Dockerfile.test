@@ -6,7 +6,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Env
 ENV TZ Asia/Tokyo
 ENV VERSION 4.1.2
-ENV BUILD_PKGS g++ make openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl
+ENV BUILD_PKGS g++ make libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl
 ENV RUN_PKGS ""
 ENV CFLAGS '-Os -fstack-protector-strong'
 ENV CXXFLAGS '-g -Os'
@@ -18,7 +18,7 @@ VOLUME ["/etc/powerdns"]
 CMD ["/usr/local/sbin/pdns_recursor", "--daemon=no", "--write-pid=no", "--disable-syslog", "--log-timestamp=yes"]
 
 # dev package install
-RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
+RUN apk add --no-cache --virtual build-deps ${BUILD_PKGS} \
   && mkdir -p /usr/src \
 ## build
   && cd / \
@@ -26,7 +26,6 @@ RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
   && tar xf pdns-recursor.tar.bz2 --strip-components=1 -C /usr/src \
   && rm pdns-recursor.tar.bz2 \
   && cd /usr/src \
-  \
   && CFLAGS=${CFLAGS} CXXFLAGS=${CXXFLAGS} LDFLAGS=${LDFLAGS} ./configure \
     --prefix=/usr/local \
     --sysconfdir=/etc/powerdns \
@@ -52,6 +51,6 @@ RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
       | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
   )" \
   && apk add --virtual .rundeps $runDeps \
-  && apk del .build-deps \
+  && apk del build-deps --purge \
   && rm -rf /var/cache/apk/* /tmp/build \
   && adduser -DH pdnsrec
