@@ -10,7 +10,7 @@ Basically we will check the operation of the following application.
 ## base images
 
 - Debian stretch/testing
-- alpine
+- alpine edge
 
 ## check software
 
