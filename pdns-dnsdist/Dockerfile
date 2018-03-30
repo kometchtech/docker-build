@@ -45,6 +45,6 @@ RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
       | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
   )" \
   && apk add --virtual .rundeps $runDeps \
-  && apk del .build-deps \
+  && apk del --purge .build-deps \
   && rm -rf /var/cache/apk/* /tmp/build \
   && adduser -DH _dnsdist
