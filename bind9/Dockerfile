@@ -12,5 +12,6 @@ CMD ["named", "-c", "/etc/bind/named.conf", "-g", "-u", "named"]
 
 
 # install
-RUN apk --no-cache --update add bind \
+RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/main/ >> /etc/apk/repositories \
+    && apk --no-cache --update add bind \
     && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
