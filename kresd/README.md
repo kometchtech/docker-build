@@ -1,6 +1,6 @@
 # Knot DNS Resolver
 
-Knot DNS Resolver <https://www.nlnetlabs.nl/projects/unbound/>
+Knot DNS Resolver <https://www.knot-resolver.cz/>
 
 ## description
 
