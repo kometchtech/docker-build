@@ -24,6 +24,7 @@ Basically we will check the operation of the following application.
 - BIND9 (testing) <https://www.isc.org/downloads/bind/> alpine package
 - zabbix-agent (testing) <https://www.zabbix.com/>
 - mackerel-plugin (testing) <https://github.com/mackerelio/mackerel-agent-plugins>
+- DNSCrypt Proxy <https://github.com/jedisct1/dnscrypt-proxy>
 
 ## Tips
 
