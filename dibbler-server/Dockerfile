@@ -31,7 +31,7 @@ RUN mkdir -p /usr/src \
   && ./configure CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \ 
   --sysconfdir=/etc/dibbler \ 
   --enable-maintainer-mode \
-  ake -j "$(nproc)" \ 
+  && make -j "$(nproc)" \ 
   && make install \ 
   && apk del --purge ${BUILD_PKGS} \
   && cd / \
