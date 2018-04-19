@@ -7,7 +7,7 @@ ENV DIBBLER 1.0.1
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ Asia/Tokyo
 ENV BUILD_PKGS build-base ca-certificates curl automake autoconf unzip linux-headers
-ENV RUN_PKGS coreutils
+ENV RUN_PKGS coreutils libstdc++ libgcc
 ENV CFLAGS "-O3 -fPIC -mtune=native -march=native"
 ENV LDFLAGS ""
 
@@ -35,8 +35,7 @@ RUN mkdir -p /usr/src \
   && make install \ 
   && apk del --purge ${BUILD_PKGS} \
   && cd / \
-  && rm -rf /usr/src \ 
-    && /var/cache/apk/* /usr/local/share/man \
+  && rm -rf /usr/src /var/cache/apk/* /usr/local/share/man \
     && cp /usr/local/share/doc/dibbler/examples/server.conf /etc/dibbler/server.conf \
     && mkdir -p /var/lib/dibbler \
     && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
