@@ -4,19 +4,20 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 ENV UNBOUND_VERSION 1.7.0
 ENV DEBIAN_FRONTEND noninteractive
-ENV BUILD_PKGS build-essential curl automake autoconf libexpat1-dev
-ENV RUN_PKGS openssl libevent-2.0-5 libssl-dev libevent-dev ca-certificates ldnsutils
+ENV BUILD_PKGS build-essential curl automake autoconf libexpat1-dev libssl-dev libevent-dev
+ENV RUN_PKGS openssl libevent-2.0-5 ca-certificates ldnsutils
 ENV TZ Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc
 RUN echo $TZ > /etc/timezone \
     && apt-get update \
-    && apt-get -qq install -y --no-install-recommends $BUILD_PKGS $RUN_PKGS \
-    && curl -fLO "https://www.unbound.net/downloads/unbound-${UNBOUND_VERSION}.tar.gz" \
-    && tar xf "unbound-${UNBOUND_VERSION}.tar.gz" \
-    && rm -f "unbound-${UNBOUND_VERSION}.tar.gz" \ 
-    && cd unbound-${UNBOUND_VERSION} \
+    && apt-get -qq install -y --no-install-recommends ${BUILD_PKGS} ${RUN_PKGS} \
+    && mkdir -p /usr/src \
+    && curl -fL "https://www.unbound.net/downloads/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
+    && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
+    && rm -f "unbound.tar.gz" \ 
+    && cd /usr/src \
     && ./configure \
       --prefix=/usr/local \
       --with-libevent \
@@ -32,15 +33,14 @@ RUN echo $TZ > /etc/timezone \
       --enable-pie \
       --disable-flto \
       --enable-relro-now \
-      CFLAGS='-fPIC -Os -pipe' \
-      CXXFLAGS=${LDFLAGS} \
+      CFLAGS='-fPIC -O3 -pipe -mtune=native -march=native' \
+      CXXFLAGS=${CFLAGS} \
 	  && make -j "$(nproc)" \
     && make install \
-    && rm -rf \
-        "/usr/local/etc/unbound-${UNBOUND_VERSION}" \
-        /var/lib/apt/lists/* \
+    && rm -rf /usr/src \
         /usr/local/share/man \
-    && apt-get purge --auto-remove -y $BUILD_PKGS \
+    && apt-get purge --auto-remove -y ${BUILD_PKGS} \
+    && rm -rf /var/lib/apt/* \
     && useradd -s /usr/sbin/nologin -d /etc/unbound unbound \
     && chown -R unbound:unbound /etc/unbound \
     && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
