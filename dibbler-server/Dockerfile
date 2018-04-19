@@ -6,7 +6,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV DIBBLER 1.0.1
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ Asia/Tokyo
-ENV BUILD_PKGS build-base ca-certificates curl automake autoconf unzip
+ENV BUILD_PKGS build-base ca-certificates curl automake autoconf unzip linux-headers
 ENV RUN_PKGS coreutils
 ENV CFLAGS "-O3 -fPIC -mtune=native -march=native"
 ENV LDFLAGS ""
