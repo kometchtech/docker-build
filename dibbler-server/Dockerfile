@@ -1,8 +1,8 @@
 # Environment
 FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-    arch="aarch64" \
-    version="github-master"
+  arch="aarch64" \
+  version="github-master"
 ENV DIBBLER 1.0.1
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ Asia/Tokyo
@@ -23,20 +23,21 @@ CMD ["/usr/local/sbin/dibbler-server", "run"]
 
 # compile and install
 RUN mkdir -p /usr/src \
-    && apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \ 
-    && curl -LO "https://github.com/tomaszmrugalski/dibbler/archive/master.zip" \
-    && unzip "master.zip" -d /usr/src \ 
-    && rm -f "master.zip" \
-    && cd /usr/src/dibbler-master \
-    && ./configure CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \ 
-        --sysconfdir=/etc/dibbler \ 
-        --enable-maintainer-mode \
-    ake -j "$(nproc)" \ 
-    && make install \ 
-    && apk del --purge ${BUILD_PKGS} \
-    && cd / \
-    && rm -rf /usr/src /var/cache/apk/* /usr/local/share/man \
+&& apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \ 
+  && curl -LO "https://github.com/tomaszmrugalski/dibbler/archive/master.zip" \
+  && unzip "master.zip" -d /usr/src \ 
+  && rm -f "master.zip" \
+  && cd /usr/src/dibbler-master \
+  && ./configure CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \ 
+  --sysconfdir=/etc/dibbler \ 
+  --enable-maintainer-mode \
+  ake -j "$(nproc)" \ 
+  && make install \ 
+  && apk del --purge ${BUILD_PKGS} \
+  && cd / \
+  && rm -rf /usr/src \ 
+    && /var/cache/apk/* /usr/local/share/man \
     && cp /usr/local/share/doc/dibbler/examples/server.conf /etc/dibbler/server.conf \
-    && mkdir /var/lib/dibbler \
+    && mkdir -p /var/lib/dibbler \
     && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
     
