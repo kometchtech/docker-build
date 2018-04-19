@@ -25,7 +25,7 @@ CMD ["/usr/local/sbin/dibbler-server", "run"]
 RUN mkdir -p /usr/src \
 && apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \ 
   && curl -LO "https://github.com/tomaszmrugalski/dibbler/archive/master.zip" \
-  && unzip "master.zip" -d /usr/src \ 
+  && unzip -q "master.zip" -d /usr/src \ 
   && rm -f "master.zip" \
   && cd /usr/src/dibbler-master \
   && ./configure CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \ 
