@@ -4,8 +4,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
-ENV BUILD_PKGS build-essential curl automake autoconf
-ENV RUN_PKGS openssl libevent-2.0-5 libssl-dev libevent-dev ca-certificates ldnsutils
+ENV BUILD_PKGS build-base curl automake autoconf expat-dev libressl-dev libevent-dev
+ENV RUN_PKGS libressl libevent ca-certificates ldns-tools
 ENV CFLAGS "-O3 -fPIC -mtune=native -march=native"
 ENV LDFLAGS ""
 ENV TZ Asia/Tokyo
