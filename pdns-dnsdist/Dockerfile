@@ -8,15 +8,16 @@ ENV TZ=Asia/Tokyo
 ARG VERSION=1.3.0
 ARG BUILD_PKGS="g++ make libressl boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev re2-dev"
 ARG RUN_PKGS=""
+ARG CFLAGS="-O3 -fPIC -pipe -mtune=native -march=native"
+ARG LDFLAGS=""
 
 # Select entrypoint
-USER _dnsdist
 EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/dnsdist"]
 ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
 # dev package install
-RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
+RUN apk add --update --no-cache --virtual .build-deps ${BUILD_PKGS} \
   && mkdir -p /usr/src \
 ## build
   && cd / \
@@ -25,7 +26,7 @@ RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
   && rm dnsdist.tar.bz2 \
   && cd /usr/src \
   \
-  && CFLAGS='-Os' CXXFLAGS='-Os' ./configure \
+  && ./configure \
     --prefix=/usr/local \
     --sysconfdir=/etc/dnsdist \
     --localstatedir=/var \
@@ -33,6 +34,7 @@ RUN apk add --no-cache --virtual .build-deps ${BUILD_PKGS} \
     --enable-dnscrypt \
     --enable-re2 \
     --disable-static \
+    CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
   && make -j "$(nproc)" \
   && make install \
 ## cleanup
