@@ -6,7 +6,7 @@ DHCPv6: Dibbler - a portable DHCPv6 <http://klub.com.pl/dhcpv6/>
 
 ### Baseimage
 
-arm64v8/debian:9.3
+arm64v8/alpine:edge
 
 ### minimum operating
 
@@ -22,7 +22,7 @@ docker run --rm -d -p 547:547/udp -v ${PWD}/servier.conf:/etc/dibbler/server.con
 #
 # This config. file is considered all-purpose as it instructs server
 # to provide almost every configuratio
-# 
+#
 
 # Logging level range: 1(Emergency)-8(Debug)
 log-level 8
@@ -43,7 +43,7 @@ iface "eth0" {
  t2 2700-3000
  prefered-lifetime 3600
  valid-lifetime 7200
- 
+
 # assign addresses from this pool
  class {
    pool 2001:db8:1111::/64
@@ -54,7 +54,7 @@ iface "eth0" {
  ta-class {
     pool 2001:db8:2222::/96
  }
- 
+
 #assign /96 prefixes from this pool
  pd-class {
      pd-pool 2001:db8:3333::/80
@@ -64,7 +64,7 @@ iface "eth0" {
 
 # provide DNS server location to the clients
  option dns-server 2000::ff,2000::fe
- 
+
 # provide their domain name
  option domain example.com
 
