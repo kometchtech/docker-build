@@ -6,14 +6,14 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ARG UNBOUND_VERSION=1.7.0
 ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev"
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools"
-ARG CFLAGS="-O3 -fPIC -mtune=native -march=native"
+ARG CFLAGS="-O3 -fPIC -pipe -mtune=native -march=native"
 ARG LDFLAGS=""
-ENV TZ=Asia/Tokyo
+ENV TZ Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc
 RUN echo $TZ > /etc/timezone \
-    && apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
+    && apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
     && mkdir -p /usr/src \
     && curl -fL "https://www.unbound.net/downloads/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
     && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
@@ -34,7 +34,7 @@ RUN echo $TZ > /etc/timezone \
       --enable-pie \
       --disable-flto \
       --enable-relro-now \
-      CFLAGS='${CFLAGS}' LDFLAGS=${LDFLAGS} CXXFLAGS=${CFLAGS} \
+      CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
 	  && make -j "$(nproc)" \
     && make install \
     && cd / \
@@ -51,6 +51,5 @@ RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 VOLUME ["/etc/unbound"]
 
 # export TCP and UDP
-USER unbound
 EXPOSE 53/tcp 53/udp 
 CMD ["/usr/local/sbin/run.sh"]
