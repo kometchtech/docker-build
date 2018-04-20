@@ -1,14 +1,15 @@
-# Environment
 FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
-ENV NSD_VERSION 4.1.20
-ENV DEBIAN_FRONTEND noninteractive
-ENV BUILD_PKGS build-base curl automake autoconf expat-dev libressl-dev libevent-dev
-ENV RUN_PKGS libressl libevent ca-certificates ldns-tools
-ENV CFLAGS "-O3 -fPIC -mtune=native -march=native"
-ENV LDFLAGS ""
-ENV TZ Asia/Tokyo
+
+# Environment
+ARG NSD_VERSION=4.1.20
+ARG DEBIAN_FRONTEND=noninteractive
+ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev"
+ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools"
+ARG CFLAGS="-O3 -fPIC -mtune=native -march=native"
+ARG LDFLAGS=""
+ENV TZ=Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc

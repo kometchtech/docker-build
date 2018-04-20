@@ -1,10 +1,11 @@
-# Environment
 FROM arm64v8/debian:testing-slim
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
-ENV PDNS_REC_VERSION 4.1.1
-ENV DEBIAN_FRONTEND noninteractive
-ENV TZ Asia/Tokyo
+
+# Environment
+ARG PDNS_REC_VERSION=4.1.1
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Tokyo
 
 # package install 
 RUN apt-get update \

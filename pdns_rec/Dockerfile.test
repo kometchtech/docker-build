@@ -3,14 +3,14 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="PowerDNS recursor for Aarch64"
 
-# Env
-ENV TZ Asia/Tokyo
-ENV VERSION 4.1.2
-ENV BUILD_PKGS build-base libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl
-ENV RUN_PKGS ""
-ENV CFLAGS '-Os -fstack-protector-strong'
-ENV CXXFLAGS '-g -Os'
-ENV LDFLAGS '-Wl,-z,relro -Wl,-z,now'
+# Environmet
+ENV TZ=Asia/Tokyo
+ARG VERSION=4.1.2
+ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl"
+ARG RUN_PKGS=""
+ARG CFLAGS="-Os -fstack-protector-strong"
+ARG CXXFLAGS="-g -Os"
+ARG LDFLAGS="-Wl,-z,relro -Wl,-z,now"
 
 # Select entrypoint
 USER pdnsrec

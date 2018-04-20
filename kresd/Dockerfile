@@ -4,13 +4,13 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="Knot resolver team's things are modified and used."
 
 # Environment
-ENV TZ Asia/Tokyo
-ENV BUILD_PKGS build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev gnutls-dev jansson-dev userspace-rcu-dev curl vim bsd-compat-headers
-ENV RUN_PKGS luajit libuv gnutls jansson bash libstdc++ lua-cqueues lua-http lua-sec lua-socket
-ENV BUILD_IGNORE gmp nettle jansson gnutls lua libuv cmocka
-ENV PKG_CONFIG_PATH /usr/local/lib/pkgconfig
-ENV CFLAGS="-Ofast -ftree-vectorize -fstack-protector -g"
-ENV LDFLAGS="-Wl,--as-needed"
+ENV TZ=Asia/Tokyo
+ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev gnutls-dev jansson-dev userspace-rcu-dev curl vim bsd-compat-headers"
+ARG RUN_PKGS="luajit libuv gnutls jansson bash libstdc++ lua-cqueues lua-http lua-sec lua-socket"
+ARG BUILD_IGNORE="gmp nettle jansson gnutls lua libuv cmocka"
+ARG PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
+ARG CFLAGS="-Ofast -ftree-vectorize -fstack-protector -g"
+ARG LDFLAGS="-Wl,--as-needed"
 
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP

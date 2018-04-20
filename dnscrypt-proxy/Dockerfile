@@ -5,10 +5,10 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       url="https://github.com/jedisct1/dnscrypt-proxy"
 
 # Environment
-ENV TZ Asia/Tokyo
+ENV TZ=Asia/Tokyo
 ARG VERSION="2.0.10"
-ENV BUILD_PKGS curl tar 
-ENV RUN_PKGS ca-certificates tzdata
+ARG BUILD_PKGS="curl tar" 
+ARG RUN_PKGS="ca-certificates tzdata"
 
 # download
 RUN apk --no-cache add ${BUILD_PKGS} ${RUN_PKGS} \

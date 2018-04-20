@@ -1,12 +1,14 @@
-# Environment
+
 FROM arm64v8/debian:9.3-slim
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
-ENV UNBOUND_VERSION 1.7.0
-ENV DEBIAN_FRONTEND noninteractive
-ENV BUILD_PKGS build-essential curl automake autoconf libexpat1-dev libssl-dev libevent-dev
-ENV RUN_PKGS openssl libevent-2.0-5 ca-certificates ldnsutils
-ENV TZ Asia/Tokyo
+
+# Environment
+ARG UNBOUND_VERSION=1.7.0
+ARG DEBIAN_FRONTEND=noninteractive
+ARG BUILD_PKGS="build-essential curl automake autoconf libexpat1-dev libssl-dev libevent-dev"
+ARG RUN_PKGS="openssl libevent-2.0-5 ca-certificates ldnsutils"
+ENV TZ=Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc

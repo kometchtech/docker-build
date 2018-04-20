@@ -1,15 +1,16 @@
-# Environment
 FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
   arch="aarch64" \
   version="github-master"
-ENV DIBBLER 1.0.1
-ENV DEBIAN_FRONTEND noninteractive
-ENV TZ Asia/Tokyo
-ENV BUILD_PKGS build-base ca-certificates curl automake autoconf unzip linux-headers
-ENV RUN_PKGS coreutils libstdc++ libgcc
-ENV CFLAGS "-O3 -fPIC -mtune=native -march=native"
-ENV LDFLAGS ""
+
+# Environment
+ARG DIBBLER=1.0.1
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Tokyo
+ARG BUILD_PKGS="build-base ca-certificates curl automake autoconf unzip linux-headers"
+ARG RUN_PKGS="coreutils libstdc++ libgcc"
+ARG CFLAGS="-O3 -fPIC -mtune=native -march=native"
+ARG LDFLAGS=""
 
 # config
 WORKDIR /etc/dibbler

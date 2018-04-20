@@ -4,11 +4,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
     version="master"
 
 # Environment
-ENV TZ Asia/Tokyo
-ENV BUILD_PKGS build-essential devscripts
-ENV RUN_PKGS ''
-ENV CFLAGS ''
-ENV LDFLAGS ''
+ENV TZ=Asia/Tokyo
+ARG BUILD_PKGS="build-essential devscripts"
+ARG RUN_PKGS=""
+ARG CFLAGS=""
+ARG LDFLAGS=""
 
 WORKDIR /root
 RUN apt-get -qq update \
