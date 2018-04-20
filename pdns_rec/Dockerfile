@@ -7,10 +7,22 @@ ARG PDNS_REC_VERSION=4.1.2
 ENV TZ=Asia/Tokyo
 
 # package install 
-RUN apk add --update --no-cache pdns-recursor \
-      && apk del --purge \
-      && rm -rf /var/lib/apt/lists/* \
-      && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+# https://wiki.alpinelinux.org/wiki/Alpine_Linux_package_management#Repository_pinning
+RUN echo "@edgecommunity http://dl-cdn.alpinelinux.org/alpine/edge/community/" >> /etc/apk/repositories \
+    && echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
+#    && apk add --update apk-tools@edge  \
+    && apk add --update --upgrade \
+      libressl2.7-libcrypto@edge \
+      boost-system@edge \
+      boost-filesystem@edge \
+      boost-regex@edge \
+      boost-thread@edge \
+      boost@edge \
+      protobuf@edge \
+      pdns-recursor@edgecommunity \
+    && apk del --purge \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 # execute
 WORKDIR /etc/powerdns
