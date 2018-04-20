@@ -1,22 +1,24 @@
 # Environment
-FROM arm64v8/debian:9.3-slim
+FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 ENV NSD_VERSION 4.1.20
 ENV DEBIAN_FRONTEND noninteractive
 ENV BUILD_PKGS build-essential curl automake autoconf
 ENV RUN_PKGS openssl libevent-2.0-5 libssl-dev libevent-dev ca-certificates ldnsutils
+ENV CFLAGS "-O3 -fPIC -mtune=native -march=native"
+ENV LDFLAGS ""
 ENV TZ Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc
 RUN echo $TZ > /etc/timezone \
-    && apt-get update \
-    && apt-get -qq install -y --no-install-recommends $BUILD_PKGS $RUN_PKGS \
-    && curl -fLO "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" \
-    && tar xf "nsd-${NSD_VERSION}.tar.gz" \
-    && rm -f "nsd-${NSD_VERSION}.tar.gz" \ 
-    && cd nsd-${NSD_VERSION} \
+    && apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
+    && mkdir -p /usr/src \
+    && curl -fL "http://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz -o nsd.tar.gz" \
+    && tar xf "nsd.tar.gz" --strip-components=1 -C /usr/src \
+    && rm -f "nsd.tar.gz" \ 
+    && cd /usr/src \
     && autoreconf -if \
     && ./configure \
       --prefix=/usr/local \
@@ -26,17 +28,16 @@ RUN echo $TZ > /etc/timezone \
       --disable-flto \
       --enable-ratelimit \
       --enable-packed \
+      CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' CXXFLAGS='${CFLAGS}' \
 	&& make -j "$(nproc)" \
     && make install \
-    && rm -rf \
-        "/usr/local/etc/nsd-${NSD_VERSION}" \
-        /var/lib/apt/lists/* \
-        /usr/local/share/man \
-    && apt-get purge --auto-remove -y $BUILD_PKGS \
-    && apt-get clean \
-    && useradd -s /usr/sbin/nologin -d /usr/local/etc/nsd nsd \
+    && cd / \
+    && rm -rf /usr/src \
+    && apk del --purge ${BUILD_PKGS} \
+    && rm -rf /var/cache/apk/* /usr/local/share/man \
+    && addusr -DH nsd \
     && mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones \
-    && chown -R nsd:nsd /usr/local/var/db/nsd /usr/local/etc/nsd /var/run/nsd /var/cache/nsd \
+#    && chown -R nsd:nsd /usr/local/var/db/nsd /usr/local/etc/nsd /var/run/nsd /var/cache/nsd \
     && chmod 0700 /usr/local/var/db/nsd /var/run/nsd /var/cache/nsd \
     && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 

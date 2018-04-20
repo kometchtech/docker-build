@@ -5,6 +5,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV UNBOUND_VERSION 1.7.0
 ENV BUILD_PKGS build-base curl automake autoconf expat-dev libressl-dev libevent-dev
 ENV RUN_PKGS libressl libevent ca-certificates ldns-tools
+ENV CFLAGS "-O3 -fPIC -mtune=native -march=native"
+ENV LDFLAGS ""
 ENV TZ Asia/Tokyo
 
 # source build and install
@@ -31,8 +33,7 @@ RUN echo $TZ > /etc/timezone \
       --enable-pie \
       --disable-flto \
       --enable-relro-now \
-      CFLAGS='-fPIC -O3 -pipe -mtune=native -march=native' \
-      CXXFLAGS=${CFLAGS} \
+      CFLAGS='${CFLAGS}' LDFLAGS=${LDFLAGS} CXXFLAGS=${CFLAGS} \
 	  && make -j "$(nproc)" \
     && make install \
     && cd / \
