@@ -46,6 +46,7 @@ RUN echo $TZ > /etc/timezone \
     && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 # Application execution related information
+USER unbound
 ADD ./run.sh /usr/local/sbin/
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 VOLUME ["/etc/unbound"]

@@ -9,8 +9,8 @@ ENV BUILD_PKGS build-base automake autoconf libtool pkgconfig git luajit-dev lib
 ENV RUN_PKGS luajit libuv gnutls jansson bash libstdc++ lua-cqueues lua-http lua-sec lua-socket
 ENV BUILD_IGNORE gmp nettle jansson gnutls lua libuv cmocka
 ENV PKG_CONFIG_PATH /usr/local/lib/pkgconfig
-ENV CFLAGS -Ofast -ftree-vectorize -fstack-protector -g
-ENV LDFLAGS -Wl,--as-needed
+ENV CFLAGS="-Ofast -ftree-vectorize -fstack-protector -g"
+ENV LDFLAGS="-Wl,--as-needed"
 
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP

@@ -6,9 +6,9 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ARG VERSION="9.12.1"
 ENV TZ Asia/Tokyo
-ENV BUILD_PKGS build-essential ca-certificates curl automake autoconf tar openssl
+ENV BUILD_PKGS build-base ca-certificates curl automake autoconf tar libressl
 ENV RUN_PKGS fstrim protobuf-c zlib
-ENV CFLAGS "-Os -fPIC"
+ENV CFLAGS "-O3 -fPIC -mtune=native -march=native"
 ENV LDFLAGS ""
 
 # dev package install
@@ -21,7 +21,7 @@ RUN apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
   && rm bind9.tar.gz \
   && cd /usr/src \
   \
-  && CFLAGS='${CFLAGS}' CXXFLAGS='${CFLAGS}' ./configure \
+  && ./configure \
     --prefix=/usr/local \
     --sysconfdir=/etc/bind \
     --localstatedir=/var \
@@ -42,6 +42,7 @@ RUN apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
     --with-zlib \
     --with-tuning \
     --with-make-clean \
+    CFLAGS='${CFLAGS}' CXXFLAGS='${CFLAGS}' \
     && make -j "$(nproc)" \
   && make install \
   ## cleanup

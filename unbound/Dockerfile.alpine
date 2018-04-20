@@ -50,5 +50,6 @@ RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 VOLUME ["/etc/unbound"]
 
 # export TCP and UDP
+USER unbound
 EXPOSE 53/tcp 53/udp 
 CMD ["/usr/local/sbin/run.sh"]

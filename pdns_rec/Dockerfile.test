@@ -13,6 +13,7 @@ ENV CXXFLAGS '-g -Os'
 ENV LDFLAGS '-Wl,-z,relro -Wl,-z,now'
 
 # Select entrypoint
+USER pdnsrec
 EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/powerdns"]
 CMD ["/usr/local/sbin/pdns_recursor", "--daemon=no", "--write-pid=no", "--disable-syslog", "--log-timestamp=yes"]

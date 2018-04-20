@@ -10,6 +10,7 @@ ENV BUILD_PKGS g++ make libressl boost-dev lua5.3-dev libedit-dev libsodium-dev 
 ENV RUN_PKGS ""
 
 # Select entrypoint
+USER _dnsdist
 EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/dnsdist"]
 ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
