@@ -6,7 +6,7 @@ NSD: Name Server Daemon <https://www.nlnetlabs.nl/projects/nsd/>
 
 ### Baseimage
 
-arm64v8/debian:9.3
+arm64v8/alpine:edge
 
 ### minimum operating
 
