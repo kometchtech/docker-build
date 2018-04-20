@@ -48,4 +48,3 @@ VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd
 EXPOSE 53/tcp 53/udp 8952/tcp
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 CMD ["/usr/local/sbin/run.sh"]
-USER nsd
