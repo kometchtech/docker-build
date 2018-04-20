@@ -1,17 +1,14 @@
-FROM arm64v8/debian:testing-slim
+FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG PDNS_REC_VERSION=4.1.1
-ARG DEBIAN_FRONTEND=noninteractive
+ARG PDNS_REC_VERSION=4.1.2
 ENV TZ=Asia/Tokyo
 
 # package install 
-RUN apt-get update \
-      && apt-get -qq install pdns-recursor/testing \
-      && apt-get clean \
-      && apt-get purge --auto-remove -y \
+RUN apk add --update --no-cache pdns-recursor \
+      && apk del --purge \
       && rm -rf /var/lib/apt/lists/* \
       && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
