@@ -3,14 +3,13 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG PDNS_REC_VERSION=4.1.2
+ARG PDNS_REC_VERSION=4.2.1
 ENV TZ=Asia/Tokyo
 
 # package install 
 # https://wiki.alpinelinux.org/wiki/Alpine_Linux_package_management#Repository_pinning
 RUN echo "@edgecommunity http://dl-cdn.alpinelinux.org/alpine/edge/community/" >> /etc/apk/repositories \
     && echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
-#    && apk add --update apk-tools@edge  \
     && apk add --update --upgrade \
       libressl2.7-libcrypto@edge \
       boost-system@edge \
@@ -25,8 +24,8 @@ RUN echo "@edgecommunity http://dl-cdn.alpinelinux.org/alpine/edge/community/" >
     && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 # execute
-WORKDIR /etc/powerdns
-VOLUME ["/etc/powerdns"]
+WORKDIR /etc/pdns
+VOLUME ["/etc/pdns"]
 
 # export TCP and UDP
 EXPOSE 53/TCP 53/UDP
