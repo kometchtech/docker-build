@@ -34,7 +34,7 @@ RUN echo $TZ > /etc/timezone \
     --sysconfdir=/etc/dibbler \ 
     --enable-maintainer-mode \
     && make -j "$(nproc)" \ 
-    && make install \ 
+    && make install-strip \ 
     && apk del --purge ${BUILD_PKGS} \
     && cd / \
     && rm -rf /usr/src /var/cache/apk/* /usr/local/share/man \

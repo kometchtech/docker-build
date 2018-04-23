@@ -40,7 +40,7 @@ RUN apk add --no-cache --virtual build-deps ${BUILD_PKGS} \
     --disable-dependency-tracking \
     --enable-reproducible \
   && make -j "$(nproc)" \
-  && make install \
+  && make install-strip \
 ## cleanup
   && cd / \
   && rm -rf /usr/src \

@@ -36,7 +36,7 @@ RUN apk add --update --no-cache --virtual .build-deps ${BUILD_PKGS} \
     --disable-static \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
   && make -j "$(nproc)" \
-  && make install \
+  && make install-strip \
 ## cleanup
   && cd / \
   && rm -rf /usr/src \

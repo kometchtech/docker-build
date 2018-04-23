@@ -38,7 +38,7 @@ RUN echo $TZ > /etc/timezone \
       CFLAGS='-fPIC -O3 -pipe -mtune=native -march=native' \
       CXXFLAGS=${CFLAGS} \
 	  && make -j "$(nproc)" \
-    && make install \
+    && make install-strip \
     && rm -rf /usr/src \
         /usr/local/share/man \
     && apt-get purge --auto-remove -y ${BUILD_PKGS} \

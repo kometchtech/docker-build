@@ -36,7 +36,7 @@ RUN echo $TZ > /etc/timezone \
       --enable-relro-now \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
 	  && make -j "$(nproc)" \
-    && make install \
+    && make install-strip \
     && cd / \
     && rm -rf \
         /usr/src \

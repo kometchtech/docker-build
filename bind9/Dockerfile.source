@@ -44,7 +44,7 @@ RUN apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
     --with-make-clean \
     CFLAGS='${CFLAGS}' CXXFLAGS='${CFLAGS}' \
     && make -j "$(nproc)" \
-  && make install \
+  && make install-strip \
   ## cleanup
   && cd / \
   && rm -rf /usr/src \

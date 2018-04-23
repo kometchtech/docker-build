@@ -30,7 +30,7 @@ RUN echo $TZ > /etc/timezone \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
 	&& make -j "$(nproc)" \
-    && make install \
+    && make install-strip \
     && cd / \
     && rm -rf /usr/src \
     && apk del --purge ${BUILD_PKGS} \
