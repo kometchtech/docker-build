@@ -5,11 +5,12 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ=Asia/Tokyo
-ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev gnutls-dev jansson-dev userspace-rcu-dev curl vim bsd-compat-headers"
+ARG VERSION="2.3.0"
+ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev gnutls-dev jansson-dev userspace-rcu-dev curl vim bsd-compat-headers tzdata"
 ARG RUN_PKGS="luajit libuv gnutls jansson bash libstdc++ lua-cqueues lua-http lua-sec lua-socket"
 ARG BUILD_IGNORE="gmp nettle jansson gnutls lua libuv cmocka"
 ARG PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
-ARG CFLAGS="-Ofast -ftree-vectorize -fstack-protector -g"
+ARG CFLAGS="-Og -ftree-vectorize -fstack-protector"
 ARG LDFLAGS="-Wl,--as-needed"
 
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
@@ -27,10 +28,9 @@ RUN apk add -t lua-compat53 \
       # Trim down the image
       && cd / \
       && apk del --purge build-dep \
-      && rm -rf /var/cache/apk/* /tmp/build \
-      && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+      && rm -rf /var/cache/apk/* /tmp/build 
 
 # Select entrypoint
-WORKDIR /etc/knot-resolver
-RUN cp /usr/local/etc/knot-resolver/config.personal /etc/knot-resolver/kresd.conf
+RUN mkdir -p /etc/knot-resolver \
+    && cp /usr/local/etc/knot-resolver/config.personal /etc/knot-resolver/kresd.conf
 CMD ["/usr/local/sbin/kresd", "-c", "/etc/knot-resolver/kresd.conf"]
