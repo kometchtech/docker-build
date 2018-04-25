@@ -6,11 +6,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environmet
 ENV TZ=Asia/Tokyo
 ARG VERSION=4.1.2
-ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl"
-ARG RUN_PKGS=""
-ARG CFLAGS="-Os -fstack-protector-strong"
-ARG CXXFLAGS="-g -Os"
-ARG LDFLAGS="-Wl,-z,relro -Wl,-z,now"
+ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl net-snmp-dev"
+ARG RUN_PKGS="tzdata"
+ARG CFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG CXXFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Select entrypoint
 USER pdnsrec
