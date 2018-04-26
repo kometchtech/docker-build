@@ -5,11 +5,13 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Env
 ENV TZ=Asia/Tokyo
-ARG VERSION=1.3.0
-ARG BUILD_PKGS="g++ make libressl boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev re2-dev"
-ARG RUN_PKGS=""
-ARG CFLAGS="-O3 -fPIC -pipe -mtune=native -march=native"
-ARG LDFLAGS=""
+ENV VERSION "1.3.0"
+ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev"
+ARG RUN_PKGS="tzdata"
+ARG CFLAGS="-fPIC -fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG CPPFLAGS="-Os -fomit-frame-pointer -pipe"
+ARG CXXFLAGS="-fPIC -fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Select entrypoint
 EXPOSE 53/tcp 53/udp
@@ -17,11 +19,13 @@ VOLUME ["/etc/dnsdist"]
 ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
 # dev package install
-RUN apk add --update --no-cache --virtual .build-deps ${BUILD_PKGS} \
+RUN apk add --update ${RUN_PKGS} \ 
+  && apk add --virtual .build-deps ${BUILD_PKGS} \
+  && update-ca-certificates \
   && mkdir -p /usr/src \
 ## build
   && cd / \
-  && wget -O dnsdist.tar.bz2 https://downloads.powerdns.com/releases/dnsdist-$VERSION.tar.bz2 \
+  && wget https://downloads.powerdns.com/releases/dnsdist-${VERSION}.tar.bz2 -O dnsdist.tar.bz2 \
   && tar xf dnsdist.tar.bz2 --strip-components=1 -C /usr/src \
   && rm dnsdist.tar.bz2 \
   && cd /usr/src \
