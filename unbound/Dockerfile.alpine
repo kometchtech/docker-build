@@ -3,17 +3,18 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG UNBOUND_VERSION=1.7.0
-ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev"
-ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools"
-ARG CFLAGS="-O3 -fPIC -pipe -mtune=native -march=native"
-ARG LDFLAGS=""
+ARG UNBOUND_VERSION=1.7.1rc1
+ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev"
+ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
+ARG CFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG CFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG CXXFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 ENV TZ Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc
-RUN echo $TZ > /etc/timezone \
-    && apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
+RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
     && mkdir -p /usr/src \
     && curl -fL "https://www.unbound.net/downloads/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
     && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
@@ -35,15 +36,14 @@ RUN echo $TZ > /etc/timezone \
       --disable-flto \
       --enable-relro-now \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
-	  && make -j "$(nproc)" \
-    && make install-strip \
+	  && make -j $(nproc) \
+    && make install \
     && cd / \
     && rm -rf \
         /usr/src \
     && apk del --purge ${BUILD_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man \
-    && adduser -DH unbound \
-    && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+    && adduser -DH unbound 
 
 # Application execution related information
 ADD ./run.sh /usr/local/sbin/
@@ -51,5 +51,5 @@ RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 VOLUME ["/etc/unbound"]
 
 # export TCP and UDP
-EXPOSE 53/tcp 53/udp 
+EXPOSE 53/tcp 53/udp
 CMD ["/usr/local/sbin/run.sh"]
