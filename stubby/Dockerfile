@@ -4,8 +4,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ARG UNBOUND_VERSION=1.7.1rc1
-ARG BUILD_PKGS="build-base curl git yaml-dev openssl-dev libtool m4 autoconf automake linux-headers"
-ARG RUN_PKGS="tzdata"
+ARG BUILD_PKGS="build-base curl git libtool m4 autoconf automake linux-headers gawk libressl-dev"
+ARG RUN_PKGS="tzdata yaml-dev"
 ARG CFLAGS="-fPIE -DPIE -Os -fomit-frame-pointer -pipe"
 ARG CFLAGS="-fPIE -DPIE -Os -fomit-frame-pointer -pipe"
 ARG CXXFLAGS="-fPIE -DPIE -Os -fomit-frame-pointer -pipe"
