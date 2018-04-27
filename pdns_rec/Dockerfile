@@ -3,7 +3,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG PDNS_REC_VERSION=4.2.1
+ARG PDNS_REC_VERSION=4.1.2
 ENV TZ=Asia/Tokyo
 
 # package install 
@@ -11,6 +11,7 @@ ENV TZ=Asia/Tokyo
 RUN echo "@edgecommunity http://dl-cdn.alpinelinux.org/alpine/edge/community/" >> /etc/apk/repositories \
     && echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
     && apk add --update --upgrade \
+      tzdata \
       libressl2.7-libcrypto@edge \
       boost-system@edge \
       boost-filesystem@edge \
@@ -20,8 +21,7 @@ RUN echo "@edgecommunity http://dl-cdn.alpinelinux.org/alpine/edge/community/" >
       protobuf@edge \
       pdns-recursor@edgecommunity \
     && apk del --purge \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+    && rm -rf /var/lib/apt/lists/* 
 
 # execute
 WORKDIR /etc/pdns
