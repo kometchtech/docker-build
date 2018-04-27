@@ -8,15 +8,14 @@ ENV TZ=Asia/Tokyo
 ARG VERSION=4.1.2
 ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl net-snmp-dev"
 ARG RUN_PKGS="tzdata"
-ARG CFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
-ARG CXXFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG CFLAGS="-Os -fomit-frame-pointer -pipe"
+ARG CXXFLAGS="-Os -fomit-frame-pointer -pipe"
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Select entrypoint
-USER pdnsrec
 EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/powerdns"]
-CMD ["/usr/local/sbin/pdns_recursor", "--daemon=no", "--write-pid=no", "--disable-syslog", "--log-timestamp=yes"]
+CMD ["/usr/local/sbin/pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
 
 # dev package install
 RUN apk add --no-cache --virtual build-deps ${BUILD_PKGS} \
@@ -33,14 +32,10 @@ RUN apk add --no-cache --virtual build-deps ${BUILD_PKGS} \
     --localstatedir=/var \
     --libdir=${prefix}/lib/aarch64-linux-gnu \
     --libexecdir=${prefix}/lib/aarch64-linux-gnu \
-    --enable-libsodium \
-    --disable-maintainer-mode \
-    --with-lua \
-    --with-protobuf=yes \
-    --disable-dependency-tracking \
-    --enable-reproducible \
+    --enable-unit-tests \
+    --disable-static \
   && make -j "$(nproc)" \
-  && make install-strip \
+  && make install \
 ## cleanup
   && cd / \
   && rm -rf /usr/src \
