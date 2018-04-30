@@ -23,8 +23,7 @@ EXPOSE 547/TCP 547/UDP
 CMD ["/usr/local/sbin/dibbler-server", "run"]
 
 # compile and install
-RUN echo $TZ > /etc/timezone \
-    && mkdir -p /usr/src \
+RUN mkdir -p /usr/src \
     && apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS} \ 
     && curl -LO "https://github.com/tomaszmrugalski/dibbler/archive/master.zip" \
     && unzip -q "master.zip" -d /usr/src \ 
@@ -34,11 +33,10 @@ RUN echo $TZ > /etc/timezone \
     --sysconfdir=/etc/dibbler \ 
     --enable-maintainer-mode \
     && make -j "$(nproc)" \ 
-    && make install-strip \ 
+    && make install \ 
     && apk del --purge ${BUILD_PKGS} \
     && cd / \
     && rm -rf /usr/src /var/cache/apk/* /usr/local/share/man \
     && cp /usr/local/share/doc/dibbler/examples/server.conf /etc/dibbler/server.conf \
-    && mkdir -p /var/lib/dibbler \
-    && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+    && mkdir -p /var/lib/dibbler 
     
