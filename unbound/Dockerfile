@@ -4,7 +4,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG UNBOUND_VERSION=1.7.0
+ARG UNBOUND_VERSION=1.7.1
 ARG DEBIAN_FRONTEND=noninteractive
 ARG BUILD_PKGS="build-essential curl automake autoconf libexpat1-dev libssl-dev libevent-dev"
 ARG RUN_PKGS="openssl libevent-2.0-5 ca-certificates ldnsutils"
