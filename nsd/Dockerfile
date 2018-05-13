@@ -12,8 +12,7 @@ ENV TZ=Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/src/etc
-RUN echo $TZ > /etc/timezone \
-    && apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
+RUN apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
     && mkdir -p /usr/src \
     && curl -fL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /usr/src \
@@ -37,8 +36,7 @@ RUN echo $TZ > /etc/timezone \
     && rm -rf /var/cache/apk/* /usr/local/share/man \
     && adduser -DH nsd \
     && mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones \
-    && chmod 0700 /usr/local/var/db/nsd /var/run/nsd /var/cache/nsd \
-    && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+    && chmod 0700 /usr/local/var/db/nsd /var/run/nsd /var/cache/nsd 
 
 # Application execution related information
 COPY conf /usr/local/sbin
