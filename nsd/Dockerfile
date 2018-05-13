@@ -5,14 +5,14 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ARG NSD_VERSION=4.1.20
 ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev"
-ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools"
-ARG CFLAGS="-O3 -fPIC -pipe -mtune=native -march=native"
+ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
+ARG CFLAGS="-O2 -fPIC -pipe -mtune=native -march=native"
 ARG LDFLAGS=""
 ENV TZ=Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/src/etc
-RUN apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
+RUN apk add --update ${BUILD_PKGS} ${RUN_PKGS} \
     && mkdir -p /usr/src \
     && curl -fL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /usr/src \
@@ -28,8 +28,8 @@ RUN apk add --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-	&& make -j "$(nproc)" \
-    && make install-strip \
+	&& make  \
+    && make install \
     && cd / \
     && rm -rf /usr/src \
     && apk del --purge ${BUILD_PKGS} \
