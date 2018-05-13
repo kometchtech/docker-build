@@ -30,13 +30,14 @@ RUN addgroup zabbix && \
 
 ARG MAJOR_VERSION=3.4
 ARG ZBX_VERSION=${MAJOR_VERSION}.9
-ARG ZBX_SOURCES="https://sourceforge.net/projects/zabbix/files/ZABBIX%20Latest%20Stable/${ZBX_VERSION}/zabbix-${ZBX_VERSION}.tar.gz"
+#ARG ZBX_SOURCES="https://sourceforge.net/projects/zabbix/files/ZABBIX%20Latest%20Stable/${ZBX_VERSION}/zabbix-${ZBX_VERSION}.tar.gz"
+ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/3.4/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 
 RUN apk add ${APK_FLAGS_DEV} --virtual build-dependencies \
             ${RUN_PKGS} \
     && cd /tmp/ \
-    && curl -LO ${ZBX_SOURCES} \
+    && curl -L ${ZBX_SOURCES} -o zabbix-${ZBX_VERSION}.tar.gz \
     && tar xf zabbix-${ZBX_VERSION}.tar.gz \
     && rm -rf zabbix-${ZBX_VERSION}.tar.gz \
     && cd /tmp/zabbix-${ZBX_VERSION} \
