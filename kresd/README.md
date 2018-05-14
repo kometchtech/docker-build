@@ -4,7 +4,7 @@ Knot DNS Resolver <https://www.knot-resolver.cz/>
 
 ## description
 
-### issue
+### issue (May 14, 2018)
 
 Currently, the following error of LuaJIT involvement has occurred, it is not possible to check the operation.
 
