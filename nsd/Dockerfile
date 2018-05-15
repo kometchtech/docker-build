@@ -3,7 +3,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG NSD_VERSION=4.1.20
+ARG NSD_VERSION=4.1.21
 ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev"
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
 ARG CFLAGS="-O2 -fPIC -pipe -mtune=native -march=native"
