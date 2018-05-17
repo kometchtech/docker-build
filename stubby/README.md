@@ -1,8 +1,8 @@
 # Stubby
 
-DNS Privacy Daemon - Stubby <https://github.com/getdnsapi/stubby>
-A modern asynchronous DNS API <https://getdnsapi.net/>
-docker-getdns-stubby <https://github.com/juzam/docker-getdns-stubby>
+- DNS Privacy Daemon - Stubby <https://github.com/getdnsapi/stubby>  
+- A modern asynchronous DNS API <https://getdnsapi.net/>  
+- docker-getdns-stubby <https://github.com/juzam/docker-getdns-stubby>  
 
 ## description
 
