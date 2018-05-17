@@ -3,7 +3,6 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG UNBOUND_VERSION=1.7.1rc1
 ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev libuv-dev libev-dev check-dev"
 ARG RUN_PKGS="tzdata yaml libressl unbound"
 ARG CFLAGS="-O0 -fomit-frame-pointer -pipe"
