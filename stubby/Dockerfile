@@ -6,7 +6,6 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev libuv-dev libev-dev check-dev"
 ARG RUN_PKGS="tzdata yaml libressl unbound"
 ARG CFLAGS="-O0 -fomit-frame-pointer -pipe"
-ARG CFLAGS="-O0 -fomit-frame-pointer -pipe"
 ARG CXXFLAGS="-O0 -fomit-frame-pointer -pipe"
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 ENV TZ Asia/Tokyo
