@@ -44,8 +44,7 @@ RUN echo $TZ > /etc/timezone \
     && apt-get purge --auto-remove -y ${BUILD_PKGS} \
     && rm -rf /var/lib/apt/* \
     && useradd -s /usr/sbin/nologin -d /etc/unbound unbound \
-    && chown -R unbound:unbound /etc/unbound \
-    && ln -snf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+    && chown -R unbound:unbound /etc/unbound 
 
 # Application execution related information
 USER unbound
