@@ -3,7 +3,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG UNBOUND_VERSION=1.7.1
+ARG UNBOUND_VERSION=1.7.2
 ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev"
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
 ARG CFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
@@ -15,7 +15,7 @@ ENV TZ Asia/Tokyo
 WORKDIR /usr/local/etc
 RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
     && mkdir -p /usr/src \
-    && curl -fL "https://www.unbound.net/downloads/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
+    && curl -fL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
     && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
     && rm -f "unbound.tar.gz" \ 
     && cd /usr/src \
