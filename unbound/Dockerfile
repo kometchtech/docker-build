@@ -1,22 +1,21 @@
-
-FROM arm64v8/debian:9.3-slim
+FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG UNBOUND_VERSION=1.7.1
-ARG DEBIAN_FRONTEND=noninteractive
-ARG BUILD_PKGS="build-essential curl automake autoconf libexpat1-dev libssl-dev libevent-dev"
-ARG RUN_PKGS="openssl libevent-2.0-5 ca-certificates ldnsutils"
-ENV TZ=Asia/Tokyo
+ARG UNBOUND_VERSION=1.7.2
+ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev"
+ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
+ARG CFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG CXXFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ENV TZ Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc
-RUN echo $TZ > /etc/timezone \
-    && apt-get update \
-    && apt-get -qq install -y --no-install-recommends ${BUILD_PKGS} ${RUN_PKGS} \
+RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
     && mkdir -p /usr/src \
-    && curl -fL "https://www.unbound.net/downloads/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
+    && curl -fL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
     && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
     && rm -f "unbound.tar.gz" \ 
     && cd /usr/src \
@@ -35,23 +34,21 @@ RUN echo $TZ > /etc/timezone \
       --enable-pie \
       --disable-flto \
       --enable-relro-now \
-      CFLAGS='-fPIC -O3 -pipe -mtune=native -march=native' \
-      CXXFLAGS=${CFLAGS} \
-	  && make -j "$(nproc)" \
-    && make install-strip \
-    && rm -rf /usr/src \
-        /usr/local/share/man \
-    && apt-get purge --auto-remove -y ${BUILD_PKGS} \
-    && rm -rf /var/lib/apt/* \
-    && useradd -s /usr/sbin/nologin -d /etc/unbound unbound \
-    && chown -R unbound:unbound /etc/unbound 
+      CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
+	  && make -j $(nproc) \
+    && make install \
+    && cd / \
+    && rm -rf \
+        /usr/src \
+    && apk del --purge ${BUILD_PKGS} \
+    && rm -rf /var/cache/apk/* /usr/local/share/man \
+    && adduser -DH unbound 
 
 # Application execution related information
-USER unbound
 ADD ./run.sh /usr/local/sbin/
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 VOLUME ["/etc/unbound"]
 
 # export TCP and UDP
-EXPOSE 53/tcp 53/udp 
+EXPOSE 53/tcp 53/udp
 CMD ["/usr/local/sbin/run.sh"]
