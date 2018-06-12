@@ -10,8 +10,8 @@ WORKDIR /root
 EXPOSE 53/UDP 53/TCP
 
 # Environment
-ENV VERSION="2.6.7"
-ENV TZ Asia/Tokyo
+ENV VERSION="2.6.7" \
+    TZ=Asia/Tokyo
 ARG DEBIAN_FRONTEND=noninteractive
 ARG BUILD_PKGS="git-core make gcc libtool autoconf pkg-config liburcu-dev liblmdb-dev libgnutls28-dev libedit-dev libidn11-dev curl gawk g++"
 ARG RUNTIME_PKGS="liburcu4 liblmdb0 libgnutls30 libedit2 libidn11 tzdata"

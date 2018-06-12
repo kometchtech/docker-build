@@ -2,8 +2,8 @@ FROM golang:alpine AS build-env
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
     arch="aarch64" \
     version="1.1.3"
-ENV COREDNS 1.1.3
-ENV TZ Asia/Tokyo
+ENV COREDNS 1.1.3 \
+    TZ Asia/Tokyo
 
 # 1st stage build
 ADD . /work

@@ -5,9 +5,9 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ARG APK_FLAGS_COMMON="-q"
 ARG APK_FLAGS_PERSISTANT="${APK_FLAGS_COMMON} --no-cache"
 ARG APK_FLAGS_DEV="${APK_FLAGS_COMMON} --no-cache"
-ENV BUILD_PKGS bash iputils libevent pcre
-ENV RUN_PKGS alpine-sdk autoconf automake openssl-dev pcre-dev coreutils libevent-dev
-ENV TERM=xterm \
+ENV BUILD_PKGS="bash iputils libevent pcre" \
+		RUN_PKGS="alpine-sdk autoconf automake openssl-dev pcre-dev coreutils libevent-dev" \
+		TERM=xterm \
     ZBX_TYPE=agent ZBX_OPT_TYPE=none
 
 STOPSIGNAL SIGTERM
