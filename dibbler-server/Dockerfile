@@ -5,7 +5,6 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ARG DIBBLER=1.0.1
-ARG DEBIAN_FRONTEND=noninteractive
 ARG BUILD_PKGS="build-base ca-certificates curl automake autoconf unzip linux-headers gawk"
 ARG RUN_PKGS="coreutils libstdc++ libgcc"
 ARG CFLAGS="-O0 -fPIC -pipe -mtune=native -march=native"
