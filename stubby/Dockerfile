@@ -9,6 +9,7 @@ ARG CXXFLAGS=${CFLAGS}
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 ENV TZ="Asia/Tokyo"
 
+WORKDIR /usr/local
 RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
     && git clone -b v${VERSION} https://github.com/getdnsapi/getdns.git \
     && cd getdns \
