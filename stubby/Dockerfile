@@ -1,5 +1,5 @@
 FROM arm64v8/alpine:edge
-MAINTAINER "kometchtech <kometch@gmail.com>"
+LABEL MAINTAINER "kometchtech <kometch@gmail.com>"
 
 ARG VERSION=1.4.2
 ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev libuv-dev libev-dev check-dev gawk"
