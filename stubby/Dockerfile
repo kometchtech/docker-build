@@ -1,5 +1,5 @@
 FROM arm64v8/alpine:edge
-MAINTAINER "kometchtech <kometch@gmail.com>"
+LABEL MAINTAINER "kometchtech <kometch@gmail.com>"
 
 ARG VERSION=1.4.2
 ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev libuv-dev libev-dev check-dev gawk"
@@ -9,6 +9,7 @@ ARG CXXFLAGS=${CFLAGS}
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 ENV TZ="Asia/Tokyo"
 
+WORKDIR /usr/local
 RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
     && git clone -b v${VERSION} https://github.com/getdnsapi/getdns.git \
     && cd getdns \
