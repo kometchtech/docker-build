@@ -3,11 +3,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG UNBOUND_VERSION=1.7.2
-ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev"
+ARG UNBOUND_VERSION=1.7.3
+ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev gawk flex-dev bison"
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
 ARG CFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
-ARG CXXFLAGS="-fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
+ARG CXXFLAGS=${CFLAGS}
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 ENV TZ Asia/Tokyo
 
@@ -39,9 +39,9 @@ RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
     && make install \
     && cd / \
     && rm -rf \
-        /usr/src \
+        /usr/src/* \
     && apk del --purge ${BUILD_PKGS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man \
+    && rm -rf /var/cache/apk/* /usr/local/share/man /var/rmp/* \
     && adduser -DH unbound 
 
 # Application execution related information

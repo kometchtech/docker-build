@@ -6,7 +6,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Env
 ENV TZ=Asia/Tokyo \
     VERSION="1.3.0"
-ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev"
+ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev gawk"
 ARG RUN_PKGS="tzdata"
 ARG CFLAGS="-fPIC -fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
 ARG CPPFLAGS="-Os -fomit-frame-pointer -pipe"
@@ -39,7 +39,7 @@ RUN apk add --update ${RUN_PKGS} \
     --enable-re2 \
     --disable-static \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-  && make -j "$(nproc)" \
+  && make -j2  \
   && make install-strip \
 ## cleanup
   && cd / \
@@ -54,4 +54,4 @@ RUN apk add --update ${RUN_PKGS} \
   && apk add --virtual .rundeps $runDeps \
   && apk del --purge .build-deps \
   && rm -rf /var/cache/apk/* /tmp/build \
-  && adduser -DH _dnsdist
+&& adduser -DH _dnsdist
