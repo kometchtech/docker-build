@@ -1,7 +1,8 @@
 FROM debian:stable-slim
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
-      description="Knot DNS team's things are modified and used."
+      description="Knot DNS team's things are modified and used." \
+      url="https://www.knot-dns.cz/"
 
 # Select entrypoint
 WORKDIR /root
