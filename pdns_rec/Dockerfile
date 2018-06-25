@@ -9,7 +9,7 @@ ARG VERSION=4.1.3
 ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl net-snmp-dev gawk"
 ARG RUN_PKGS="tzdata"
 ARG CFLAGS="-Os -fomit-frame-pointer -pipe"
-ARG CXXFLAGS="-Os -fomit-frame-pointer -pipe"
+ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Select entrypoint
