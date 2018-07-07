@@ -5,9 +5,9 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ=Asia/Tokyo
-ARG VERSION="2.3.0"
+ARG VERSION="2.4.0"
 ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev gnutls-dev jansson-dev userspace-rcu-dev curl vim bsd-compat-headers nettle-dev binutils"
-ARG RUN_PKGS="luajit libuv gnutls jansson bash lua-cqueues lua-http lua-sec lua-socket knot-utils cmocka protobuf-c nettle"
+ARG RUN_PKGS="luajit libuv gnutls jansson bash lua-cqueues lua-http lua-sec lua-socket knot-utils cmocka protobuf-c nettle lua5.1-sec lua5.1-socket lua5.1-filesystem"
 ARG PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
 ARG CFLAGS="-Os -ftree-vectorize -D_FORTIFY_SOURCE=2 -fstack-protector -g -pthread"
 ARG LDFLAGS="-Wl,--as-needed"
@@ -16,7 +16,9 @@ ARG LDFLAGS="-Wl,--as-needed"
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
 
 # Install dependencies and sources
-RUN apk add -t lua-compat53 \
+RUN sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
+      && apk add --update --upgrade apk-tools \
+      && apk add -t lua-compat53 \
       && apk --update add ${RUN_PKGS} \
       && apk add --virtual build-dep ${BUILD_PKGS} \
       && git clone --depth 1 --recurse-submodules=modules/policy/lua-aho-corasick \
