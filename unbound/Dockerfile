@@ -13,7 +13,9 @@ ENV TZ Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/local/etc
-RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
+RUN sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
+    && apk add --update --upgrade apk-tools \
+    && apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS}\
     && mkdir -p /usr/src \
     && curl -fL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
     && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \

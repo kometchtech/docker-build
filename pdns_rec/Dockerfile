@@ -18,7 +18,9 @@ VOLUME ["/etc/powerdns"]
 CMD ["/usr/local/sbin/pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
 
 # dev package install
-RUN apk add --no-cache --virtual build-deps ${BUILD_PKGS} \
+RUN sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
+  && apk add --update --upgrade apk-tools \
+  && apk add --no-cache --virtual build-deps ${BUILD_PKGS} \
   && mkdir -p /usr/src \
 ## build
   && cd / \

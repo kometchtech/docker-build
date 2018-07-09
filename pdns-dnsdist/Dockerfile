@@ -19,7 +19,9 @@ VOLUME ["/etc/dnsdist"]
 ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
 # dev package install
-RUN apk add --update ${RUN_PKGS} \ 
+RUN sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
+  && apk add --update --upgrade apk-tools \
+  && apk add --update ${RUN_PKGS} \ 
   && apk add --virtual .build-deps ${BUILD_PKGS} \
   && update-ca-certificates \
   && mkdir -p /usr/src \

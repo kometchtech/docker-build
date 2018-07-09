@@ -12,7 +12,9 @@ ENV TZ=Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/src/etc
-RUN apk add --update ${BUILD_PKGS} ${RUN_PKGS} \
+RUN sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
+    && apk add --update --upgrade apk-tools \
+    && apk add --update ${BUILD_PKGS} ${RUN_PKGS} \
     && mkdir -p /usr/src \
     && curl -fL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /usr/src \

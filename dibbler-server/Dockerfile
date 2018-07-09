@@ -23,6 +23,8 @@ CMD ["/usr/local/sbin/dibbler-server", "run"]
 
 # compile and install
 RUN mkdir -p /usr/src \
+    && sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
+    && apk add --update --upgrade apk-tools \
     && apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS} \ 
     && curl -LO "https://github.com/tomaszmrugalski/dibbler/archive/master.zip" \
     && unzip -q "master.zip" -d /usr/src \ 
