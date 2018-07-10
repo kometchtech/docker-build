@@ -1,5 +1,8 @@
 # Knot DNS Resolver
 
+[![](https://images.microbadger.com/badges/image/kometchtech/kresd.svg)](https://microbadger.com/images/kometchtech/kresd "Get your own image badge on microbadger.com")
+[![](https://images.microbadger.com/badges/version/kometchtech/kresd.svg)](https://microbadger.com/images/kometchtech/kresd "Get your own version badge on microbadger.com")
+
 Knot DNS Resolver <https://www.knot-resolver.cz/>
 
 ## description
