@@ -1,5 +1,8 @@
 # NSD: Name Server Daemon
 
+[![](https://images.microbadger.com/badges/image/kometchtech/nsd.svg)](https://microbadger.com/images/kometchtech/nsd "Get your own image badge on microbadger.com")
+[![](https://images.microbadger.com/badges/version/kometchtech/nsd.svg)](https://microbadger.com/images/kometchtech/nsd "Get your own version badge on microbadger.com")
+
 NSD: Name Server Daemon <https://www.nlnetlabs.nl/projects/nsd/>
 
 ## description
