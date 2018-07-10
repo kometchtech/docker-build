@@ -5,7 +5,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Env
 ENV TZ=Asia/Tokyo \
-    VERSION="1.3.0"
+    VERSION="1.3.2"
 ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev gawk"
 ARG RUN_PKGS="tzdata"
 ARG CFLAGS="-fPIC -fPIE -DPIE -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
