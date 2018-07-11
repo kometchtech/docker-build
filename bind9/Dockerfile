@@ -4,7 +4,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="BIND9 for Aarch64"
 
 # Environment
-ENV VERSION="9.13.1" \
+ENV VERSION="9.13.2" \
     TZ=Asia/Tokyo
 ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl linux-headers bsd-compat-headers libxml2-dev json-c-dev libedit-dev readline-dev ncurses-dev gawk"
 ARG RUN_PKGS=" protobuf-c tzdata libxml2 json-c libedit libressl libcap"
