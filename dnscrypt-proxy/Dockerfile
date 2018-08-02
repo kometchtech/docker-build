@@ -6,7 +6,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ=Asia/Tokyo
-ARG VERSION="2.0.15"
+ARG VERSION="2.0.16"
 ARG BUILD_PKGS="curl tar" 
 ARG RUN_PKGS="ca-certificates tzdata"
 
@@ -22,10 +22,11 @@ RUN apk --no-cache add ${BUILD_PKGS} ${RUN_PKGS} \
     && cp example-dnscrypt-proxy.toml /etc/dnscrypt-proxy/dnscrypt-proxy.toml \
     && apk del --purge ${BUILD_PKGS} \
     && cd .. \
-    && rm -rf linux-arm64
+    && rm -rf linux-arm64 
+
 
 # export DNS over UDP & TCP
-#EXPOSE 53/TCP 53/UDP 443/TCP 443/UDP
+EXPOSE 53/TCP 53/UDP 443/TCP 443/UDP
 # expose VOLUME
 VOLUME [ "/etc/dnscrypt-proxy" ]
 # command
