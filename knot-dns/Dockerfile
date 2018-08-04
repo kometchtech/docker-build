@@ -11,7 +11,7 @@ WORKDIR /root
 EXPOSE 53/UDP 53/TCP
 
 # Environment
-ENV VERSION="2.6.8" \
+ENV VERSION="2.7.0" \
     TZ=Asia/Tokyo
 ARG DEBIAN_FRONTEND=noninteractive
 ARG BUILD_PKGS="git-core make gcc libtool autoconf pkg-config liburcu-dev liblmdb-dev libgnutls28-dev libedit-dev libidn11-dev curl gawk g++"
