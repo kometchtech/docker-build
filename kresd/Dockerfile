@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:edge
+FROM arm64v8/alpine:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="Knot resolver team's things are modified and used."
@@ -29,8 +29,7 @@ RUN apk add --update --upgrade apk-tools \
       # Trim down the image
       && cd / \
       && apk del --purge build-dep \
-      && rm -rf /var/cache/apk/* /tmp/build /usr/local/share/man/* \
-      && update-ca-certificates
+      && rm -rf /var/cache/apk/* /tmp/build /usr/local/share/man/*
 
 # Select entrypoint
 RUN mkdir -p /etc/knot-resolver \

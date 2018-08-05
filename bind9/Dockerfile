@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:edge
+FROM arm64v8/alpine:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="BIND9 for Aarch64"
@@ -12,8 +12,7 @@ ARG CFLAGS="-Os -pipe"
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # dev package install
-RUN sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
-  && apk add --update --upgrade apk-tools \
+RUN apk add --update --upgrade apk-tools \
   && apk add --update --no-cache --virtual .build-deps ${BUILD_PKGS} \
   && apk add --no-cache ${RUN_PKGS} \
 ## build

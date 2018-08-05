@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:edge
+FROM arm64v8/alpine:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
@@ -12,8 +12,7 @@ ENV TZ=Asia/Tokyo
 
 # source build and install
 WORKDIR /usr/src/etc
-RUN sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
-    && apk add --update --upgrade apk-tools \
+RUN apk add --update --upgrade apk-tools \
     && apk add --update ${BUILD_PKGS} ${RUN_PKGS} \
     && mkdir -p /usr/src \
     && curl -fL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \

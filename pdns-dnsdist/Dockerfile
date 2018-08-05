@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:edge
+FROM arm64v8/alpine:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="dnsdist for Aarch64"
@@ -19,8 +19,7 @@ VOLUME ["/etc/dnsdist"]
 ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
 # dev package install
-RUN sed -i -e "s/3.7/3.8/" /etc/apk/repositories \
-  && apk add --update --upgrade apk-tools \
+RUN apk add --update --upgrade apk-tools \
   && apk add --update ${RUN_PKGS} \ 
   && apk add --virtual .build-deps ${BUILD_PKGS} \
   && update-ca-certificates \
