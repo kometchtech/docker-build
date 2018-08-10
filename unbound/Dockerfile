@@ -29,6 +29,8 @@ RUN apk add --update --upgrade apk-tools \
       --sysconfdir=/etc/unbound \
       --with-conf-file=/etc/unbound/unbound.conf \
       --with-pidfile=/var/run/unbound.pid \
+      PKG_CONFIG=/usr/bin/pkg-config \
+      --enable-subnet \
       --enable-sha2 \
       --disable-gost \
       --disable-ecdsa \
