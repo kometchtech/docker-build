@@ -10,8 +10,8 @@ ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig git luajit-dev li
 ARG RUN_PKGS="luajit libuv gnutls jansson bash lua5.1-cqueues lua5.1-http lua5.1-sec lua5.1-socket knot-utils cmocka protobuf-c nettle lua5.1-filesystem libstdc++ ca-certificates"
 ARG BUILD_IGNORE="gmp nettle jansson gnutls lua libuv cmocka"
 ARG PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
-ARG CFLAGS="-Os -ftree-vectorize -D_FORTIFY_SOURCE=2 -fstack-protector -g -pthread"
-ARG LDFLAGS="-Wl,--as-needed"
+ARG CFLAGS="-O2 -ftree-vectorize -D_FORTIFY_SOURCE=3 -fstack-protector -pthread -mtune=native -march=native"
+ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
@@ -20,7 +20,7 @@ EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
 RUN apk add --update --upgrade apk-tools \
       && apk add --update -t lua5.1-compat5.3 lua5.1-compat53 \
       && apk add ${RUN_PKGS} \
-      && apk add --virtual build-dep ${BUILD_PKGS} \
+      && apk add --virtual .build-dep ${BUILD_PKGS} \
       && git clone --depth 1 --recurse-submodules=modules/policy/lua-aho-corasick \
             https://github.com/CZ-NIC/knot-resolver.git /tmp/build \
       && cd /tmp/build \
@@ -28,7 +28,7 @@ RUN apk add --update --upgrade apk-tools \
       && make -j $(nproc) install  \
       # Trim down the image
       && cd / \
-      && apk del --purge build-dep \
+      && apk del --purge .build-dep \
       && rm -rf /var/cache/apk/* /tmp/build /usr/local/share/man/*
 
 # Select entrypoint
