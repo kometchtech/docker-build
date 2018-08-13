@@ -7,7 +7,7 @@ ARG NSD_VERSION=4.1.23
 ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev"
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
 ARG CFLAGS="-O2 -fPIC -pipe -mtune=native -march=native"
-ARG LDFLAGS=""
+ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 ENV TZ=Asia/Tokyo
 
 # source build and install
