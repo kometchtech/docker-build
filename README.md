@@ -1,5 +1,9 @@
 # docker-build
 
+[![GitHub commit activity the past week, 4 weeks, year](https://img.shields.io/github/commit-activity/y/eslint/eslint.svg)](https://github.com/kometchtech/docker-build/commits/master)
+[![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/kometchtech/docker-build/commits/master)
+[![GitHub repo size in bytes](https://img.shields.io/github/repo-size/badges/shields.svg)](https://github.com/kometchtech/docker-build)
+
 personal docker build
 
 It exists to check the operation of container in the ARM environment (arm64/Aarch64).
