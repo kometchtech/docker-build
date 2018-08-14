@@ -1,5 +1,7 @@
 # Stubby
 
+[![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/kometchtech/docker-build/commits/master/stubby)
+
 - DNS Privacy Daemon - Stubby <https://github.com/getdnsapi/stubby>  
 - A modern asynchronous DNS API <https://getdnsapi.net/>  
 - docker-getdns-stubby <https://github.com/juzam/docker-getdns-stubby>  
