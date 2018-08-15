@@ -2,6 +2,7 @@
 
 [![](https://images.microbadger.com/badges/image/kometchtech/nsd.svg)](https://microbadger.com/images/kometchtech/nsd "Get your own image badge on microbadger.com")
 [![](https://images.microbadger.com/badges/version/kometchtech/nsd.svg)](https://microbadger.com/images/kometchtech/nsd "Get your own version badge on microbadger.com")
+[![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/kometchtech/docker-build/commits/master/nsd)
 
 NSD: Name Server Daemon <https://www.nlnetlabs.nl/projects/nsd/>
 
