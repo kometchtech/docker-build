@@ -1,7 +1,7 @@
 # dnscrypt-proxy
 
-[!(https://images.microbadger.com/badges/image/kometchtech/dnscrypt-proxy.svg)](https://microbadger.com/images/kometchtech/dnscrypt-proxy "Get your own image badge on microbadger.com")
-[!(https://images.microbadger.com/badges/version/kometchtech/dnscrypt-proxy.svg)](https://microbadger.com/images/kometchtech/dnscrypt-proxy "Get your own version badge on microbadger.com")
+[![](https://images.microbadger.com/badges/image/kometchtech/dnscrypt-proxy.svg)](https://microbadger.com/images/kometchtech/dnscrypt-proxy "Get your own image badge on microbadger.com")
+[![](https://images.microbadger.com/badges/version/kometchtech/dnscrypt-proxy.svg)](https://microbadger.com/images/kometchtech/dnscrypt-proxy "Get your own version badge on microbadger.com")
 [![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/kometchtech/docker-build/commits/master/knot-dns)
 
 <https://github.com/jedisct1/dnscrypt-proxy>
