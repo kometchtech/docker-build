@@ -1,7 +1,7 @@
 # Knot DNS Resolver
 
-[![](https://images.microbadger.com/badges/image/kometchtech/kresd.svg)](https://microbadger.com/images/kometchtech/kresd "Get your own image badge on microbadger.com")
-[![](https://images.microbadger.com/badges/version/kometchtech/kresd.svg)](https://microbadger.com/images/kometchtech/kresd "Get your own version badge on microbadger.com")
+[!(https://images.microbadger.com/badges/image/kometchtech/kresd.svg)](https://microbadger.com/images/kometchtech/kresd "Get your own image badge on microbadger.com")
+[!(https://images.microbadger.com/badges/version/kometchtech/kresd.svg)](https://microbadger.com/images/kometchtech/kresd "Get your own version badge on microbadger.com")
 [![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/kometchtech/docker-build/commits/master/kresd)
 
 Knot DNS Resolver <https://www.knot-resolver.cz/>
@@ -16,7 +16,7 @@ Currently, the following error of LuaJIT involvement has occurred, it is not pos
 PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 ```
 
-#### Relation ?
+#### Relation"?"
 
 [\[ARM64\] Execution of daemon failing, possible deprecated usage of lua_pushlightuserdata (#216) · Issues · Knot projects / Knot Resolver · GitLab](https://gitlab.labs.nic.cz/knot/knot-resolver/issues/216)
 
