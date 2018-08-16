@@ -30,7 +30,7 @@ RUN addgroup zabbix && \
 
 ARG MAJOR_VERSION=3.4
 ARG ZBX_VERSION=${MAJOR_VERSION}.12
-ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/3.4/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
+ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 
 RUN apk add ${APK_FLAGS_DEV} --virtual build-dependencies \
