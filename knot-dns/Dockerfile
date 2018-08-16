@@ -11,12 +11,12 @@ WORKDIR /root
 EXPOSE 53/UDP 53/TCP
 
 # Environment
-ENV VERSION="2.7.0" \
+ENV VERSION="2.7.1" \
     TZ=Asia/Tokyo
 ARG DEBIAN_FRONTEND=noninteractive
 ARG BUILD_PKGS="git-core make gcc libtool autoconf pkg-config liburcu-dev liblmdb-dev libgnutls28-dev libedit-dev libidn11-dev curl gawk g++"
 ARG RUNTIME_PKGS="liburcu4 liblmdb0 libgnutls30 libedit2 libidn11 tzdata"
-ARG CFLAGS="-Os"
+ARG CFLAGS="-Os -fstack-protector -pthread -mtune=native -march=native"
 ARG CXXFLAGS="-Os"
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
