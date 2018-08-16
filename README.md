@@ -14,7 +14,7 @@ Basically we will check the operation of the following application.
 ## base images
 
 - Debian stretch/testing
-- alpine latest
+- [arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
 
 ## check software
 
