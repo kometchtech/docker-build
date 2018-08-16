@@ -11,7 +11,7 @@ WORKDIR /root
 EXPOSE 53/UDP 53/TCP
 
 # Environment
-ENV VERSION="2.7.0" \
+ENV VERSION="2.7.1" \
     TZ=Asia/Tokyo
 ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev lmdb-dev gnutls-dev libedit-dev libidn-dev curl gawk"
 ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata"
