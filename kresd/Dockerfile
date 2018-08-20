@@ -5,12 +5,12 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ=Asia/Tokyo
-ARG VERSION="2.4.1"
+ARG VERSION="3.0.0"
 ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev gnutls-dev jansson-dev userspace-rcu-dev curl vim bsd-compat-headers nettle-dev binutils"
 ARG RUN_PKGS="luajit libuv gnutls jansson bash lua5.1-cqueues lua5.1-http lua5.1-sec lua5.1-socket knot-utils cmocka protobuf-c nettle lua5.1-filesystem libstdc++ ca-certificates"
 ARG BUILD_IGNORE="gmp nettle jansson gnutls lua libuv cmocka"
 ARG PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
-ARG CFLAGS="-O2 -ftree-vectorize -D_FORTIFY_SOURCE=3 -fstack-protector -pthread -mtune=native -march=native"
+ARG CFLAGS="-O2 -ftree-vectorize -fstack-protector -pthread -mtune=native -march=native"
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
