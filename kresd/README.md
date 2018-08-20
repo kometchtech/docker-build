@@ -16,7 +16,7 @@ Currently, the following error of LuaJIT involvement has occurred, it is not pos
 PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 ```
 
-#### Relation ?
+#### Relation"?"
 
 [\[ARM64\] Execution of daemon failing, possible deprecated usage of lua_pushlightuserdata (#216) · Issues · Knot projects / Knot Resolver · GitLab](https://gitlab.labs.nic.cz/knot/knot-resolver/issues/216)
 
@@ -26,7 +26,7 @@ PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 
 ### Baseimage
 
-arm64v8/alpine
+[arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
 
 ### minimum operating
 

@@ -8,13 +8,21 @@ dnsdist <https://dnsdist.org/>
 
 ## description
 
+dnsdist is a highly DNS-, DoS- and abuse-aware loadbalancer. Its goal in life is to route traffic to the best server, delivering top performance to legitimate users while shunting or blocking abusive traffic.
+
 ### Baseimage
 
-arm64v8/alpine
+[arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
 
 ### minimum operating
 
+```bash
+```
+
 ### config
+
+```config
+```
 
 ### document page
 

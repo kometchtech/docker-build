@@ -8,7 +8,7 @@ DHCPv6: Dibbler - a portable DHCPv6 <http://klub.com.pl/dhcpv6/>
 
 ### Baseimage
 
-arm64v8/alpine:edge
+[arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
 
 ### minimum operating
 

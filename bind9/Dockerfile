@@ -8,7 +8,7 @@ ENV VERSION="9.13.2" \
     TZ=Asia/Tokyo
 ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl linux-headers bsd-compat-headers libxml2-dev json-c-dev libedit-dev readline-dev ncurses-dev gawk"
 ARG RUN_PKGS=" protobuf-c tzdata libxml2 json-c libedit libressl libcap"
-ARG CFLAGS="-Os -pipe"
+ARG CFLAGS="-Os -fomit-frame-pointer -pipe -flto -mtune=native -march=native"
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # dev package install

@@ -1,14 +1,15 @@
 FROM arm64v8/alpine:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-  arch="aarch64" \
-  version="github-master"
+      arch="aarch64" \
+      version="github-master" \
+      description="Portable DHCPv6 implementation"
 
 # Environment
 ARG DIBBLER=1.0.1
 ARG BUILD_PKGS="build-base ca-certificates curl automake autoconf unzip linux-headers gawk"
 ARG RUN_PKGS="coreutils libstdc++ libgcc"
-ARG CFLAGS="-O0 -fPIC -pipe -mtune=native -march=native"
-ARG LDFLAGS=""
+ARG CFLAGS="-O2 -fPIC -pipe -mtune=native -march=native"
+ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 ENV TZ=Asia/Tokyo
 
 # config
