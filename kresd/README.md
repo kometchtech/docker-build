@@ -24,6 +24,8 @@ PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 
 [\[arm64\] /usr/bin/luajit: bad light userdata pointer · Issue #1035 · torch/torch7](https://github.com/torch/torch7/issues/1035)
 
+[arm64: unprotected error in call to Lua API (bad light userdata pointer) #2802](https://github.com/kubernetes/ingress-nginx/issues/2802)
+
 ### Baseimage
 
 [arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
