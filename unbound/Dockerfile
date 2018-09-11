@@ -3,7 +3,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG UNBOUND_VERSION=1.8.0rc1
+ARG UNBOUND_VERSION=1.8.0
 ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev gawk flex-dev bison"
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
 ARG CFLAGS="-fPIE -DPIE --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
