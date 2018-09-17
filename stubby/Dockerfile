@@ -39,4 +39,4 @@ COPY stubby.yml /usr/local/etc/stubby/stubby.yml
 
 EXPOSE 53
 
-CMD ["/usr/local/bin/stubby", "-l"]
+CMD ["/usr/local/bin/stubby", "-C", "/usr/local/etc/stubby/stubby.yml"]
