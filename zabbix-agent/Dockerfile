@@ -29,7 +29,7 @@ RUN addgroup zabbix && \
     rm -rf /var/cache/apk/*
 
 ARG MAJOR_VERSION=3.4
-ARG ZBX_VERSION=${MAJOR_VERSION}.13
+ARG ZBX_VERSION=${MAJOR_VERSION}.14
 ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 
