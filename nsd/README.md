@@ -15,7 +15,10 @@ NSD: Name Server Daemon <https://www.nlnetlabs.nl/projects/nsd/>
 ### minimum operating
 
 ```bash
-docker run --rm -d -p 53:53/tcp -p 53:53/udp -v ${PWD}/nsd.conf:/usr/local/etc/nsd/nsd.conf -v ${PWD}/zones:/usr/local/etc/nsd/zones -v ${PWD}/db:/usr/local/var/db kometchtech/nsd:latest
+docker run --rm -d -p 53:53/tcp -p 53:53/udp -v ${PWD}/nsd.conf:/usr/local/etc/nsd/nsd.conf \
+        -v ${PWD}/zones:/usr/local/etc/nsd/zones \
+        -v ${PWD}/db:/usr/local/var/db \
+        kometchtech/nsd:latest
 ```
 
 ### config
