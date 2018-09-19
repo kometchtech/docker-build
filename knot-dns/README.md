@@ -12,7 +12,7 @@ Knot DNS is a high-performance authoritative-only DNS server which supports all 
 
 ## Baseimage
 
-[debian:stretch-slim](https://hub.docker.com/_/debian/)
+[debian:stretch-slim](https://hub.docker.com/_/debian/)  
 [arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
 
 ## config
