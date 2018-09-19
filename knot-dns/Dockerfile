@@ -1,4 +1,4 @@
-FROM debian:stretch-slim
+FROM arm64v8/alpine:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="Knot DNS team's things are modified and used." \
@@ -11,18 +11,17 @@ WORKDIR /root
 EXPOSE 53/UDP 53/TCP
 
 # Environment
-ENV VERSION="2.7.1" \
+ENV VERSION="2.7.2" \
     TZ=Asia/Tokyo
-ARG DEBIAN_FRONTEND=noninteractive
-ARG BUILD_PKGS="git-core make gcc libtool autoconf pkg-config liburcu-dev liblmdb-dev libgnutls28-dev libedit-dev libidn11-dev curl gawk g++"
-ARG RUNTIME_PKGS="liburcu4 liblmdb0 libgnutls30 libedit2 libidn11 tzdata"
-ARG CFLAGS="-Os -fstack-protector -pthread -mtune=native -march=native"
+ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev lmdb-dev gnutls-dev libedit-dev libidn-dev curl gawk"
+ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata"
+ARG CFLAGS="-Os -fomit-frame-pointer -pipe -flto -mtune=native -march=native"
 ARG CXXFLAGS="-Os"
 ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Install dependencies and sources
-RUN apt-get -q -y update \
-  && apt-get install -q -y ${BUILD_PKGS} ${RUNTIME_PKGS} \
+RUN apk add --update --upgrade apk-tools \
+  && apk add --update ${BUILD_PKGS} ${RUNTIME_PKGS} \
 # Compile sources
   && curl -fL https://secure.nic.cz/files/knot-dns/knot-${VERSION}.tar.xz -o knot.tar.gz \
   && mkdir -p /knot-src/ \
@@ -46,9 +45,7 @@ RUN apt-get -q -y update \
 # Trim down the image
   && cd \
   && rm -rf /knot-src \
-  && apt-get purge -q -y ${BUILD_PKGS} \
-  && apt-get autoremove -q -y \
-  && apt-get clean \
+  && apk del --purge ${BUILD_PKGS} \
   && mkdir -p /var/lib/knot/zones /var/lib/knot/zones/timers \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
