@@ -18,17 +18,14 @@ PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 
 #### Relation"?"
 
-[\[ARM64\] Execution of daemon failing, possible deprecated usage of lua_pushlightuserdata (#216) · Issues · Knot projects / Knot Resolver · GitLab](https://gitlab.labs.nic.cz/knot/knot-resolver/issues/216)
-
-[ARM64 (AArch64) Lua "bad light userdata pointer" · Issue #7879 · neovim/neovim](https://github.com/neovim/neovim/issues/7879)
-
-[\[arm64\] /usr/bin/luajit: bad light userdata pointer · Issue #1035 · torch/torch7](https://github.com/torch/torch7/issues/1035)
-
-[arm64: unprotected error in call to Lua API (bad light userdata pointer) #2802](https://github.com/kubernetes/ingress-nginx/issues/2802)
+- [\[ARM64\] Execution of daemon failing, possible deprecated usage of lua_pushlightuserdata (#216) · Issues · Knot projects / Knot Resolver · GitLab](https://gitlab.labs.nic.cz/knot/knot-resolver/issues/216)
+- [ARM64 (AArch64) Lua "bad light userdata pointer" · Issue #7879 · neovim/neovim](https://github.com/neovim/neovim/issues/7879)
+- [\[arm64\] /usr/bin/luajit: bad light userdata pointer · Issue #1035 · torch/torch7](https://github.com/torch/torch7/issues/1035)
+- [arm64: unprotected error in call to Lua API (bad light userdata pointer) #2802](https://github.com/kubernetes/ingress-nginx/issues/2802)
 
 ### Baseimage
 
-[arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
+- [arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
 
 ### minimum operating
 

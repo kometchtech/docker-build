@@ -10,7 +10,7 @@ PowerDNS Recursor <https://www.powerdns.com/recursor.html>
 
 ### Baseimage
 
-[arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
+- [arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
 
 ### info
 

@@ -12,4 +12,4 @@ dnscrypt-proxy 2 - A flexible DNS proxy, with support for encrypted DNS protocol
 
 ## Baseimage
 
-[arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
+- [arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
