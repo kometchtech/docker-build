@@ -8,12 +8,12 @@ CoreDNS <https://coredns.io/>
 
 As the Arm64 image is released from the official, it will not be updated here.
 
-[coredns/coredns](https://hub.docker.com/r/coredns/coredns/)  
-tag: coredns-arm64
+- [coredns/coredns](https://hub.docker.com/r/coredns/coredns/)  
+ - tag: coredns-arm64
 
 ### Baseimage
 
-arm64v8/alpine
+- arm64v8/alpine:latest
 
 ### minimum operating
 

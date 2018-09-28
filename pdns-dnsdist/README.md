@@ -12,7 +12,7 @@ dnsdist is a highly DNS-, DoS- and abuse-aware loadbalancer. Its goal in life is
 
 ### Baseimage
 
-[arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
+- [arm64v8/alpine](https://hub.docker.com/r/arm64v8/alpine/)
 
 ### minimum operating
 
