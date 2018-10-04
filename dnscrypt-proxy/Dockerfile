@@ -6,7 +6,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ=Asia/Tokyo
-ARG VERSION="2.0.16"
+ARG VERSION="2.0.17"
 ARG BUILD_PKGS="curl tar" 
 ARG RUN_PKGS="ca-certificates tzdata"
 
