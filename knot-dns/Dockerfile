@@ -11,13 +11,14 @@ WORKDIR /root
 EXPOSE 53/UDP 53/TCP
 
 # Environment
-ENV VERSION="2.7.2" \
+ENV VERSION="2.7.3" \
     TZ=Asia/Tokyo
 ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev lmdb-dev gnutls-dev libedit-dev libidn-dev curl gawk"
 ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata"
-ARG CFLAGS="-Os -fomit-frame-pointer -pipe -flto -mtune=native -march=native"
+ARG CFLAGS="-Os -fomit-frame-pointer -pipe -mtune=native -march=native"
 ARG CXXFLAGS="-Os"
-ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+#ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z,norelro"
 
 # Install dependencies and sources
 RUN apk add --update --upgrade apk-tools \
