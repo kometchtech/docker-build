@@ -11,7 +11,7 @@ ARG RUN_PKGS="luajit libuv gnutls jansson bash lua5.1-cqueues lua5.1-http lua5.1
 ARG BUILD_IGNORE="gmp nettle jansson gnutls lua libuv cmocka"
 ARG PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
 ARG CFLAGS="-O2 -ftree-vectorize -fstack-protector -pthread -mtune=native -march=native"
-ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
@@ -33,6 +33,6 @@ RUN apk add --update --upgrade apk-tools \
 
 # Select entrypoint
 RUN mkdir -p /etc/knot-resolver \
-    && cp /usr/local/etc/knot-resolver/config.personal /etc/knot-resolver/kresd.conf \
-    && kdig DNSKEY . @k.root-servers.net +noall +answer | grep "DNSKEY[[:space:]]257" > /etc/knot-resolver/root.keys
-CMD ["/usr/local/sbin/kresd", "-v", "-f", "1", "-c", "/etc/knot-resolver/kresd.conf"]
+    && cp /usr/local/etc/knot-resolver/config.personal /etc/knot-resolver/kresd.conf 
+#    && kdig DNSKEY . @k.root-servers.net +noall +answer | grep "DNSKEY[[:space:]]257" > /etc/knot-resolver/root.keys
+CMD ["/usr/local/sbin/kresd", "-v", "-f", "1", "-c", "/etc/knot-resolver/kresd.conf", "-k", "/etc/knot-resolver/root.keys", "."]

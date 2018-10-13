@@ -4,11 +4,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ARG NSD_VERSION=4.1.25
+ENV TZ=Asia/Tokyo
 ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev"
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
 ARG CFLAGS="-O2 -fPIC -pipe -mtune=native -march=native"
-ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
-ENV TZ=Asia/Tokyo
+ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # source build and install
 WORKDIR /usr/src/etc

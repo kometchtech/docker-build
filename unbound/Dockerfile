@@ -4,12 +4,12 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ARG UNBOUND_VERSION=1.8.1
+ENV TZ Asia/Tokyo
 ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev gawk flex-dev bison"
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
 ARG CFLAGS="-fPIE -DPIE --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
 ARG CXXFLAGS=${CFLAGS}
-ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
-ENV TZ Asia/Tokyo
+ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # source build and install
 WORKDIR /usr/local/etc

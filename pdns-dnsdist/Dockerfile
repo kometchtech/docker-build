@@ -8,10 +8,10 @@ ENV TZ=Asia/Tokyo \
     VERSION="1.3.2"
 ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev gawk"
 ARG RUN_PKGS="tzdata"
-ARG CFLAGS="-fPIC -fPIE -DPIE -Os -fomit-frame-pointer -pipe -flto -mtune=native -march=native"
-ARG CPPFLAGS="-Os -fomit-frame-pointer -pipe -flto -mtune=native -march=native"
+ARG CFLAGS="-fPIC -fPIE -DPIE -Os -fomit-frame-pointer -pipe -mtune=native -march=native"
+ARG CPPFLAGS="-Os -fomit-frame-pointer -pipe -mtune=native -march=native"
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Select entrypoint
 EXPOSE 53/tcp 53/udp

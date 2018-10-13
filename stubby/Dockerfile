@@ -2,12 +2,12 @@ FROM arm64v8/alpine:latest
 LABEL MAINTAINER "kometchtech <kometch@gmail.com>"
 
 ARG VERSION=1.4.2
+ENV TZ="Asia/Tokyo"
 ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev libuv-dev libev-dev check-dev gawk"
 ARG RUN_PKGS="tzdata yaml libressl unbound"
-ARG CFLAGS="-Os -fomit-frame-pointer -pipe -flto -mtune=native -march=native"
+ARG CFLAGS="-Os -fomit-frame-pointer -pipe -mtune=native -march=native"
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
-ENV TZ="Asia/Tokyo"
+ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 WORKDIR /usr/local
 RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS} \

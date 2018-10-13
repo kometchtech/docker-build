@@ -17,8 +17,7 @@ ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev
 ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata"
 ARG CFLAGS="-Os -fomit-frame-pointer -pipe -mtune=native -march=native"
 ARG CXXFLAGS="-Os"
-#ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
-ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z,norelro"
+ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Install dependencies and sources
 RUN apk add --update --upgrade apk-tools \

@@ -9,7 +9,8 @@ ENV VERSION="9.13.3" \
 ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl linux-headers bsd-compat-headers libxml2-dev json-c-dev libedit-dev readline-dev ncurses-dev gawk"
 ARG RUN_PKGS=" protobuf-c tzdata libxml2 json-c libedit libressl libcap"
 ARG CFLAGS="-Os -pipe -fomit-frame-pointer -mtune=native -march=native"
-ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+#ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z,norelro"
 
 # dev package install
 RUN apk add --update --upgrade apk-tools \
