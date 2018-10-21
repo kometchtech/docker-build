@@ -29,6 +29,22 @@ PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 
 ### minimum operating
 
+### Notes on running Docker
+
+When forking more than 2 processes, enable `init`.
+
+```bash
+docker run --init ...
+```
+
+```bash
+version: '2.2'
+services:
+  web:
+    image: alpine:latest
+    init: true
+```
+
 ### config
 
 ```lua
