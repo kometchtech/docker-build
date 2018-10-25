@@ -23,8 +23,9 @@ Basically we will check the operation of the following application.
 - Unbound <https://www.nlnetlabs.nl/projects/unbound/>
 - PowerDNS recursor <https://www.powerdns.com/recursor.html>
 - Knot DNS resolver <https://www.knot-resolver.cz/>
-- Knot DNS <https://www.knot-dns.cz/>
-- CoreDNS (testing) <https://coredns.io/>
+- Knot DNS <https://www.knot-dns.cz/>  
+~~- CoreDNS (testing) <https://coredns.io/>~~  
+Currently the Docker image is released from CoreDNS.io formula. <https://hub.docker.com/r/coredns/coredns/>
 - dnsdist <https://dnsdist.org/>
 - BIND9 (testing) <https://www.isc.org/downloads/bind/> alpine package
 - zabbix-agent (testing) <https://www.zabbix.com/>
