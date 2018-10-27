@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:latest
+FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="dnsdist for Aarch64"
@@ -6,20 +6,22 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Env
 ENV TZ=Asia/Tokyo \
     VERSION="1.3.2"
-ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev gawk"
+ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev gawk fstrm-dev"
 ARG RUN_PKGS="tzdata"
-ARG CFLAGS="-fPIC -fPIE -DPIE -Os -fomit-frame-pointer -pipe -mtune=native -march=native"
-ARG CPPFLAGS="-Os -fomit-frame-pointer -pipe -mtune=native -march=native"
+ARG CFLAGS="-fPIC -fPIE -DPIE -Os -fomit-frame-pointer -pipe -mtune=generic -march=armv8-a"
+ARG CPPFLAGS="-Os -fomit-frame-pointer -pipe -mtune=generic -march=armv8-a"
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Select entrypoint
 EXPOSE 53/tcp 53/udp
 VOLUME ["/etc/dnsdist"]
-ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
+ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "dnsdist", "-g", "dnsdist"]
 
 # dev package install
-RUN apk add --update --upgrade apk-tools \
+RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
+  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
+  && apk add --update --upgrade apk-tools \
   && apk add --update ${RUN_PKGS} \ 
   && apk add --virtual .build-deps ${BUILD_PKGS} \
   && update-ca-certificates \
@@ -55,4 +57,4 @@ RUN apk add --update --upgrade apk-tools \
   && apk add --virtual .rundeps $runDeps \
   && apk del --purge .build-deps \
   && rm -rf /var/cache/apk/* /tmp/build \
-&& adduser -DH _dnsdist
+  && adduser -DH dnsdist
