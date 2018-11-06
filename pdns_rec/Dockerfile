@@ -1,14 +1,14 @@
-FROM arm64v8/alpine:latest
+FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="PowerDNS recursor for Aarch64"
 
 # Environmet
 ENV TZ=Asia/Tokyo
-ARG VERSION=4.1.4
+ARG VERSION=4.1.5
 ARG BUILD_PKGS="build-base openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl gawk"
 ARG RUN_PKGS="tzdata"
-ARG CFLAGS="-Os -fomit-frame-pointer -pipe -mtune=native -march=native"
+ARG CFLAGS="-Os -fstack-protector -pthread -fomit-frame-pointer -pipe -mtune=generic "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
@@ -18,7 +18,8 @@ VOLUME ["/etc/powerdns"]
 CMD ["/usr/local/sbin/pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
 
 # dev package install
-RUN apk add --update --upgrade apk-tools \
+RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
+  && apk add --update --upgrade apk-tools \
   && apk add --no-cache --virtual build-deps ${BUILD_PKGS} \
   && mkdir -p /usr/src \
 ## build
@@ -35,7 +36,6 @@ RUN apk add --update --upgrade apk-tools \
     --libexecdir=${prefix}/lib/aarch64-linux-gnu \
     --enable-unit-tests \
     --disable-static \
-  && make  \
   && make install \
 ## cleanup
   && cd / \
