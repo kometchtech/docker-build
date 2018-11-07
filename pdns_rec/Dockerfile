@@ -5,7 +5,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environmet
 ENV TZ=Asia/Tokyo
-ARG VERSION=4.1.5
+ARG VERSION=4.1.6
 ARG BUILD_PKGS="build-base openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl gawk"
 ARG RUN_PKGS="tzdata"
 ARG CFLAGS="-Os -fstack-protector -pthread -fomit-frame-pointer -pipe -mtune=generic "
