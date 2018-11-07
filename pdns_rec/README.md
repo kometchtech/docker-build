@@ -20,6 +20,7 @@ As a result, `net-snmp-dev` is deleted because it becomes satisfies.
 ### minimum operating
 
 ```bash
+/usr/local/sbin/pdns_recursor --log-timestamp=yes --daemon=no --write-pid=no --enable-syslog
 ```
 
 ### config
