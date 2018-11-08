@@ -5,11 +5,10 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Env
 ENV TZ=Asia/Tokyo \
-    VERSION="1.3.2"
-ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev gawk fstrm-dev gnutls-dev"
+    VERSION="1.3.3"
+ARG BUILD_PKGS="build-base boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev ca-certificates openssl libedit-dev gawk fstrm-dev gnutls-dev libressl-dev"
 ARG RUN_PKGS="tzdata"
-ARG CFLAGS="-fPIC -fPIE -DPIE -Os -fomit-frame-pointer -pipe -mtune=generic "
-ARG CPPFLAGS="-Os -fomit-frame-pointer -pipe -mtune=generic "
+ARG CFLAGS="-fPIC -fPIE -DPIE -Ofast -fstack-protector -pthread -fomit-frame-pointer -pipe -mtune=generic "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
@@ -21,7 +20,7 @@ ENTRYPOINT ["dnsdist", "--supervised", "--disable-syslog", "-u", "dnsdist", "-g"
 # dev package install
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
   && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-  && apk add --update --upgrade apk-tools \
+#  && apk add --update --upgrade apk-tools \
   && apk add --update ${RUN_PKGS} \ 
   && apk add --virtual .build-deps ${BUILD_PKGS} \
   && update-ca-certificates \
