@@ -29,6 +29,10 @@ PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 
 ### minimum operating
 
+```bash
+kresd -f 1 -c /etc/knot-resolver/kresd.conf /run/knot-resolver
+```
+
 ### Notes on running Docker
 
 When forking more than 2 processes, enable `init`.
@@ -52,7 +56,7 @@ services:
 -- net = { '127.0.0.1', '::1' }
 
 -- Drop root privileges
--- user('knot-resolver', 'knot-resolver')
+user('knot', 'knot')
 
 -- Auto-maintain root TA
 trust_anchors.file = 'root.keys'
