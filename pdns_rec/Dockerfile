@@ -5,8 +5,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environmet
 ENV TZ=Asia/Tokyo
-ARG VERSION=4.1.6
-ARG BUILD_PKGS="build-base openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl gawk"
+ARG VERSION=4.1.7
+ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev curl gawk"
 ARG RUN_PKGS="tzdata"
 ARG CFLAGS="-Os -fstack-protector -pthread -fomit-frame-pointer -pipe -mtune=generic "
 ARG CXXFLAGS="${CFLAGS}"
@@ -19,8 +19,8 @@ CMD ["/usr/local/sbin/pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
 
 # dev package install
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
-  && apk add --update --upgrade apk-tools \
-  && apk add --no-cache --virtual build-deps ${BUILD_PKGS} \
+#  && apk add --update --upgrade apk-tools \
+  && apk --update add --no-cache --virtual build-deps ${BUILD_PKGS} \
   && mkdir -p /usr/src \
 ## build
   && cd / \
