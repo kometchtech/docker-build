@@ -32,4 +32,4 @@ WORKDIR /etc/dnscrypt-proxy/
 COPY --from=build /go/src/github.com/jedisct1/dnscrypt-proxy/example-* /etc/dnscrypt-proxy/
 
 # command
-CMD [ "dnscrypt-proxy", "-config", "/etc/dnscrypt-proxy/dnscrypt-proxy.toml"]
+CMD [ "dnscrypt-proxy", "-config", "/etc/dnscrypt-proxy/example-dnscrypt-proxy.toml"]
