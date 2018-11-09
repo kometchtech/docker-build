@@ -29,7 +29,7 @@ ADD ca-certificates.crt /etc/ssl/certs/
 # Multi stage build
 COPY --from=build /go/bin/dnscrypt-proxy /usr/local/bin/
 WORKDIR /etc/dnscrypt-proxy/
-COPY --from=0 /go/src/github.com/jedisct1/dnscrypt-proxy/example-* /etc/dnscrypt-proxy/
+COPY --from=build /go/src/github.com/jedisct1/dnscrypt-proxy/example-* /etc/dnscrypt-proxy/
 
 # command
 CMD [ "dnscrypt-proxy", "-config", "/etc/dnscrypt-proxy/dnscrypt-proxy.toml"]
