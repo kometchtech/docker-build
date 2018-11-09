@@ -22,11 +22,8 @@ ENV TZ=Asia/Tokyo
 # export DNS over UDP & TCP
 EXPOSE 53/TCP 53/UDP 443/TCP 443/UDP
 
-# Recommend package
-#RUN apk --no-cache add ca-certificates tzdata
-ADD ca-certificates.crt /etc/ssl/certs/
-
 # Multi stage build
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ 
 COPY --from=build /go/bin/dnscrypt-proxy /usr/local/bin/
 WORKDIR /etc/dnscrypt-proxy/
 COPY --from=build /go/src/github.com/jedisct1/dnscrypt-proxy/example-* /etc/dnscrypt-proxy/
