@@ -7,7 +7,7 @@ ARG VERSION=1.4.2
 ENV TZ="Asia/Tokyo"
 ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev libuv-dev libev-dev check-dev gawk"
 ARG RUN_PKGS="tzdata yaml libressl unbound"
-ARG CFLAGS="-Os -fstack-protector -pthread -fomit-frame-pointer -pipe -mtune=generic "
+ARG CFLAGS="-Os -fstack-protector -pthread -fomit-frame-pointer -pipe -march=armv8-a+crc -mtune=cortex-a53 -ffast-math "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 

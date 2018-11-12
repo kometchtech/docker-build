@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:latest
+FROM arm64v8/alpine:edge
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="Knot DNS team's things are modified and used." \
@@ -15,13 +15,15 @@ ENV VERSION="2.7.3" \
     TZ=Asia/Tokyo
 ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev lmdb-dev gnutls-dev libedit-dev libidn-dev curl gawk"
 ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata"
-ARG CFLAGS="-Os -fomit-frame-pointer -pipe -mtune=native -march=native"
-ARG CXXFLAGS="-Os"
-ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+#ARG CFLAGS="-Os -fomit-frame-pointer -pipe -mtune=native -march=native"
+ARG CFLAGS="-Os -fstack-protector -pthread -fomit-frame-pointer -pipe -march=armv8-a+crc -mtune=cortex-a53 -ffast-math "
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,-O1 -Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
 # Install dependencies and sources
-RUN apk add --update --upgrade apk-tools \
-  && apk add --update ${BUILD_PKGS} ${RUNTIME_PKGS} \
+RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
+  && apk add --no-cache --update --upgrade libressl \
+  && apk add --no-cache --update ${BUILD_PKGS} ${RUNTIME_PKGS} \
 # Compile sources
   && curl -fL https://secure.nic.cz/files/knot-dns/knot-${VERSION}.tar.xz -o knot.tar.gz \
   && mkdir -p /knot-src/ \
@@ -40,8 +42,7 @@ RUN apk add --update --upgrade apk-tools \
       --enable-recvmmsg=auto \
       --enable-systemd=no \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"  \
-      && make -j "$(nproc)" \
-      && make install \
+      && make -j "$(nproc)" install \
 # Trim down the image
   && cd \
   && rm -rf /knot-src \
