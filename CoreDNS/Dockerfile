@@ -1,16 +1,11 @@
 # 1st build 
 FROM arm64v8/golang as build-env
-ENV CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=arm64
+
 RUN apt-get -q -y update \
     && apt-get install -q -y git-core make gcc libtool autoconf pkg-config 
-RUN go get -u golang.org/x/vgo
 RUN go get -u -v github.com/coredns/coredns || true
 RUN cd  /go/src/github.com/coredns/coredns/ \
     && set -x \
-#    && vgo build  -v \
-#    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -v -ldflags="-s -w" || true \
     && make -j all \
     && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -v -ldflags="-s -w" 
 
