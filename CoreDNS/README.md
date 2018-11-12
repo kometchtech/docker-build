@@ -4,6 +4,9 @@ CoreDNS <https://coredns.io/>
 
 ## description
 
+[![](https://images.microbadger.com/badges/image/kometchtech/coredns:20181112.svg)](https://microbadger.com/images/kometchtech/coredns:20181112 "Get your own image badge on microbadger.com")
+[![](https://images.microbadger.com/badges/version/kometchtech/coredns:20181112.svg)](https://microbadger.com/images/kometchtech/coredns:20181112 "Get your own version badge on microbadger.com")
+
 ## !Announce!
 
 As the Arm64 image is released from the official, it will not be updated here.
