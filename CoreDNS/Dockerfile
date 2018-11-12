@@ -1,16 +1,32 @@
-FROM arm64v8/alpine:edge
+# 1st build 
+FROM arm64v8/golang as build-env
+ENV CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=arm64
+RUN apt-get -q -y update \
+    && apt-get install -q -y git-core make gcc libtool autoconf pkg-config 
+RUN go get -u golang.org/x/vgo
+RUN go get -u -v github.com/coredns/coredns || true
+RUN cd  /go/src/github.com/coredns/coredns/ \
+    && set -x \
+#    && vgo build  -v \
+#    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -v -ldflags="-s -w" || true \
+    && make -j all \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -v -ldflags="-s -w" 
+
+# 2nd build
+FROM scratch
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-    arch="aarch64" \
-    version="1.2.0"
-ENV COREDNS 1.2.0 \
-    TZ Asia/Tokyo
+      arch="aarch64" \
+      description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
+      url="https://github.com/coredns/coredns"
 
-# Only need ca-certificates & openssl if want to use DNS over TLS (RFC 7858).
-RUN apk --no-cache add bind-tools ca-certificates openssl && update-ca-certificates
+# Environment
+ENV TZ=Asia/Tokyo
 
-COPY ./coredns /usr/local/bin/coredns
+COPY --from=build-env /etc/ssl/certs /etc/ssl/certs
+COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /usr/local/bin/coredns
 # export DNS over UDP & TCP
 EXPOSE 53 53/UDP
-VOLUME [ "/etc/coredns" ]
 # Select entrypoint
-CMD ["coredns", "-conf", "/etc/coredns/corefile"]
+CMD ["coredns", "-dns.port", "53"]
