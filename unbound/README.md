@@ -4,6 +4,7 @@
 [![](https://images.microbadger.com/badges/version/kometchtech/unbound.svg)](https://microbadger.com/images/kometchtech/unbound "Get your own version badge on microbadger.com")
 [![](https://images.microbadger.com/badges/version/kometchtech/unbound:latest-alpine.svg)](https://microbadger.com/images/kometchtech/unbound:latest-alpine "Get your own version badge on microbadger.com")
 [![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/kometchtech/docker-build/commits/master/unbound)
+[![Docker Pulls](https://img.shields.io/docker/pulls/kometchtech/unbound.svg)](https://hub.docker.com/r/kometchtech/unbound/)
 
 Unbound <https://www.nlnetlabs.nl/projects/unbound/>
 

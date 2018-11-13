@@ -3,6 +3,7 @@
 [![](https://images.microbadger.com/badges/image/kometchtech/bind.svg)](https://microbadger.com/images/kometchtech/bind "Get your own image badge on microbadger.com")
 [![](https://images.microbadger.com/badges/version/kometchtech/bind.svg)](https://microbadger.com/images/kometchtech/bind "Get your own version badge on microbadger.com")
 [![GitHub last commit](https://img.shields.io/github/last-commit/google/skia.svg)](https://github.com/kometchtech/docker-build/tree/master/bind9)
+[![Docker Pulls](https://img.shields.io/docker/pulls/kometchtech/bind.svg)](https://hub.docker.com/r/kometchtech/bind/)
 
 BIND <https://www.isc.org/downloads/bind/>
 

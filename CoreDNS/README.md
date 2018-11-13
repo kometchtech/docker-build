@@ -6,6 +6,7 @@ CoreDNS <https://coredns.io/>
 
 [![](https://images.microbadger.com/badges/image/kometchtech/coredns:20181112.svg)](https://microbadger.com/images/kometchtech/coredns:20181112 "Get your own image badge on microbadger.com")
 [![](https://images.microbadger.com/badges/version/kometchtech/coredns:20181112.svg)](https://microbadger.com/images/kometchtech/coredns:20181112 "Get your own version badge on microbadger.com")
+[![Docker Pulls](https://img.shields.io/docker/pulls/kometchtech/coredns.svg)](https://hub.docker.com/r/kometchtech/coredns/)
 
 ## !Announce!
 
