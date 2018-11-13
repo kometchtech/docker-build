@@ -31,6 +31,7 @@ Currently the Docker image is released from CoreDNS.io formula. <https://hub.doc
 - zabbix-agent (testing) <https://www.zabbix.com/>
 - mackerel-agent-plugins (testing) <https://github.com/mackerelio/mackerel-agent-plugins>
 - DNSCrypt Proxy <https://github.com/jedisct1/dnscrypt-proxy>
+- Stubby <https://github.com/getdnsapi/stubby>
 
 ## Tips
 
@@ -40,3 +41,11 @@ Currently the Docker image is released from CoreDNS.io formula. <https://hub.doc
 echo '{"ipv6":true, "fixed-cidr-v6":"2001:db8:1::/64"}' | sudo tee -a /etc/docker/daemon.json
 sudo systemctl restart docker.service
 ```
+- If you make the Interface
+```
+docker network create --ipv6 \
+    --gateway 2001:db8:1::1 \
+    --subnet 2001:db8:1::/80 \
+    docker-ipv6-network
+```
+
