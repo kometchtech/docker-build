@@ -9,6 +9,7 @@ ENV BUILD_PKGS="bash iputils libevent pcre" \
 		RUN_PKGS="alpine-sdk autoconf automake openssl-dev pcre-dev coreutils libevent-dev" \
 		TERM=xterm \
     ZBX_TYPE=agent ZBX_OPT_TYPE=none
+ARG CFLAGS="-fPIC -pie -Wl,-z,relro -Wl,-z,now,-Os -fstack-protector -pthread -pipe"
 
 STOPSIGNAL SIGTERM
 
@@ -29,7 +30,7 @@ RUN addgroup zabbix && \
     rm -rf /var/cache/apk/*
 
 ARG MAJOR_VERSION=4.0
-ARG ZBX_VERSION=${MAJOR_VERSION}.0
+ARG ZBX_VERSION=${MAJOR_VERSION}.1
 ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 
@@ -40,7 +41,7 @@ RUN apk add ${APK_FLAGS_DEV} --virtual build-dependencies \
     && tar xf zabbix-${ZBX_VERSION}.tar.gz \
     && rm -rf zabbix-${ZBX_VERSION}.tar.gz \
     && cd /tmp/zabbix-${ZBX_VERSION} \
-    && export CFLAGS="-fPIC -pie -Wl,-z,relro -Wl,-z,now" \
+    && export CFLAGS="${CFLAGS}" \
     && ./configure \
             --datadir=/usr/lib \
             --libdir=/usr/lib/zabbix \
