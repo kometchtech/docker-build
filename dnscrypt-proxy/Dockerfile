@@ -1,11 +1,14 @@
 # 1st build 
 FROM arm64v8/golang:alpine as build
+
+# https://golang.org/doc/install/source#environment
 ENV CGO_ENABLED=0 \
     GOOS=linux \
-    GOARCH=arm64
+    GOARCH=arm64 \
+    VERSION=2.0.18
 WORKDIR /go/src/github.com/jedisct1/
 RUN apk add --no-cache git 
-RUN git clone https://github.com/jedisct1/dnscrypt-proxy /go/src/github.com/jedisct1/
+RUN git clone -b ${VERSION} https://github.com/jedisct1/dnscrypt-proxy /go/src/github.com/jedisct1/
 RUN cd /go/src/github.com/jedisct1/dnscrypt-proxy \
   && go build -v -ldflags="-s -w" -o /go/bin/dnscrypt-proxy
 
@@ -20,7 +23,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ=Asia/Tokyo
 
 # export DNS over UDP & TCP
-EXPOSE 53/TCP 53/UDP 443/TCP 443/UDP
+EXPOSE 53/TCP 53/UDP 
 
 # Multi stage build
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ 
