@@ -15,9 +15,9 @@ ENV VERSION="2.7.4" \
     TZ=Asia/Tokyo
 ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev lmdb-dev gnutls-dev libedit-dev libidn-dev curl gawk"
 ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata"
-ARG CFLAGS="-Os -fstack-protector -pthread -fomit-frame-pointer -pipe -march=armv8-a+crc -mtune=cortex-a53 -ffast-math "
+ARG CFLAGS="-O1 -fstack-protector -pthread -heap-arrays "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O2 -Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ARG LDFLAGS="-Wl,--as-needed -Wl,relro"
 
 # Install dependencies and sources
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
