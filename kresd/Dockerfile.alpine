@@ -22,20 +22,19 @@ ARG LDFLAGS="-Wl,--as-needed -Wl,relro"
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
   && apk add --no-cache --update --upgrade libressl \
   && apk add --no-cache --update ${BUILDENV_DEPS} \
-
 # Install Knot DNS from sources
-RUN git clone -b $KNOT_DNS_VERSION --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns && \
-        cd /tmp/knot-dns && \
-        autoreconf -if && \
-        ./configure \
-        --disable-static \
-        --disable-fastparser \
-        --disable-documentation \
-        --disable-daemon \
-        --disable-utilities \
-        --with-lmdb=no && \
-        make "-j$(nproc)" install && \
-        ldconfig
+  && git clone -b $KNOT_DNS_VERSION --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns \
+  && cd /tmp/knot-dns \
+  && autoreconf -if \
+  && ./configure \
+     --disable-static \
+     --disable-fastparser \
+     --disable-documentation \
+     --disable-daemon \
+     --disable-utilities \
+     --with-lmdb=no && \
+     make "-j$(nproc)" install && \
+    ldconfig
 
 # Copy libknot, libdnssec, libzscanner to runtime
 RUN mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig && \
