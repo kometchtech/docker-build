@@ -20,6 +20,7 @@ ARG LDFLAGS="-Wl,--as-needed -Wl,relro"
 
 # Install dependencies and sources
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
+  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
   && apk add --no-cache --update --upgrade libressl \
   && apk add --no-cache --update ${BUILDENV_DEPS} \
 # Install Knot DNS from sources
