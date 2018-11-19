@@ -9,7 +9,7 @@ ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev gawk flex-de
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
 ARG CFLAGS="-fPIE -DPIE --param ssp-buffer-size=4 -fstack-protector -Os -fomit-frame-pointer -pipe"
 ARG CXXFLAGS=${CFLAGS}
-ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # source build and install
 WORKDIR /usr/local/etc

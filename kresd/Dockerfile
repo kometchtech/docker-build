@@ -12,7 +12,7 @@ ARG BUILD_IGNORE="gmp nettle jansson gnutls lua libuv cmocka"
 ARG PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
 ARG CFLAGS="-O1 -fstack-protector -pthread -heap-arrays "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,relro"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # export DNS over UDP & TCP, DNS-over-TLS, web interface
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP

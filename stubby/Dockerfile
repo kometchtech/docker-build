@@ -9,7 +9,7 @@ ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-
 ARG RUN_PKGS="tzdata yaml libressl unbound"
 ARG CFLAGS="-Os -fstack-protector -pthread -fomit-frame-pointer -pipe -march=armv8-a+crc -mtune=cortex-a53 -ffast-math "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 WORKDIR /usr/local
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \

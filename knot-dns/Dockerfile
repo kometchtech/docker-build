@@ -17,7 +17,7 @@ ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev
 ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata"
 ARG CFLAGS="-O1 -fstack-protector -pthread -heap-arrays "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,relro"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # Install dependencies and sources
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \

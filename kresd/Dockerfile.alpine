@@ -16,7 +16,7 @@ ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata fstrm "
 ARG BUILDENV_DEPS="${BUILD_PKGS} ${RUNTIME_PKGS}"
 ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,relro"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # Install dependencies and sources
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
@@ -69,7 +69,7 @@ FROM knot-dns-build AS build
 
 # Build Knot Resolver
 ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays "
-ARG LDFLAGS="-Wl,--as-needed"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 RUN git clone --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver && \
         cd /tmp/knot-resolver && \
         make -j"$(nproc)" && \

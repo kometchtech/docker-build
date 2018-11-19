@@ -9,7 +9,7 @@ ENV BUILD_PKGS="bash iputils libevent pcre" \
 		RUN_PKGS="alpine-sdk autoconf automake openssl-dev pcre-dev coreutils libevent-dev" \
 		TERM=xterm \
     ZBX_TYPE=agent ZBX_OPT_TYPE=none
-ARG CFLAGS="-fPIC -pie -Wl,-z,relro -Wl,-z,now,-Os -fstack-protector -pthread -pipe"
+ARG CFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fstack-protector -pthread -pipe"
 
 STOPSIGNAL SIGTERM
 

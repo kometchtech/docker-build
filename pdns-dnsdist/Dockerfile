@@ -10,7 +10,7 @@ ARG BUILD_PKGS="build-base boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-d
 ARG RUN_PKGS="tzdata"
 ARG CFLAGS="-fPIC -fPIE -DPIE -Ofast -fstack-protector -pthread -fomit-frame-pointer -pipe -mtune=generic "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-s,-flto,--gc-sections,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # Select entrypoint
 EXPOSE 53/tcp 53/udp
