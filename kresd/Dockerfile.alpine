@@ -33,9 +33,9 @@ RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
      --disable-documentation \
      --disable-daemon \
      --disable-utilities \
-     --with-lmdb=no && \
-     make "-j$(nproc)" install && \
-    ldconfig
+     --with-lmdb=no \
+    && make "-j$(nproc)" install && \
+    && ldconfig /
 
 # Copy libknot, libdnssec, libzscanner to runtime
 RUN mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig && \
@@ -93,4 +93,4 @@ CMD ["/usr/local/sbin/kresd", "-c", "/etc/knot-resolver/kresd.conf"]
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
-RUN ldconfig
+RUN ldconfig /
