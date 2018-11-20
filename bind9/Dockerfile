@@ -8,12 +8,12 @@ ENV VERSION="9.13.3" \
     TZ=Asia/Tokyo
 ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl linux-headers bsd-compat-headers libxml2-dev json-c-dev libedit-dev readline-dev ncurses-dev gawk"
 ARG RUN_PKGS=" protobuf-c tzdata libxml2 json-c libedit libressl libcap"
-ARG CFLAGS="-Os -fstack-protector -pthread -pipe -fomit-frame-pointer -mtune=generic "
+ARG CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer "
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # dev package install
 RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
-##  && apk add --update --upgrade apk-tools \
+  && apk add --no-cache --update libressl \
   && apk add --update --no-cache --virtual .build-deps ${BUILD_PKGS} \
   && apk add --no-cache ${RUN_PKGS} \
 ## build
