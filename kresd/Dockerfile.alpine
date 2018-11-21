@@ -1,30 +1,25 @@
 # Intermediate container for Knot DNS build (not persistent)
 FROM arm64v8/alpine:edge AS knot-dns-build
-ARG KNOT_DNS_VERSION=v2.7.4
+ARG KNOT_DNS_VERSION=v2.7.2
 
 # Build dependencies
-#ENV KNOT_DNS_BUILD_DEPS git-core build-essential libtool autoconf pkg-config \
-#        libgnutls28-dev libprotobuf-dev libprotobuf-c-dev libfstrm-dev
-#ENV KNOT_RESOLVER_BUILD_DEPS build-essential pkg-config bsdmainutils liblmdb-dev \
-#        libluajit-5.1-dev libuv1-dev libprotobuf-dev libprotobuf-c-dev \
-#        libfstrm-dev luajit lua-sec lua-socket
-#ENV BUILDENV_DEPS ${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}
-
-ENV TZ Asia/Tokyo
-ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev lmdb-dev gnutls-dev libedit-dev libidn-dev curl gawk git lua-sec lua-socket bsd-compat-headers luajit luajit-dev libuv lua-filesystem protobuf-c-dev protobuf-dev fstrm musl-utils"
-ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata fstrm "
-ARG BUILDENV_DEPS="${BUILD_PKGS} ${RUNTIME_PKGS}"
-ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays "
+ENV KNOT_DNS_BUILD_DEPS build-base automake autoconf libtool pkgconfig userspace-rcu-dev \
+			gnutls curl gawk git bsd-compat-headers \
+			musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev
+ENV KNOT_RESOLVER_BUILD_DEPS build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev \
+			gnutls-dev fstrm-dev@test jansson-dev userspace-rcu-dev curl vim bsd-compat-headers nettle-dev \
+			binutils cmocka-dev protobuf-c-dev protobuf-dev lua5.1-sec lua5.1-socket lua5.1-filesystem
+ENV BUILDENV_DEPS ${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}
+ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 
 # Install dependencies and sources
-RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
-  && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-  && apk add --no-cache --update --upgrade libressl \
-  && apk add --no-cache --update ${BUILDENV_DEPS} \
+RUN set -x \
+  && echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" | tee -a /etc/apk/repositories \
+  && apk add --no-cache ${BUILDENV_DEPS} \
 # Install Knot DNS from sources
-  && git clone -b $KNOT_DNS_VERSION --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns \
+  && git clone -b ${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns \
   && cd /tmp/knot-dns \
   && autoreconf -if \
   && ./configure \
@@ -34,42 +29,36 @@ RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
      --disable-daemon \
      --disable-utilities \
      --with-lmdb=no \
-    && make "-j$(nproc)" install && \
-    && ldconfig /
-
+    && make "-j$(nproc)" install \
+    && ldconfig / || true \
 # Copy libknot, libdnssec, libzscanner to runtime
-RUN mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig && \
-        cp -rt /tmp/root/usr/local/include /usr/local/include/libknot /usr/local/include/libdnssec /usr/local/include/libzscanner && \
-        cp -rt /tmp/root/usr/local/lib /usr/local/lib/libknot* /usr/local/lib/libdnssec* /usr/local/lib/libzscanner* && \
-        cp -rt /tmp/root/usr/local/lib/pkgconfig /usr/local/lib/pkgconfig/libknot.pc /usr/local/lib/pkgconfig/libdnssec.pc /usr/local/lib/pkgconfig/libzscanner.pc
-
+    && mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig \
+    && cp -r /usr/local/include/libknot /usr/local/include/libdnssec /usr/local/include/libzscanner /tmp/root/usr/local/include \
+    && cp -r /usr/local/lib/libknot* /usr/local/lib/libdnssec* /usr/local/lib/libzscanner* /tmp/root/usr/local/lib \
+    && cp -r /usr/local/lib/pkgconfig/libknot.pc /usr/local/lib/pkgconfig/libdnssec.pc /usr/local/lib/pkgconfig/libzscanner.pc /tmp/root/usr/local/lib/pkgconfig
 
 # Intermediate container with runtime dependencies
 FROM arm64v8/alpine:edge AS runtime
 
 # Install runtime dependencies
-ENV KNOT_DNS_RUNTIME_DEPS gnutls-dev
-ENV KNOT_RESOLVER_RUNTIME_DEPS lmdb-dev luajit luajit-dev libuv lua-sec lua-socket lua-filesystem \
-                                ca-certificates musl-utils
-ENV KNOT_RESOLVER_RUNTIME_DEPS_HTTP lua-http lua-maxminddb
-ENV KNOT_RESOLVER_RUNTIME_DEPS_EXTRA fstrm lua-cqueues
-ENV RUNTIME_DEPS ${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA}
-RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
-     && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-     && apk add --update -t lua5.1-compat5.3 lua5.1-compat53 libressl \
-     && apk add --no-cache --update ${RUNTIME_DEPS} \
-     && rm -rf /var/lib/apt/lists/*
-
+ENV KNOT_DNS_RUNTIME_DEPS gnutls  
+ENV KNOT_RESOLVER_RUNTIME_DEPS lmdb luajit libuv lua5.1-sec lua5.1-socket lua5.1-filesystem \
+                               ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c
+ENV KNOT_RESOLVER_RUNTIME_DEPS_HTTP lua5.1-http lua5.1-maxminddb 
+ENV KNOT_RESOLVER_RUNTIME_DEPS_EXTRA fstrm lua5.1-cqueues
+ENV RUNTIME_DEPS ${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
+		${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA}
+RUN set -x \
+     && echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" | tee -a /etc/apk/repositories \
+     && apk add --no-cache ${RUNTIME_DEPS} \
+     && rm -rf /var/cache/apk/* /usr/local/share/man/* 
 
 # Intermediate container for Knot Resolver build
 FROM knot-dns-build AS build
 
-# Get Knot Resolver code from current directory
-#COPY . /tmp/knot-resolver
-
 # Build Knot Resolver
-ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays "
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 RUN git clone --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver && \
         cd /tmp/knot-resolver && \
         make -j"$(nproc)" && \
@@ -86,6 +75,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="Knot DNS team's things are modified and used." \
       url="https://www.knot-dns.cz/"
 
+ENV TZ Asia/Tokyo 
+
 # Export DNS over UDP & TCP, DNS-over-TLS, web interface
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
 
@@ -93,4 +84,4 @@ CMD ["/usr/local/sbin/kresd", "-c", "/etc/knot-resolver/kresd.conf"]
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
-RUN ldconfig /
+RUN ldconfig / || true
