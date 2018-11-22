@@ -1,34 +1,28 @@
-FROM arm64v8/alpine:edge
+FROM arm64v8/alpine:edge AS build
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64" \
       description="Knot DNS team's things are modified and used." \
       url="https://www.knot-dns.cz/"
 
-# Select entrypoint
-WORKDIR /root
-
-# Expose port
-EXPOSE 53/UDP 53/TCP
-
 # Environment
-ENV VERSION="2.7.4" \
-    TZ=Asia/Tokyo
-ARG BUILD_PKGS="build-base automake autoconf libtool pkgconfig userspace-rcu-dev lmdb-dev gnutls-dev libedit-dev libidn-dev curl gawk"
-ARG RUNTIME_PKGS="userspace-rcu lmdb gnutls libedit libidn tzdata"
-ARG CFLAGS="-O1 -fstack-protector -pthread -heap-arrays "
+ENV KNOT_DNS_VERSION 2.7.4
+ENV TZ Asia/Tokyo
+# Build dependencies
+ENV KNOT_DNS_BUILD_DEPS build-base automake autoconf libtool pkgconfig userspace-rcu-dev \
+			gnutls curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
+			musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev
+ENV BUILDENV_DEPS ${KNOT_DNS_BUILD_DEPS} 
+ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 
 # Install dependencies and sources
-RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
-  && apk add --no-cache --update --upgrade libressl \
-  && apk add --no-cache --update ${BUILD_PKGS} ${RUNTIME_PKGS} \
-# Compile sources
-  && curl -fL https://secure.nic.cz/files/knot-dns/knot-${VERSION}.tar.xz -o knot.tar.gz \
-  && mkdir -p /knot-src/ \
-  && tar xf knot.tar.gz --strip-components=1 -C /knot-src/ \
-  && rm -rf knot.tar.gz \
-  && cd /knot-src \
+RUN apk add --no-cache ${BUILDENV_DEPS} 
+# Install Knot DNS from sources
+RUN git clone -b v${KNOT_DNS_VERSION} --depth 1 https://github.com/CZ-NIC/knot.git /tmp/knot-dns \
+  && mkdir -p /tmp/knot-dns/ \
+  && cd /tmp/knot-dns \
+  && autoreconf -if \
   && ./configure \
       --prefix=/ \
       --with-configdir=/etc/knot \
@@ -41,19 +35,42 @@ RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
       --enable-recvmmsg=auto \
       --enable-systemd=no \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"  \
-      && make -j "$(nproc)" install \
-# Trim down the image
-  && cd \
-  && rm -rf /knot-src \
-  && apk del --purge ${BUILD_PKGS} \
-  && mkdir -p /var/lib/knot/zones /var/lib/knot/zones/timers \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+      && make -j "$(nproc)" install DESTDIR=/tmp/root 
+RUN mkdir -p /tmp/root/etc/knot-dns 
+RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sample.conf
 
-# Use example configuration and zone
-RUN mv /etc/knot/knot.sample.conf /etc/knot/knot.conf && \
-echo '  - domain: example.com\n    file: "/etc/knot/example.com.zone"' >> /etc/knot/knot.conf
+
+# Intermediate container with runtime dependencies
+FROM arm64v8/alpine:edge AS runtime
+
+# Install runtime dependencies
+ENV KNOT_DNS_RUNTIME_DEPS userspace-rcu lmdb gnutls libedit libidn tzdata libmaxminddb 
+
+RUN apk add --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
+     && rm -rf /var/cache/apk/* /usr/local/share/man/* 
+
+
+# Final container
+FROM runtime
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="Aarch64" \
+      description="Knot DNS team's things are modified and used." \
+      url="https://www.knot-dns.cz/"
+
+ENV TZ Asia/Tokyo 
+
+# Export DNS over UDP & TCP, DNS-over-TLS
+EXPOSE 53/UDP 53/TCP 853/TCP
+
+# voulme
+VOLUME ["/var/lib/knot/zones/timers", "/etc/knot-dns"]
 
 # select entrypoint
 ADD entrypoint.sh /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/entrypoint.sh
 CMD ["/usr/local/sbin/entrypoint.sh"]
+
+# Fetch Knot DNS from build image
+COPY --from=build /tmp/root/ /
+RUN ldconfig / || true
+
