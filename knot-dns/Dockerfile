@@ -1,8 +1,4 @@
-FROM arm64v8/alpine:edge AS build
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="aarch64" \
-      description="Knot DNS team's things are modified and used." \
-      url="https://www.knot-dns.cz/"
+FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV KNOT_DNS_VERSION 2.7.4
@@ -41,13 +37,13 @@ RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sam
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/alpine:edge AS runtime
+FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ENV KNOT_DNS_RUNTIME_DEPS userspace-rcu lmdb gnutls libedit libidn tzdata libmaxminddb 
 
 RUN apk add --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
-     && rm -rf /var/cache/apk/* /usr/local/share/man/* 
+  && rm -rf /var/cache/apk/* /usr/local/share/man/* 
 
 
 # Final container
