@@ -1,28 +1,23 @@
-FROM arm64v8/alpine:edge
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="aarch64" \
-      description="BIND9 for Aarch64"
+FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV VERSION="9.13.3" \
-    TZ=Asia/Tokyo
-ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl linux-headers bsd-compat-headers libxml2-dev json-c-dev libedit-dev readline-dev ncurses-dev gawk"
-ARG RUN_PKGS=" protobuf-c tzdata libxml2 json-c libedit libressl libcap"
-ARG CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer "
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ENV BIND_VERSION="9.13.4" 
+ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers \
+                bsd-compat-headers libedit-dev readline-dev ncurses-dev gawk zlib-dev"
+ENV CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer "
+ENV LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # dev package install
-RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
-  && apk add --no-cache --update libressl \
-  && apk add --update --no-cache --virtual .build-deps ${BUILD_PKGS} \
-  && apk add --no-cache ${RUN_PKGS} \
+RUN apk add --update --upgrade apk-tools \
+  && apk add --update --no-cache -t .build-deps ${BUILD_PKGS} 
+
 ## build
-  && cd / \
-  && mkdir -p /usr/src \
-  && curl -L https://ftp.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.gz -o bind9.tar.gz \
-  && tar xf bind9.tar.gz --strip-components=1 -C /usr/src \
+RUN set -x \
+  && mkdir -p /tmp/build \
+  && curl -fSL "https://ftp.isc.org/isc/bind9/${BIND_VERSION}/bind-${BIND_VERSION}.tar.gz" -o bind9.tar.gz \
+  && tar xf bind9.tar.gz --strip-components=1 -C /tmp/build \
   && rm bind9.tar.gz \
-  && cd /usr/src \
+  && cd /tmp/build \
   \
   && ./configure \
     --prefix=/usr/local \
@@ -31,29 +26,60 @@ RUN sed -i -e 's/v[[:digit:]]\.[[:digit:]]/edge/g' /etc/apk/repositories \
     --with-libtool \
     --with-openssl \
     --with-tuning=default \
-    --with-make-clean \
-    --with-libxml2 \
-    --with-libjson \
     --enable-largefile \
-    --enable-fixed-rrset \
-    --enable-dnsrps \
     --enable-shared \
-    --enable-static \
+    --enable-backtrace \
+    --enable-symtable \
+    --with-dlz-filesystem \
+    --with-dlz-stub \
+    --enable-fixed-rrset \
+    --with-zlib \
+    --with-readline \
+    --without-python \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-  && make -j "$(nproc)" install \
-  ## cleanup
-  && cd / \
-# add user
-  && adduser -DH named \
-  && mkdir -p /var/named /var/run/named \
-  && chown -R named:named /var/named /var/run/named \
-# download named.root 
-  && curl -L https://www.internic.net/domain/named.root -o /var/named/named.ca \
-# Trim down the image
-  && apk del --purge .build-deps \
-  && rm -rf /usr/src/* /var/cache/apk/* /tmp/build 
+  && make -j "$(nproc)" install DESTDIR=/tmp/root \
+  && ldconfig / 
+# Delete unnecessary directory 
+RUN mkdir -p /tmp/root/var/named \
+  && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* \
+  # download named.root 
+  && curl -fSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/named/named.ca
 
-# Select entrypoint
-EXPOSE 53/tcp 53/udp
 
+# Intermediate container with runtime dependencies
+FROM arm64v8/alpine:latest AS runtime
+
+# Install runtime dependencies
+ARG RUN_PKGS=" protobuf-c tzdata zlib libedit readline ncurses libressl libcap "
+RUN apk add --no-cache ${RUN_PKGS} \
+     && rm -rf /var/cache/apk/* /usr/local/share/man/* 
+RUN adduser -DH named \
+    && mkdir -p /var/named /var/run/named /etc/named 
+
+
+# Final container
+FROM runtime
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="Aarch64" \
+      description="BIND is open source software that enables you to publish your \
+      Domain Name System (DNS) information on the Internet, and to resolve DNS queries \
+      for your users.  The name BIND stands for “Berkeley Internet Name Domain”, \
+      because the software originated in the early 1980s at the University of \
+      California at Berkeley." \
+      url="https://www.isc.org/downloads/bind/"
+
+ENV TZ Asia/Tokyo
+
+# volume
+VOLUME ["/var/named", "/var/run/named", "/etc/named"] 
+
+# export TCP and UDP
+EXPOSE 53/tcp 53/udp 953/TCP
+
+# select entrypoint
 CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
+
+# Fetch isc BIND libraries from build image
+COPY --from=build /tmp/root/ /
+RUN chown -R named:named /var/named /var/run/named /etc/named \
+    && ldconfig / || true
