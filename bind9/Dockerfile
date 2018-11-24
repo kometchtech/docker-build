@@ -81,5 +81,6 @@ CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
 
 # Fetch isc BIND libraries from build image
 COPY --from=build /tmp/root/ /
+COPY ./named.conf /etc/named/named.conf
 RUN chown -R named:named /var/named /var/run/named /etc/named \
     && ldconfig / || true
