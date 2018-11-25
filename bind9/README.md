@@ -23,7 +23,7 @@ docker run -d --name bind9 -p 53:53/tcp -p 53:53/udp -v ${PWD}/named.conf:/etc/b
 
 ```conf
 options {
-        directory "/var/bind";
+        directory "/var/named";
 
         allow-recursion {
                 127.0.0.1/32;
