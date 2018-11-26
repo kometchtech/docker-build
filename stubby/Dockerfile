@@ -27,10 +27,10 @@ RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
     && ldconfig / || true 
 
 # Copy libgetdns, libgetdns_ext_ev, libgetdns_ext_uv
-RUN mkdir -p /tmp/root/var/stubby /tmp/root/etc/stubby \
+RUN mkdir -p /tmp/root/var/stubby /tmp/root/etc/stubby /tmp/root/etc/unbound \
     && cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
     && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* \
-    && unbound-anchor -v -a "/tmp/root/etc/stubby/root.key" || true
+    && unbound-anchor -v -a "/tmp/root/etc/unbound/root.key" || true
 
 # copy example conf
 RUN curl -fSL https://raw.githubusercontent.com/getdnsapi/stubby/develop/stubby.yml.example \
@@ -50,6 +50,7 @@ RUN rm -rf /var/cache/apk/* /usr/local/share/man/* \
 # Final container
 FROM runtime
 LABEL MAINTAINER "kometchtech <kometch@gmail.com>" \
+      Arch="Aarch64" \
       url="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Daemon+-+Stubby" \
       description="Stubby is the name given to a mode of using getdns which enables \
                    it to act as a local DNS Privacy stub resolver (using DNS-over-TLS)."
