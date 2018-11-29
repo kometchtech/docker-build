@@ -1,24 +1,21 @@
-FROM arm64v8/alpine:latest
+FROM arm64v8/alpine:latest AS build
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="aarch64"
 
 # Environment
-ARG NSD_VERSION=4.1.25
+ARG NSD_VERSION=4.1.26rc1
 ENV TZ=Asia/Tokyo
-ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev"
-ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata"
-ARG CFLAGS="-O2 -fPIC -pipe -mtune=native -march=native"
+ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev "
+ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC "
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # source build and install
-WORKDIR /usr/src/etc
-RUN apk add --update --upgrade apk-tools \
-    && apk add --update ${BUILD_PKGS} ${RUN_PKGS} \
-    && mkdir -p /usr/src \
+RUN apk add --update --no-cache ${BUILD_PKGS} \
+    && mkdir -p /tmp/build \
     && curl -fL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
-    && tar xf "nsd.tar.gz" --strip-components=1 -C /usr/src \
+    && tar xf "nsd.tar.gz" --strip-components=1 -C /tmp/build \
     && rm -f "nsd.tar.gz" \ 
-    && cd /usr/src \
+    && cd /tmp/build \
     && autoreconf -vi \
     && ./configure \
       --prefix=/usr/local \
@@ -29,15 +26,32 @@ RUN apk add --update --upgrade apk-tools \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-	&& make  \
-    && make install \
-    && cd / \
-    && rm -rf /usr/src \
-    && apk del --purge ${BUILD_PKGS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man \
-    && adduser -DH nsd \
-    && mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones \
-    && chmod 0700 /usr/local/var/db/nsd /var/run/nsd /var/cache/nsd 
+	&& make -j"$(nproc)" install DESTDIR=/tmp/root 
+RUN mkdir -p /tmp/root/etc/nsd \
+    && cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf \
+    && ldconfig / || true 
+
+
+# Intermediate container with runtime dependencies
+FROM arm64v8/alpine:latest AS runtime
+
+# Install runtime dependencies
+ENV RUN_PKGS "libressl libevent ca-certificates ldns-tools tzdata"
+RUN apk add --update --no-cache ${RUN_PKGS} \
+     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+     && adduser -DH nsd
+
+# Final container
+FROM runtime
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="Aarch64" \
+      description="The NLnet Labs Name Server Daemon (NSD) is \
+      an authoritative DNS name server. It has been developed for operations \
+      in environments where speed, reliability, stability and security are \
+      of high importance." \
+      url="https://nlnetlabs.nl/projects/nsd/about/"
+
+ENV TZ Asia/Tokyo
 
 # Application execution related information
 COPY conf /usr/local/sbin
@@ -47,4 +61,11 @@ VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd
 EXPOSE 53/tcp 53/udp 8952/tcp
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 CMD ["/usr/local/sbin/run.sh"]
+
+# Fetch pdns-dnsdist libraries from build image
+COPY --from=build /tmp/root/ /
+RUN ldconfig / || true
+RUN mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones \
+    && chmod 0700 /usr/local/var/db/nsd /var/run/nsd /var/cache/nsd \
+    && chmod 0777 /tmp
 
