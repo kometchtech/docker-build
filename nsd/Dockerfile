@@ -1,22 +1,19 @@
 FROM arm64v8/alpine:latest AS build
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="aarch64"
 
 # Environment
-ARG NSD_VERSION=4.1.26rc1
-ENV TZ=Asia/Tokyo
+ENV NSD_VERSION 4.1.26rc1
 ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev "
-ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC "
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC "
+ENV LDFLAGS "-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # source build and install
 RUN apk add --update --no-cache ${BUILD_PKGS} \
     && mkdir -p /tmp/build \
-    && curl -fL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
+    && curl -fSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /tmp/build \
     && rm -f "nsd.tar.gz" \ 
     && cd /tmp/build \
-    && autoreconf -vi \
+    && autoreconf -if \
     && ./configure \
       --prefix=/usr/local \
       --with-zonesdir=/usr/local/etc/nsd/zones \
