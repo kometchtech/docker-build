@@ -17,6 +17,7 @@ RUN apk add --update --no-cache ${BUILD_PKGS} \
     && ./configure \
       --prefix=/usr/local \
       --with-zonesdir=/usr/local/etc/nsd/zones \
+      --sysconfdir=/etc \
       --with-libevent \
       --with-ssl \
       --disable-flto \
