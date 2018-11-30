@@ -60,7 +60,7 @@ EXPOSE 53/tcp 53/udp 8952/tcp
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 CMD ["/usr/local/sbin/run.sh"]
 
-# Fetch pdns-dnsdist libraries from build image
+# Fetch nsd libraries from build image
 COPY --from=build /tmp/root/ /
 RUN ldconfig / || true
 RUN mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones \
