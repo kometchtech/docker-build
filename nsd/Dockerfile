@@ -1,7 +1,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV NSD_VERSION 4.1.26rc1
+ENV NSD_VERSION 4.1.26
 ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev "
 ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC "
 ENV LDFLAGS "-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
@@ -52,7 +52,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ Asia/Tokyo
 
 # Application execution related information
-COPY conf /usr/local/sbin
+COPY ./run.sh /usr/local/sbin/run.sh
 VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd"]
 
 # export TCP and UDP
