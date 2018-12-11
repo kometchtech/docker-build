@@ -1,7 +1,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV UNBOUND_VERSION 1.8.2
+ENV UNBOUND_VERSION 1.8.3
 ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev gawk flex-dev "
 ENV CFLAGS "-O2 -fPIE -DPIE --param ssp-buffer-size=4 -fstack-protector -fomit-frame-pointer -pipe"
 ENV CXXFLAGS "${CFLAGS}"
