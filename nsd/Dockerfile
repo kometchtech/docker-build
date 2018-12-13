@@ -3,7 +3,7 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ENV NSD_VERSION 4.1.26
 ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev "
-ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC "
+ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE"
 ENV LDFLAGS "-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # source build and install
@@ -24,7 +24,7 @@ RUN apk add --update --no-cache ${BUILD_PKGS} \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-	&& make -j"$(nproc)" install DESTDIR=/tmp/root 
+    && make -j"$(nproc)" install DESTDIR=/tmp/root 
 RUN mkdir -p /tmp/root/etc/nsd \
     && cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf \
     && ldconfig / || true 
