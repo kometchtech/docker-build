@@ -30,7 +30,7 @@ RUN apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS} \
 RUN mkdir -p /tmp/root/var/stubby /tmp/root/etc/stubby /tmp/root/etc/unbound \
     && cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
     && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* \
-    && unbound-anchor -v -a "/tmp/root/etc/unbound/root.key" || true
+    && unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
 
 # copy example conf
 RUN curl -fSL https://raw.githubusercontent.com/getdnsapi/stubby/develop/stubby.yml.example \
