@@ -19,9 +19,7 @@ RUN mkdir -p /tmp/root/etc/gobetween \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-RUN apk --no-cache add tzdata zip ca-certificates
-WORKDIR /usr/share/zoneinfo
-RUN zip -r -0 /zoneinfo.zip .
+RUN apk add --update --no-cache tzdata ca-certificates
 
 # final build
 FROM scratch
@@ -33,15 +31,10 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environmet
 ENV TZ Asia/Tokyo
 
-# export DNS over UDP & TCP
-EXPOSE 53/TCP 53/UDP
-
 # command
-CMD ["gobetween", "from-file", "/etc/gobetween/gobetween.toml"]
+ENTRYPOINT ["gobetween"]
 
 # Multi stage build
 WORKDIR /etc/gobetween/
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /tmp/root /
-ENV ZONEINFO /zoneinfo.zip
-COPY --from=runtime /zoneinfo.zip /
