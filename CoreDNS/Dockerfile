@@ -12,7 +12,7 @@ RUN cd  /go/src/github.com/coredns/coredns/ \
 # 2nd build
 FROM scratch
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="aarch64" \
+      arch="Aarch64" \
       description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
       url="https://github.com/coredns/coredns"
 
@@ -23,5 +23,6 @@ COPY --from=build-env /etc/ssl/certs /etc/ssl/certs
 COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /usr/local/bin/coredns
 # export DNS over UDP & TCP
 EXPOSE 53 53/UDP
+
 # Select entrypoint
-CMD ["coredns", "-dns.port", "53"]
+ENTRYPOINT ["coredns"]
