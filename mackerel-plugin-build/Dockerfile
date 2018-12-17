@@ -1,15 +1,18 @@
-FROM golang:1.10
+FROM golang:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-    arch="aarch64" \
-    version="master"
+    arch="aarch64" 
 
 # Environment
-ENV TZ=Asia/Tokyo
+ENV VERSION v0.53.0
 ARG BUILD_PKGS="build-essential devscripts"
-ARG RUN_PKGS=""
-ARG CFLAGS=""
-ARG LDFLAGS=""
 
-WORKDIR /root
+WORKDIR /go/src
 RUN apt-get -qq update \
     && apt-get -qq install -y ${BUILD_PKGS} 
+RUN git clone -b ${VERSION} --depth=1  https://github.com/mackerelio/mackerel-agent-plugins.git 
+WORKDIR /go/src/mackerel-agent-plugins
+RUN sed -i -e 's/386/arm/g' Makefile && \
+    sed -i -e 's/amd64/arm64/g' Makefile && \
+    sed -i -e 's/amd64/arm64/g' packaging/deb-v2/debian/control && \
+    make deps && \
+    make deb-v2
