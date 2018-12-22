@@ -2,17 +2,24 @@ FROM arm64v8/alpine:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="zabbix official customize"
 
-ARG APK_FLAGS_COMMON="-q"
-ARG APK_FLAGS_PERSISTANT="${APK_FLAGS_COMMON} --no-cache"
-ARG APK_FLAGS_DEV="${APK_FLAGS_COMMON} --no-cache"
+# Environment
 ENV BUILD_PKGS="bash iputils libevent pcre" \
-		RUN_PKGS="alpine-sdk autoconf automake openssl-dev pcre-dev coreutils libevent-dev" \
-		TERM=xterm \
+	RUN_PKGS="alpine-sdk autoconf automake openssl-dev pcre-dev coreutils libevent-dev" \
+	TERM=xterm \
     ZBX_TYPE=agent ZBX_OPT_TYPE=none
 ARG CFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fstack-protector -pthread -pipe"
 
 STOPSIGNAL SIGTERM
 
+# service running
+EXPOSE 10050/TCP
+WORKDIR /var/lib/zabbix
+VOLUME ["/etc/zabbix/zabbix_agentd.d", "/var/lib/zabbix/enc", "/var/lib/zabbix/modules"]
+COPY ["docker-entrypoint.sh", "/usr/bin/"]
+RUN chmod +x /usr/bin/docker-entrypoint.sh
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+
+# runtime build
 RUN addgroup zabbix && \
     adduser -S \
             -D -G zabbix \
@@ -25,17 +32,17 @@ RUN addgroup zabbix && \
     mkdir -p /var/lib/zabbix/modules && \
     chown --quiet -R zabbix:root /var/lib/zabbix && \
     apk update && \
-    apk add ${APK_FLAGS_PERSISTANT} \
-            ${BUILD_PKGS} && \
+    apk add --update --no-cache ${RUN_PKGS} && \
     rm -rf /var/cache/apk/*
 
+
+# source build
 ARG MAJOR_VERSION=4.0
 ARG ZBX_VERSION=${MAJOR_VERSION}.3
 ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 
-RUN apk add ${APK_FLAGS_DEV} --virtual build-dependencies \
-            ${RUN_PKGS} \
+RUN apk add --update --no-cache -t build-dependencies ${BUILD_PKGS} \
     && cd /tmp/ \
     && curl -L ${ZBX_SOURCES} -o zabbix-${ZBX_VERSION}.tar.gz \
     && tar xf zabbix-${ZBX_VERSION}.tar.gz \
@@ -59,15 +66,8 @@ RUN apk add ${APK_FLAGS_DEV} --virtual build-dependencies \
     && chown --quiet -R zabbix:root /etc/zabbix \
     && cd /tmp/ \
     &&rm -rf /tmp/zabbix-${ZBX_VERSION}/ \
-    && apk del ${APK_FLAGS_COMMON} --purge \
-            build-dependencies \
+    && apk del --purge build-dependencies \
     && rm -rf /var/cache/apk/*
 
-# service running
-EXPOSE 10050/TCP
-WORKDIR /var/lib/zabbix
-VOLUME ["/etc/zabbix/zabbix_agentd.d", "/var/lib/zabbix/enc", "/var/lib/zabbix/modules"]
-COPY ["docker-entrypoint.sh", "/usr/bin/"]
-RUN chmod +x /usr/bin/docker-entrypoint.sh
-ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+
 
