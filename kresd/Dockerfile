@@ -6,7 +6,7 @@ ARG KNOT_DNS_VERSION=v2.7.4
 # Build dependencies
 ENV KNOT_DNS_BUILD_DEPS build-base automake autoconf libtool pkgconfig userspace-rcu-dev \
 			gnutls curl gawk git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev 
-ENV KNOT_RESOLVER_BUILD_DEPS build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev \
+ENV KNOT_RESOLVER_BUILD_DEPS build-base automake autoconf libtool pkgconfig git luajit-dev libuv-dev lua-compat53 \
 			gnutls-dev fstrm-dev@test jansson-dev userspace-rcu-dev curl vim bsd-compat-headers nettle-dev \
 			binutils cmocka-dev protobuf-c-dev protobuf-dev lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev
 ENV BUILDENV_DEPS ${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}
@@ -42,7 +42,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ENV KNOT_DNS_RUNTIME_DEPS gnutls  
-ENV KNOT_RESOLVER_RUNTIME_DEPS lmdb luajit libuv lua5.1-sec lua5.1-socket lua5.1-filesystem \
+ENV KNOT_RESOLVER_RUNTIME_DEPS lmdb luajit libuv lua5.1-sec lua5.1-socket lua5.1-filesystem lua-compat53 \
                                ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit
 ENV KNOT_RESOLVER_RUNTIME_DEPS_HTTP lua5.1-http lua5.1-maxminddb 
 ENV KNOT_RESOLVER_RUNTIME_DEPS_EXTRA fstrm@test lua5.1-cqueues
@@ -56,10 +56,10 @@ RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" | tee -a /etc
 FROM knot-dns-build AS build
 
 # Build Knot Resolver
-ENV RESOLV_VERSION v3.2.0
+ARG RESOLV_VERSION="v3.2.0"
 ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-RUN git clone -b ${RESOLV_VERSION} --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver && \
+RUN git clone -b ${RESOLV_VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver && \
         cd /tmp/knot-resolver && \
         make -j"$(nproc)" && \
         make install DESTDIR=/tmp/root && \
