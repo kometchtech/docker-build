@@ -1,6 +1,6 @@
 FROM arm64v8/alpine:latest AS build
 
-ARG VERSION=1.5.0-rc1
+ARG VERSION=1.5.0
 ENV BUILD_PKGS "build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev \
                 libuv-dev libev-dev check-dev libidn-dev unbound "
 ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 -fPIE "
@@ -42,7 +42,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ENV RUN_PKGS "tzdata yaml libressl libuv libidn libev "
-RUN apk add --no-cache ${RUN_PKGS} \
+RUN apk add --update --no-cache ${RUN_PKGS} \
 RUN rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && mkdir -p /etc/stubby
 
