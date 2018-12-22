@@ -1,48 +1,14 @@
-FROM arm64v8/alpine:latest
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      description="zabbix official customize"
-
-# Environment
-ENV BUILD_PKGS="bash iputils libevent pcre" \
-	RUN_PKGS="alpine-sdk autoconf automake openssl-dev pcre-dev coreutils libevent-dev" \
-	TERM=xterm \
-    ZBX_TYPE=agent ZBX_OPT_TYPE=none
-ARG CFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fstack-protector -pthread -pipe"
-
-STOPSIGNAL SIGTERM
-
-# service running
-EXPOSE 10050/TCP
-WORKDIR /var/lib/zabbix
-VOLUME ["/etc/zabbix/zabbix_agentd.d", "/var/lib/zabbix/enc", "/var/lib/zabbix/modules"]
-COPY ["docker-entrypoint.sh", "/usr/bin/"]
-RUN chmod +x /usr/bin/docker-entrypoint.sh
-ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
-
-# runtime build
-RUN addgroup zabbix && \
-    adduser -S \
-            -D -G zabbix \
-            -h /var/lib/zabbix/ \
-        zabbix && \
-    mkdir -p /etc/zabbix && \
-    mkdir -p /etc/zabbix/zabbix_agentd.d && \
-    mkdir -p /var/lib/zabbix && \
-    mkdir -p /var/lib/zabbix/enc && \
-    mkdir -p /var/lib/zabbix/modules && \
-    chown --quiet -R zabbix:root /var/lib/zabbix && \
-    apk update && \
-    apk add --update --no-cache ${RUN_PKGS} && \
-    rm -rf /var/cache/apk/*
-
+FROM arm64v8/alpine:latest AS build
 
 # source build
 ARG MAJOR_VERSION=4.0
 ARG ZBX_VERSION=${MAJOR_VERSION}.3
-ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
+ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
+ENV BUILD_PKGS="build-base autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl " 
+ARG CFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fstack-protector -pthread -pipe"
 
-RUN apk add --update --no-cache -t build-dependencies ${BUILD_PKGS} \
+RUN apk add --update --no-cache -t .build-dep ${BUILD_PKGS} \
     && cd /tmp/ \
     && curl -L ${ZBX_SOURCES} -o zabbix-${ZBX_VERSION}.tar.gz \
     && tar xf zabbix-${ZBX_VERSION}.tar.gz \
@@ -59,15 +25,56 @@ RUN apk add --update --no-cache -t build-dependencies ${BUILD_PKGS} \
             --enable-ipv6 \
             --silent \
     && make -j"$(nproc)" -s 1>/dev/null \
-    && cp src/zabbix_agent/zabbix_agentd /usr/sbin/zabbix_agentd \
-    && cp src/zabbix_get/zabbix_get /usr/bin/zabbix_get \
-    && cp src/zabbix_sender/zabbix_sender /usr/bin/zabbix_sender \
-    && cp conf/zabbix_agentd.conf /etc/zabbix/zabbix_agentd.conf \
-    && chown --quiet -R zabbix:root /etc/zabbix \
-    && cd /tmp/ \
-    &&rm -rf /tmp/zabbix-${ZBX_VERSION}/ \
-    && apk del --purge build-dependencies \
-    && rm -rf /var/cache/apk/*
+    && make install DESTDIR=/tmp/root \
+    && rm -rf /tmp/root/usr/share/man /tmp/root/usr/local/share/man \
+    && cp src/zabbix_agent/zabbix_agentd /tmp/root/usr/sbin/zabbix_agentd \
+    && cp src/zabbix_get/zabbix_get /tmp/root/usr/bin/zabbix_get \
+    && cp src/zabbix_sender/zabbix_sender /tmp/root/usr/bin/zabbix_sender \
+    && cp conf/zabbix_agentd.conf /tmp/root/etc/zabbix/zabbix_agentd.conf 
 
 
+# Environment
+FROM arm64v8/alpine:latest AS runtime
 
+ARG RUN_PKGS="bash iputils libevent pcre tzdata" 
+
+# runtime build
+RUN addgroup zabbix && \
+    adduser -S \
+            -D -G zabbix \
+            -h /var/lib/zabbix/ \
+        zabbix && \
+    mkdir -p /etc/zabbix && \
+    mkdir -p /etc/zabbix/zabbix_agentd.d && \
+    mkdir -p /var/lib/zabbix && \
+    mkdir -p /var/lib/zabbix/enc && \
+    mkdir -p /var/lib/zabbix/modules && \
+    apk add --update --no-cache ${RUN_PKGS} && \
+    rm -rf /var/cache/apk/* 
+
+# Final container
+FROM runtime
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      description="zabbix official customize" \
+      url="https://www.zabbix.com/"
+
+# Environment
+ENV TERM=xterm \
+    ZBX_TYPE=agent \
+    ZBX_OPT_TYPE=none
+ENV TZ Asia/Tokyo
+
+# service running
+STOPSIGNAL SIGTERM
+EXPOSE 10050/TCP
+WORKDIR /var/lib/zabbix
+VOLUME ["/etc/zabbix/zabbix_agentd.d", "/var/lib/zabbix/enc", "/var/lib/zabbix/modules"]
+COPY ["docker-entrypoint.sh", "/usr/bin/"]
+RUN chmod +x /usr/bin/docker-entrypoint.sh
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+
+# Fetch app and libraries from build image
+COPY --from=build /tmp/root /
+RUN ldconfig / || true \
+    && chown -R zabbix:root /etc/zabbix \
+    && chown -R zabbix:root /var/lib/zabbix
