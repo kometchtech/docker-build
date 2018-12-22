@@ -1,20 +1,16 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-#ENV BIND_VERSION="9.13.5" 
-ENV BIND_VERSION="9_13_5" 
+ENV BIND_VERSION="9_13_5_W1" 
 ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers \
                 bsd-compat-headers libedit-dev readline-dev ncurses-dev gawk zlib-dev"
-ENV CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer "
+ENV CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ENV LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # dev package install
-RUN apk add --update --upgrade apk-tools \
-  && apk add --update --no-cache -t .build-deps ${BUILD_PKGS} 
-
+RUN apk add --update --no-cache ${BUILD_PKGS} 
 ## build
-RUN set -x \
-  && mkdir -p /tmp/build \
+RUN mkdir -p /tmp/build \
 #  && curl -fSL "https://ftp.isc.org/isc/bind9/${BIND_VERSION}/bind-${BIND_VERSION}.tar.gz" -o bind9.tar.gz \
   && curl -fSL "https://github.com/isc-projects/bind9/archive/v${BIND_VERSION}.tar.gz" -o bind9.tar.gz \
   && tar xf bind9.tar.gz --strip-components=1 -C /tmp/build \
@@ -53,7 +49,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS=" protobuf-c tzdata zlib libedit readline ncurses libressl libcap "
-RUN apk add --no-cache ${RUN_PKGS} \
+RUN apk add --update --no-cache ${RUN_PKGS} \
      && rm -rf /var/cache/apk/* /usr/local/share/man/* 
 RUN adduser -DH named \
     && mkdir -p /var/named /var/run/named /etc/named 
