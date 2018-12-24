@@ -6,7 +6,7 @@ ENV CGO_ENABLED 0
 ENV GOOS linux 
 ENV GOARCH arm64 
 ENV VERSION 0.6.1
-ARG BUILD_PKGS="git make automake autoconf libressl curl"
+ARG BUILD_PKGS="git make automake autoconf libressl curl binutils "
 
 WORKDIR /go/src/github.com/yyyar/
 RUN apk add --update --no-cache ${BUILD_PKGS}
@@ -16,6 +16,7 @@ RUN git config http.postBuffer 524288000 \
   && make deps
 RUN mkdir -p /tmp/root/etc/gobetween \
   && make -j"$(nproc)" install DESTDIR=/tmp/root 
+RUN strip /tmp/root/usr/local/bin/gobetween
 
 # final build
 FROM scratch
