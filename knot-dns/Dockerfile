@@ -8,12 +8,12 @@ ENV KNOT_DNS_BUILD_DEPS build-base automake autoconf libtool pkgconfig userspace
 			gnutls curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
 			musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev
 ENV BUILDENV_DEPS ${KNOT_DNS_BUILD_DEPS} 
-ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe "
+ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 
 # Install dependencies and sources
-RUN apk add --no-cache ${BUILDENV_DEPS} 
+RUN apk add --update --no-cache ${BUILDENV_DEPS} 
 # Install Knot DNS from sources
 RUN git clone -b v${KNOT_DNS_VERSION} --depth 1 https://github.com/CZ-NIC/knot.git /tmp/knot-dns \
   && mkdir -p /tmp/knot-dns/ \
@@ -42,7 +42,7 @@ FROM arm64v8/alpine:latest AS runtime
 # Install runtime dependencies
 ENV KNOT_DNS_RUNTIME_DEPS userspace-rcu lmdb gnutls libedit libidn tzdata libmaxminddb 
 
-RUN apk add --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
+RUN apk add --update --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
   && rm -rf /var/cache/apk/* /usr/local/share/man/* 
 
 
