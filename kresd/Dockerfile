@@ -10,7 +10,7 @@ ENV KNOT_RESOLVER_BUILD_DEPS build-base automake autoconf libtool pkgconfig git 
 			gnutls-dev fstrm-dev@test jansson-dev userspace-rcu-dev curl vim bsd-compat-headers nettle-dev \
 			binutils cmocka-dev protobuf-c-dev protobuf-dev lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev
 ENV BUILDENV_DEPS ${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}
-ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 
@@ -57,15 +57,14 @@ FROM knot-dns-build AS build
 
 # Build Knot Resolver
 ARG RESOLV_VERSION="v3.2.0"
-ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fomit-frame-pointer "
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-RUN git clone -b ${RESOLV_VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver && \
-        cd /tmp/knot-resolver && \
-        make -j"$(nproc)" && \
-        make install DESTDIR=/tmp/root && \
-        mkdir -p /tmp/root/etc/knot-resolver && \
-        cp ./etc/config.docker /tmp/root/etc/knot-resolver/kresd.conf && \
-        cp ./distro/common/root.keys /tmp/root/etc/knot-resolver/
+RUN git clone -b ${RESOLV_VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver \
+    && cd /tmp/knot-resolver \
+    && make -j"$(nproc)" install DESTDIR=/tmp/root \
+    && mkdir -p /tmp/root/etc/knot-resolver \
+    && cp ./etc/config.docker /tmp/root/etc/knot-resolver/kresd.conf \
+    && cp ./distro/common/root.keys /tmp/root/etc/knot-resolver/
 
 
 # Final container
@@ -73,14 +72,15 @@ FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="Aarch64" \
       description="Knot DNS team's things are modified and used." \
-      url="https://www.knot-dns.cz/"
+      url="https://www.knot-resolver.cz"
 
+# Environment
 ENV TZ Asia/Tokyo 
 
 # Export DNS over UDP & TCP, DNS-over-TLS
-EXPOSE 53/UDP 53/TCP 853/TCP 
+EXPOSE 53/UDP 53/TCP 853/TCP
 
-CMD ["/usr/local/sbin/kresd", "-c", "/etc/knot-resolver/kresd.conf"]
+CMD ["/usr/local/sbin/kresd", "-f", "1", "-c", "/etc/knot-resolver/kresd.conf"]
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
