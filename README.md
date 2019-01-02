@@ -18,23 +18,23 @@ Basically we will check the operation of the following application.
 
 ## check software
 
-- dibbler-server <http://klub.com.pl/dhcpv6/>
-- NSD <https://www.nlnetlabs.nl/projects/nsd/>
-- Unbound <https://www.nlnetlabs.nl/projects/unbound/>
-- PowerDNS recursor <https://www.powerdns.com/recursor.html>
-- Knot DNS resolver <https://www.knot-resolver.cz/>
-- Knot DNS <https://www.knot-dns.cz/>  
+- dibbler-server <http://klub.com.pl/dhcpv6/> [![](https://images.microbadger.com/badges/version/kometchtech/dibbler-server.svg)](https://microbadger.com/images/kometchtech/dibbler-server "Get your own version badge on microbadger.com")
+- NSD <https://www.nlnetlabs.nl/projects/nsd/> [![](https://images.microbadger.com/badges/version/kometchtech/nsd.svg)](https://microbadger.com/images/kometchtech/nsd "Get your own version badge on microbadger.com")
+- Unbound <https://www.nlnetlabs.nl/projects/unbound/> [![](https://images.microbadger.com/badges/version/kometchtech/unbound.svg)](https://microbadger.com/images/kometchtech/unbound "Get your own version badge on microbadger.com")
+- PowerDNS recursor <https://www.powerdns.com/recursor.html> [![](https://images.microbadger.com/badges/version/kometchtech/pdns_rec.svg)](https://microbadger.com/images/kometchtech/pdns_rec "Get your own version badge on microbadger.com")
+- Knot DNS resolver <https://www.knot-resolver.cz/> [![](https://images.microbadger.com/badges/version/kometchtech/kresd.svg)](https://microbadger.com/images/kometchtech/kresd "Get your own version badge on microbadger.com")
+- Knot DNS <https://www.knot-dns.cz/>  [![](https://images.microbadger.com/badges/version/kometchtech/knot.svg)](https://microbadger.com/images/kometchtech/knot "Get your own version badge on microbadger.com")
 ~~- CoreDNS (testing) <https://coredns.io/>~~  
-Currently the Docker image is released from CoreDNS.io formula. <https://hub.docker.com/r/coredns/coredns/>
-- dnsdist <https://dnsdist.org/>
-- BIND9 (testing) <https://www.isc.org/downloads/bind/> alpine package
+Currently the Docker image is released from CoreDNS.io formula. <https://hub.docker.com/r/coredns/coredns/> [![](https://images.microbadger.com/badges/version/kometchtech/coredns.svg)](https://microbadger.com/images/kometchtech/coredns "Get your own version badge on microbadger.com")
+- dnsdist <https://dnsdist.org/>  [![](https://images.microbadger.com/badges/version/kometchtech/dnsdist.svg)](https://microbadger.com/images/kometchtech/dnsdist "Get your own version badge on microbadger.com")
+- BIND9 (testing) <https://www.isc.org/downloads/bind/> alpine package [![](https://images.microbadger.com/badges/version/kometchtech/bind.svg)](https://microbadger.com/images/kometchtech/bind "Get your own version badge on microbadger.com")
 - zabbix-agent (testing) <https://www.zabbix.com/>
 - mackerel-agent-plugins (testing) <https://github.com/mackerelio/mackerel-agent-plugins>
-- DNSCrypt Proxy <https://github.com/jedisct1/dnscrypt-proxy>
-- Stubby <https://github.com/getdnsapi/stubby>
+- DNSCrypt Proxy <https://github.com/jedisct1/dnscrypt-proxy> [![](https://images.microbadger.com/badges/version/kometchtech/dnscrypt-proxy.svg)](https://microbadger.com/images/kometchtech/dnscrypt-proxy "Get your own version badge on microbadger.com")
+- Stubby <https://github.com/getdnsapi/stubby> [![](https://images.microbadger.com/badges/version/kometchtech/stubby.svg)](https://microbadger.com/images/kometchtech/stubby "Get your own version badge on microbadger.com")
 
-- gobetween <https://github.com/yyyar/gobetween>
-- glider <https://github.com/nadoo/glider>
+- gobetween <https://github.com/yyyar/gobetween> [![](https://images.microbadger.com/badges/version/kometchtech/gobetween.svg)](https://microbadger.com/images/kometchtech/gobetween "Get your own version badge on microbadger.com")
+- glider <https://github.com/nadoo/glider> [![](https://images.microbadger.com/badges/version/kometchtech/glider.svg)](https://microbadger.com/images/kometchtech/glider "Get your own version badge on microbadger.com")
 
 ## Tips
 
