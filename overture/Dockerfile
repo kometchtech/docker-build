@@ -1,6 +1,6 @@
 FROM alpine AS build
 
-ENV VERSION="v1.5-rc2"
+ENV VERSION="v1.5-rc3"
 ENV ARCH="arm64"
 ENV BUILD_PKGS="curl unzip "
 
