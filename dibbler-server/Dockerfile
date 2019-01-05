@@ -1,18 +1,49 @@
-FROM arm64v8/alpine:latest
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="aarch64" \
-      version="github-master" \
-      description="Portable DHCPv6 implementation"
+FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV DIBBLER 1.0.1
-ENV TZ Asia/Tokyo
-ARG BUILD_PKGS="build-base ca-certificates curl automake autoconf unzip linux-headers gawk"
-ARG RUN_PKGS="coreutils libstdc++ libgcc"
-ENV CFLAGS="-O2 -fPIC -pipe -mtune=native -march=native"
-ENV LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
+ENV VERSION master
+#ENV VERSION RELEASE1.0.1
+ARG BUILD_PKGS="build-base ca-certificates curl automake autoconf linux-headers gawk git libtool"
+ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,-z -Wl,relro -Wl,-z -Wl,now -Wl,--as-needed"
 
-# config
+# compile and install
+RUN mkdir -p /usr/src \
+    && apk add --update --no-cache ${BUILD_PKGS} 
+RUN git clone -b ${VERSION} --depth 1 https://github.com/tomaszmrugalski/dibbler.git /usr/src \
+    && cd /usr/src \
+    && autoreconf -ifv \
+    && ./configure CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \ 
+      --sysconfdir=/etc/dibbler \ 
+    && make -j "$(nproc)" install DESTDIR=/tmp/root 
+RUN cd / \
+    && mkdir -p /tmp/root/etc/dibbler/ \
+    && cp /tmp/root/usr/local/share/doc/dibbler/examples/server.conf /tmp/root/etc/dibbler/server.conf \
+    && rm -rf /tmp/root/usr/local/share/man/* /tmp/root/usr/local/share/doc/*
+
+
+# runtime container build
+FROM arm64v8/alpine:latest AS runtime
+
+# install runtime dependencies
+ARG RUN_PKGS="libstdc++ libgcc"
+
+RUN apk add --update --no-cache ${RUN_PKGS} \
+    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+    && mkdir -p /var/lib/dibbler
+
+# Final container
+FROM runtime
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="Aarch64" \
+      description="Portable DHCPv6 implementation" \
+      url="http://klub.com.pl/dhcpv6/"
+
+# Environment
+ENV TZ Asia/Tokyo
+
+# volume
 WORKDIR /etc/dibbler
 VOLUME ["/etc/dibbler", "/var/lib/dibbler"]
 
@@ -22,20 +53,6 @@ EXPOSE 547/TCP 547/UDP
 # Select entrypoint
 CMD ["/usr/local/sbin/dibbler-server", "run"]
 
-# compile and install
-RUN mkdir -p /usr/src /var/lib/dibbler \
-    && apk add --update --upgrade apk-tools \
-    && apk add --update --no-cache ${BUILD_PKGS} ${RUN_PKGS} \ 
-    && curl -LO "https://github.com/tomaszmrugalski/dibbler/archive/master.zip" \
-    && unzip -q "master.zip" -d /usr/src \ 
-    && rm -f "master.zip" \
-    && cd /usr/src/dibbler-master \
-    && ./configure CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \ 
-    --sysconfdir=/etc/dibbler \ 
-    --enable-maintainer-mode \
-    && make -j "$(nproc)" install \ 
-    && apk del --purge ${BUILD_PKGS} \
-    && cd / \
-    && rm -rf /usr/src /var/cache/apk/* /usr/local/share/man \
-    && cp /usr/local/share/doc/dibbler/examples/server.conf /etc/dibbler/server.conf 
-    
+# Fetch binary images
+COPY --from=build /tmp/root /
+RUN ldconfig / || true
