@@ -1,7 +1,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV KNOT_DNS_VERSION 2.7.4
+ENV KNOT_DNS_VERSION 2.7.5
 ENV TZ Asia/Tokyo
 # Build dependencies
 ENV KNOT_DNS_BUILD_DEPS build-base automake autoconf libtool pkgconfig userspace-rcu-dev \
@@ -15,8 +15,8 @@ ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 # Install dependencies and sources
 RUN apk add --update --no-cache ${BUILDENV_DEPS} 
 # Install Knot DNS from sources
+RUN mkdir -p /tmp/knot-dns/ /tmp/root/etc/knot-dns
 RUN git clone -b v${KNOT_DNS_VERSION} --depth 1 https://github.com/CZ-NIC/knot.git /tmp/knot-dns \
-  && mkdir -p /tmp/knot-dns/ \
   && cd /tmp/knot-dns \
   && autoreconf -if \
   && ./configure \
@@ -32,7 +32,6 @@ RUN git clone -b v${KNOT_DNS_VERSION} --depth 1 https://github.com/CZ-NIC/knot.g
       --enable-systemd=no \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"  \
       && make -j "$(nproc)" install DESTDIR=/tmp/root 
-RUN mkdir -p /tmp/root/etc/knot-dns 
 RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sample.conf
 
 
