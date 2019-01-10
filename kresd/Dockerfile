@@ -56,7 +56,7 @@ RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" | tee -a /etc
 FROM knot-dns-build AS build
 
 # Build Knot Resolver
-ARG RESOLV_VERSION="v3.2.0"
+ARG RESOLV_VERSION="v3.2.1"
 ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fomit-frame-pointer "
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 RUN git clone -b ${RESOLV_VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver \
