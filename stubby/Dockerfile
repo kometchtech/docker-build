@@ -1,6 +1,6 @@
 FROM arm64v8/alpine:latest AS build
 
-ARG VERSION=1.5.0
+ARG VERSION=1.5.1
 ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev \
                 libuv-dev libev-dev check-dev libidn-dev unbound "
 ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 -fPIE -fPIC "
