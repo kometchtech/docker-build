@@ -8,7 +8,8 @@ ENV KNOT_DNS_BUILD_DEPS build-base automake autoconf libtool pkgconfig userspace
 			gnutls curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
 			musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev
 ENV BUILDENV_DEPS ${KNOT_DNS_BUILD_DEPS} 
-ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 \
+            -fPIE -ftree-vectorize -ftree-slp-vectorize "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 

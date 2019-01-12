@@ -4,7 +4,8 @@ FROM arm64v8/alpine:latest AS build
 ENV VERSION 1.3.3
 ARG BUILD_PKGS="build-base pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
                libedit-dev gawk libressl-dev curl libressl-dev "
-ARG CFLAGS="-fPIC -fPIE -DPIE -O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 "
+ARG CFLAGS="-fPIC -fPIE -DPIE -O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 \
+            -ftree-vectorize -ftree-slp-vectorize "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 

@@ -3,7 +3,8 @@ FROM arm64v8/alpine:latest AS getdns-build
 ENV VERSION v1.5.1
 ARG BUILD_PKGS="build-base curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev \
                 libuv-dev libev-dev check-dev unbound-dev "
-ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 -fPIE -fPIC "
+ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 -fPIE -fPIC \
+            -ftree-vectorize -ftree-slp-vectorize "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 

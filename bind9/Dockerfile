@@ -4,7 +4,8 @@ FROM arm64v8/alpine:latest AS build
 ENV BIND_VERSION="9_13_5_W1" 
 ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers \
                 bsd-compat-headers libedit-dev readline-dev ncurses-dev gawk zlib-dev"
-ENV CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ENV CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 \
+            -fPIE -ftree-vectorize -ftree-slp-vectorize"
 ENV LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # dev package install
