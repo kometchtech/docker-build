@@ -5,25 +5,30 @@ ARG MAJOR_VERSION=4.0
 ARG ZBX_VERSION=${MAJOR_VERSION}.3
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz"
-ENV BUILD_PKGS="build-base autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl " 
-ARG CFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fstack-protector -pthread -pipe"
+ENV BUILD_PKGS="build-base clang autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl " 
+#ARG CFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fstack-protector -pthread -pipe"
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ENV CC=clang
+ENV CXX=clang++
 
-RUN apk add --update --no-cache -t .build-dep ${BUILD_PKGS} \
-    && cd /tmp/ \
+RUN apk add --update --no-cache -t .build-dep ${BUILD_PKGS}
+RUN cd /tmp/ \
     && curl -L ${ZBX_SOURCES} -o zabbix-${ZBX_VERSION}.tar.gz \
     && tar xf zabbix-${ZBX_VERSION}.tar.gz \
-    && rm -rf zabbix-${ZBX_VERSION}.tar.gz \
-    && cd /tmp/zabbix-${ZBX_VERSION} \
-    && export CFLAGS="${CFLAGS}" \
+    && rm -rf zabbix-${ZBX_VERSION}.tar.gz
+RUN cd /tmp/zabbix-${ZBX_VERSION} \
     && ./configure \
-            --datadir=/usr/lib \
-            --libdir=/usr/lib/zabbix \
-            --prefix=/usr \
-            --sysconfdir=/etc/zabbix \
-            --prefix=/usr \
-            --enable-agent \
-            --enable-ipv6 \
-            --silent \
+       --datadir=/usr/lib \
+       --libdir=/usr/lib/zabbix \
+       --prefix=/usr \
+       --sysconfdir=/etc/zabbix \
+       --prefix=/usr \
+       --enable-agent \
+       --enable-ipv6 \
+       --silent \
+       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j"$(nproc)" -s 1>/dev/null \
     && make install DESTDIR=/tmp/root \
     && rm -rf /tmp/root/usr/share/man /tmp/root/usr/local/share/man \
@@ -43,7 +48,7 @@ RUN addgroup zabbix && \
     adduser -S \
             -D -G zabbix \
             -h /var/lib/zabbix/ \
-        zabbix && \
+            zabbix && \
     mkdir -p /etc/zabbix && \
     mkdir -p /etc/zabbix/zabbix_agentd.d && \
     mkdir -p /var/lib/zabbix && \
@@ -66,15 +71,19 @@ ENV TZ Asia/Tokyo
 
 # service running
 STOPSIGNAL SIGTERM
+
+# Expose
 EXPOSE 10050/TCP
+
 WORKDIR /var/lib/zabbix
+
 VOLUME ["/etc/zabbix/zabbix_agentd.d", "/var/lib/zabbix/enc", "/var/lib/zabbix/modules"]
 COPY ["docker-entrypoint.sh", "/usr/bin/"]
-RUN chmod +x /usr/bin/docker-entrypoint.sh
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 # Fetch app and libraries from build image
 COPY --from=build /tmp/root /
 RUN ldconfig / || true \
     && chown -R zabbix:root /etc/zabbix \
-    && chown -R zabbix:root /var/lib/zabbix
+    && chown -R zabbix:root /var/lib/zabbix \
+    && chmod +x /usr/bin/docker-entrypoint.sh

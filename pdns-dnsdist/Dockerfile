@@ -2,40 +2,42 @@ FROM arm64v8/alpine:latest AS build
 
 # Env
 ENV VERSION 1.3.3
-ARG BUILD_PKGS="build-base pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
+ARG BUILD_PKGS="build-base clang pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
                libedit-dev gawk libressl-dev curl libressl-dev "
-ARG CFLAGS="-fPIC -fPIE -DPIE -O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 \
-            -ftree-vectorize -ftree-slp-vectorize "
+#ARG CFLAGS="-fPIC -fPIE -DPIE -O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 \
+#            -ftree-vectorize -ftree-slp-vectorize "
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ENV CC=clang
+ENV CXX=clang++
 
 # dev package install
 RUN apk add --update --no-cache ${BUILD_PKGS}
-
 ## build
 RUN mkdir -p /usr/src \
-  && cd / \
-  && curl -fSL "https://downloads.powerdns.com/releases/dnsdist-${VERSION}.tar.bz2" -o dnsdist.tar.bz2 \
-  && tar xf dnsdist.tar.bz2 --strip-components=1 -C /usr/src \
-  && rm dnsdist.tar.bz2 \
-  && cd /usr/src \
-  && ./configure \
-    --prefix=/usr/local \
-    --sysconfdir=/etc/dnsdist \
-    --localstatedir=/var \
-    --enable-libsodium \
-    --enable-dnscrypt \
-    --enable-dns-over-tls \
-    --enable-re2 \
-    --with-protobuf \
-    --disable-static \
-    --with-ebpf \
-    --disable-dependency-tracking \
-    CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-  && make -j4  \
-  && make install-strip DESTDIR=/tmp/root
+    && cd / \
+    && curl -fsSL "https://downloads.powerdns.com/releases/dnsdist-${VERSION}.tar.bz2" -o dnsdist.tar.bz2 \
+    && tar xf dnsdist.tar.bz2 --strip-components=1 -C /usr/src \
+    && rm dnsdist.tar.bz2 \
+    && cd /usr/src \
+    && ./configure \
+      --prefix=/usr/local \
+      --sysconfdir=/etc/dnsdist \
+      --localstatedir=/var \
+      --enable-libsodium \
+      --enable-dnscrypt \
+      --enable-dns-over-tls \
+      --enable-re2 \
+      --with-protobuf \
+      --disable-static \
+      --with-ebpf \
+      --disable-dependency-tracking \
+      CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
+    && make -j4  \
+    && make install-strip DESTDIR=/tmp/root
 RUN mkdir -p /tmp/root/etc/dnsdist \
-  && ldconfig / || true
+    && ldconfig / || true
 
 
 # Intermediate container with runtime dependencies

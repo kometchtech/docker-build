@@ -2,12 +2,15 @@ FROM arm64v8/alpine:latest AS build
 
 # Environmet
 ENV VERSION 4.1.8
-ARG BUILD_PKGS="build-base libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev \
+ARG BUILD_PKGS="build-base clang libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev \
                 curl gawk "
-ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE \
-            -fomit-frame-pointer -ftree-vectorize -ftree-slp-vectorize "
+#ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE \
+#            -fomit-frame-pointer -ftree-vectorize -ftree-slp-vectorize "
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ENV CC=clang
+ENV CXX=clang++
 
 # dev package install
 RUN apk add --update --no-cache ${BUILD_PKGS} 
@@ -16,9 +19,9 @@ RUN mkdir -p /tmp/build
 WORKDIR /
 RUN curl -fsSL "https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}.tar.bz2" -o pdns-recursor.tar.bz2
 RUN tar xf pdns-recursor.tar.bz2 --strip-components=1 -C /tmp/build \
-  && rm pdns-recursor.tar.bz2 \
-  && cd /tmp/build \
-  && ./configure \
+    && rm pdns-recursor.tar.bz2
+RUN cd /tmp/build \
+    && ./configure \
      --prefix=/usr/local \
      --sysconfdir=/etc/powerdns \
      --localstatedir=/var \
@@ -30,9 +33,9 @@ RUN tar xf pdns-recursor.tar.bz2 --strip-components=1 -C /tmp/build \
      --with-protobuf \
      --with-lua \
      CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
-  && make -j4 install-strip DESTDIR=/tmp/root
+    && make -j4 install-strip DESTDIR=/tmp/root
 RUN rm -rf /tmp/root/usr/local/share/man/* \
-  && ldconfig / || true
+    && ldconfig / || true
 
 
 # Intermediate container with runtime dependencies

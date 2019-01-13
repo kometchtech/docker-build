@@ -2,19 +2,23 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV UNBOUND_VERSION 1.8.3
-ARG BUILD_PKGS="build-base curl expat-dev libressl-dev libevent-dev gawk flex-dev "
-ENV CFLAGS "-O2 -fPIE -DPIE --param ssp-buffer-size=4 -fstack-protector -fomit-frame-pointer -pipe \
-            -ftree-vectorize -ftree-slp-vectorize "
-ENV CXXFLAGS "${CFLAGS}"
-ENV LDFLAGS "-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev gawk flex-dev "
+#ENV CFLAGS "-O2 -fPIE -DPIE --param ssp-buffer-size=4 -fstack-protector -fomit-frame-pointer -pipe \
+#            -ftree-vectorize -ftree-slp-vectorize "
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ENV CC=clang
+ENV CXX=clang++
 
 # source build and install
-RUN apk add --update --no-cache -t .build-deps ${BUILD_PKGS} \ 
-  && mkdir -p /usr/src \
-  && curl -fL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
+RUN apk add --update --no-cache -t .build-deps ${BUILD_PKGS}
+# build
+RUN mkdir -p /usr/src \
+  && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
   && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
-  && rm -f "unbound.tar.gz" \ 
-  && cd /usr/src \
+  && rm -f "unbound.tar.gz"
+RUN cd /usr/src \
   && ./configure \
       --prefix=/usr/local \
       --with-libevent \
@@ -54,8 +58,8 @@ FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="Aarch64" \
       description="Unbound is a validating, recursive, caching DNS resolver. \
-      It is designed to be fast and lean and incorporates modern features \
-      based on open standards." \
+                  It is designed to be fast and lean and incorporates modern features \
+                  based on open standards." \
       url="https://nlnetlabs.nl/projects/unbound/about/"
 
 ENV TZ Asia/Tokyo 

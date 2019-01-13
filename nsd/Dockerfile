@@ -2,18 +2,22 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV NSD_VERSION 4.1.26
-ARG BUILD_PKGS="build-base curl automake autoconf expat-dev libressl-dev libevent-dev "
-ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -FORTIFY_SOURCE=2 \
-            -fPIE -ftree-vectorize -ftree-slp-vectorize "
-ENV LDFLAGS "-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG BUILD_PKGS="build-base clang curl automake autoconf expat-dev libressl-dev libevent-dev "
+#ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -FORTIFY_SOURCE=2 \
+#            -fPIE -ftree-vectorize -ftree-slp-vectorize "
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ENV CC=clang
+ENV CXX=clang++
 
 # source build and install
 RUN apk add --update --no-cache ${BUILD_PKGS} \
-    && mkdir -p /tmp/build \
-    && curl -fSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
+    && mkdir -p /tmp/build
+RUN curl -fSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /tmp/build \
-    && rm -f "nsd.tar.gz" \ 
-    && cd /tmp/build \
+    && rm -f "nsd.tar.gz"
+RUN cd /tmp/build \
     && autoreconf -if \
     && ./configure \
       --prefix=/usr/local \
@@ -28,7 +32,7 @@ RUN apk add --update --no-cache ${BUILD_PKGS} \
     && make -j"$(nproc)" install DESTDIR=/tmp/root 
 RUN mkdir -p /tmp/root/etc/nsd \
     && cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf \
-    && ldconfig / || true 
+    && ldconfig / || true
 
 
 # Intermediate container with runtime dependencies
@@ -44,10 +48,9 @@ RUN apk add --update --no-cache ${RUN_PKGS} \
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="Aarch64" \
-      description="The NLnet Labs Name Server Daemon (NSD) is \
-      an authoritative DNS name server. It has been developed for operations \
-      in environments where speed, reliability, stability and security are \
-      of high importance." \
+      description="The NLnet Labs Name Server Daemon (NSD) is an authoritative DNS \
+                  name server. It has been developed for operations in environments \
+                  where speed, reliability, stability and security are of high importance." \
       url="https://nlnetlabs.nl/projects/nsd/about/"
 
 ENV TZ Asia/Tokyo
