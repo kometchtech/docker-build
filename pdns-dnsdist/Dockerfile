@@ -3,12 +3,12 @@ FROM arm64v8/alpine:latest AS build
 # Env
 ENV VERSION 1.3.3
 ARG BUILD_PKGS="build-base clang pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
-               libedit-dev gawk curl libressl-dev "
+               libedit-dev gawk curl libressl-dev lld "
 #ARG CFLAGS="-fPIC -fPIE -DPIE -O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 \
 #            -ftree-vectorize -ftree-slp-vectorize "
 ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC=clang
 ENV CXX=clang++
 

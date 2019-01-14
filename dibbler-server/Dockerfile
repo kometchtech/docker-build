@@ -3,28 +3,26 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ENV VERSION master
 #ENV VERSION RELEASE1.0.1
-ARG BUILD_PKGS="build-base clang ca-certificates automake autoconf linux-headers gawk git libtool"
+ARG BUILD_PKGS="build-base clang ca-certificates automake autoconf linux-headers gawk git libtool lld "
 #ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fomit-frame-pointer \
 #            -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE -fuse-ld=lld "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 ENV CC=clang
 ENV CXX=clang++
 
 # compile and install
-RUN mkdir -p /usr/src \
-    && apk add --update --no-cache ${BUILD_PKGS} 
-RUN git clone -b ${VERSION} --depth 1 https://github.com/tomaszmrugalski/dibbler.git /usr/src \
-    && cd /usr/src \
-    && autoreconf -ifv \
+RUN mkdir -p /usr/src /tmp/root/etc/dibbler/ \
+    && apk add --update --no-cache ${BUILD_PKGS}
+RUN git clone -b ${VERSION} --depth=1 https://github.com/tomaszmrugalski/dibbler.git /usr/src
+RUN cd /usr/src \
+    && autoreconf -if \
     && ./configure \
-      CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \ 
-      --sysconfdir=/etc/dibbler \ 
-    && make -j "$(nproc)" install DESTDIR=/tmp/root 
-RUN cd / \
-    && mkdir -p /tmp/root/etc/dibbler/ \
-    && cp /tmp/root/usr/local/share/doc/dibbler/examples/server.conf /tmp/root/etc/dibbler/server.conf \
+      CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
+      --sysconfdir=/etc/dibbler \
+    && make -j "$(nproc)" install DESTDIR=/tmp/root
+RUN cp /tmp/root/usr/local/share/doc/dibbler/examples/server.conf /tmp/root/etc/dibbler/server.conf \
     && rm -rf /tmp/root/usr/local/share/man/* /tmp/root/usr/local/share/doc/*
 
 

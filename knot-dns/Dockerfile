@@ -2,17 +2,16 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV KNOT_DNS_VERSION 2.7.5
-ENV TZ Asia/Tokyo
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev \
-			                  gnutls curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
-			                  musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev "
+                        gnutls curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
+                        musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev lld "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} "
 #ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 \
 #            -fPIE -ftree-vectorize -ftree-slp-vectorize "
 ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC=clang
 ENV CXX=clang++
 
@@ -27,14 +26,12 @@ RUN git clone -b v${KNOT_DNS_VERSION} --depth 1 https://github.com/CZ-NIC/knot.g
       --prefix=/ \
       --with-configdir=/etc/knot \
       --with-rundir=/run/knot \
-      --enable-shared \
-      --disable-static \
       --enable-fastparser \
       --disable-documentation \
       --enable-reuseport=auto \
       --enable-recvmmsg=auto \
       --enable-systemd=no \
-      CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"  \
+      CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
       && make -j "$(nproc)" install DESTDIR=/tmp/root 
 RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sample.conf
 

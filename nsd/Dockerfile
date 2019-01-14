@@ -2,18 +2,18 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV NSD_VERSION 4.1.26
-ARG BUILD_PKGS="build-base clang curl automake autoconf expat-dev libressl-dev libevent-dev "
+ARG BUILD_PKGS="build-base clang curl automake autoconf expat-dev libressl-dev libevent-dev lld "
 #ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -FORTIFY_SOURCE=2 \
 #            -fPIE -ftree-vectorize -ftree-slp-vectorize "
 ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC=clang
 ENV CXX=clang++
 
 # source build and install
 RUN apk add --update --no-cache ${BUILD_PKGS} \
-    && mkdir -p /tmp/build
+    && mkdir -p /tmp/build /tmp/root/etc/nsd
 RUN curl -fSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /tmp/build \
     && rm -f "nsd.tar.gz"
@@ -29,10 +29,9 @@ RUN cd /tmp/build \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j"$(nproc)" install DESTDIR=/tmp/root 
-RUN mkdir -p /tmp/root/etc/nsd \
-    && cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf \
+    && make -j"$(nproc)" install DESTDIR=/tmp/root \
     && ldconfig / || true
+RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 
 
 # Intermediate container with runtime dependencies
@@ -41,8 +40,9 @@ FROM arm64v8/alpine:latest AS runtime
 # Install runtime dependencies
 ENV RUN_PKGS "libressl libevent ca-certificates ldns-tools tzdata"
 RUN apk add --update --no-cache ${RUN_PKGS} \
-     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-     && adduser -DH nsd
+    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+    && adduser -DH nsd \
+    && mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones
 
 # Final container
 FROM runtime
@@ -66,8 +66,7 @@ CMD ["/usr/local/sbin/run.sh"]
 
 # Fetch nsd libraries from build image
 COPY --from=build /tmp/root/ /
-RUN ldconfig / || true
-RUN mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones \
+RUN ldconfig / || true \
     && chmod 0700 /usr/local/var/db/nsd /var/run/nsd /var/cache/nsd \
     && chmod 0777 /tmp
 

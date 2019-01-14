@@ -2,17 +2,17 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV UNBOUND_VERSION 1.8.3
-ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev gawk flex-dev "
+ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld "
 #ENV CFLAGS "-O2 -fPIE -DPIE --param ssp-buffer-size=4 -fstack-protector -fomit-frame-pointer -pipe \
 #            -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE -fuse-ld=lld "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 ENV CC=clang
 ENV CXX=clang++
 
 # source build and install
-RUN apk add --update --no-cache -t .build-deps ${BUILD_PKGS}
+RUN apk add --update --no-cache ${BUILD_PKGS}
 # build
 RUN mkdir -p /usr/src \
   && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
@@ -28,7 +28,6 @@ RUN cd /usr/src \
       --sysconfdir=/etc/unbound \
       --with-conf-file=/etc/unbound/unbound.conf \
       --with-pidfile=/var/run/unbound.pid \
-      PKG_CONFIG=/usr/bin/pkg-config \
       --enable-subnet \
       --enable-sha2 \
       --disable-gost \
@@ -36,9 +35,10 @@ RUN cd /usr/src \
       --enable-pie \
       --disable-flto \
       --enable-relro-now \
+      PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
-  && make -j "$(nproc)" \
-  && make install DESTDIR=/tmp/root 
+  && make -j"$(nproc)" \
+  && make install DESTDIR=/tmp/root
 RUN mkdir -p /tmp/root/etc/unbound \
   && ldconfig / || true
 
@@ -50,7 +50,7 @@ FROM arm64v8/alpine:latest AS runtime
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison "
 RUN apk add --no-cache ${RUN_PKGS} \
      && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-     && adduser -DH unbound 
+     && adduser -DH unbound
 
 
 # Final container
@@ -62,7 +62,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
                   based on open standards." \
       url="https://nlnetlabs.nl/projects/unbound/about/"
 
-ENV TZ Asia/Tokyo 
+ENV TZ Asia/Tokyo
 
 # export TCP and UDP
 EXPOSE 53/tcp 53/udp 853/TCP

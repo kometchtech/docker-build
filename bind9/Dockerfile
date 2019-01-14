@@ -4,12 +4,12 @@ FROM arm64v8/alpine:latest AS build
 ENV BIND_VERSION="9_13_5_W1"
 ARG BUILD_PKGS="build-base git curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers \
                 bsd-compat-headers libedit-dev readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libtool \
-                clang-dev "
+                clang-dev binutils-gold "
 #ENV CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 \
 #            -fPIE -ftree-vectorize -ftree-slp-vectorize"
 ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=gold "
 
 # dev package install
 RUN apk add --update --no-cache ${BUILD_PKGS}
