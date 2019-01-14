@@ -3,11 +3,13 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ENV BIND_VERSION="9_13_5_W1"
 ARG BUILD_PKGS="build-base git curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers \
-                bsd-compat-headers libedit-dev readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libtool "
-ENV CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 \
-            -fPIE -ftree-vectorize -ftree-slp-vectorize"
+                bsd-compat-headers libedit-dev readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libtool \
+                clang-dev "
+#ENV CFLAGS="-O2 -fstack-protector -pthread -pipe -fomit-frame-pointer -fPIC -FORTIFY_SOURCE=2 \
+#            -fPIE -ftree-vectorize -ftree-slp-vectorize"
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
 # dev package install
 RUN apk add --update --no-cache ${BUILD_PKGS}
@@ -34,7 +36,7 @@ RUN cd /tmp/build \
     --with-readline \
     --without-python \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-  && make -j "$(nproc)" install DESTDIR=/tmp/root \
+  && make -j"$(nproc)" install DESTDIR=/tmp/root \
   && ldconfig /
 # Delete unnecessary directory
 RUN mkdir -p /tmp/root/var/named \
@@ -49,8 +51,9 @@ FROM arm64v8/alpine:latest AS runtime
 # Install runtime dependencies
 ARG RUN_PKGS="protobuf-c tzdata zlib libedit readline ncurses libressl libcap json-c libxml2 "
 RUN apk add --update --no-cache ${RUN_PKGS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/* 
-RUN adduser -DH named \
+    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+# add user and make dir
+    && adduser -DH named \
     && mkdir -p /var/named /var/run/named /etc/named 
 
 
