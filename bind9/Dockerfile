@@ -49,7 +49,7 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/nam
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="protobuf-c tzdata zlib libedit readline ncurses libressl libcap json-c libxml2 "
+ARG RUN_PKGS="protobuf-c tzdata zlib libressl2.7-libcrypto libcap json-c libxml2 "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
 # add user and make dir
