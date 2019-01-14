@@ -5,9 +5,9 @@ ARG BUILD_PKGS="build-base clang curl git libtool m4 yaml-dev autoconf automake 
                 libuv-dev libev-dev check-dev unbound-dev lld "
 #ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 -fPIE -fPIC \
 #            -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE -fuse-ld=lld "
+ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC=clang
 ENV CXX=clang++
 
