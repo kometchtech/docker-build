@@ -8,13 +8,13 @@ ARG BUILD_PKGS="build-base clang libressl-dev boost-dev lua5.3-dev libedit-dev l
 #            -fomit-frame-pointer -ftree-vectorize -ftree-slp-vectorize "
 ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 ENV CC=clang
 ENV CXX=clang++
 
 # dev package install
-RUN apk add --update --no-cache ${BUILD_PKGS} 
-RUN mkdir -p /tmp/build 
+RUN apk add --update --no-cache ${BUILD_PKGS}
+RUN mkdir -p /tmp/build
 ## build
 WORKDIR /
 RUN curl -fsSL "https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}.tar.bz2" -o pdns-recursor.tar.bz2
@@ -22,17 +22,16 @@ RUN tar xf pdns-recursor.tar.bz2 --strip-components=1 -C /tmp/build \
     && rm pdns-recursor.tar.bz2
 RUN cd /tmp/build \
     && ./configure \
-     --prefix=/usr/local \
-     --sysconfdir=/etc/powerdns \
-     --localstatedir=/var \
-     --libdir=${prefix}/lib/aarch64-linux-gnu \
-     --libexecdir=${prefix}/lib/aarch64-linux-gnu \
-     --disable-dependency-tracking \
-     --disable-static \
-     --enable-libsodium \
-     --with-protobuf \
-     --with-lua \
-     CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
+      --prefix=/usr/local \
+      --sysconfdir=/etc/powerdns \
+      --localstatedir=/var \
+      --libdir=${prefix}/lib/aarch64-linux-gnu \
+      --libexecdir=${prefix}/lib/aarch64-linux-gnu \
+      --disable-dependency-tracking \
+      --enable-libsodium \
+      --with-protobuf \
+      --with-lua \
+      CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j4 install-strip DESTDIR=/tmp/root
 RUN rm -rf /tmp/root/usr/local/share/man/* \
     && ldconfig / || true
@@ -42,10 +41,10 @@ RUN rm -rf /tmp/root/usr/local/share/man/* \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "lua5.3 libedit protobuf libsodium boost tzdata libressl ca-certificates "
+ARG RUN_PKGS="boost lua5.3-libs libedit protobuf libsodium tzdata libressl2.7-libssl ca-certificates "
 RUN apk add --update --no-cache ${RUN_PKGS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp
-RUN adduser -DH pdnsrec
+    && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
+    && adduser -DH pdnsrec
 
 
 # Final container
@@ -53,8 +52,8 @@ FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="Aarch64" \
       description="The PowerDNS Recursor is a high-end, high-performance resolving \
-      name server which powers the DNS resolution of at least a hundred million \
-      subscribers." \
+                  name server which powers the DNS resolution of at least a hundred million \
+                  subscribers." \
       url="https://www.powerdns.com/recursor.html"
 
 # Environment
