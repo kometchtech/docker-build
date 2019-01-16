@@ -5,11 +5,11 @@ ARG BUILD_PKGS="build-base clang curl git libtool m4 yaml-dev autoconf automake 
                 libuv-dev libev-dev check-dev unbound-dev lld "
 #ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 -fPIE -fPIC \
 #            -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O3 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
-ENV CC=clang
-ENV CXX=clang++
+ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ENV CC="clang"
+ENV CXX="clang++"
 
 RUN apk add --update --no-cache ${BUILD_PKGS}
 RUN mkdir -p /usr/src /tmp/root/var/stubby/ /tmp/root/etc/stubby/ /tmp/root/usr/local/lib/ /tmp/root/usr/local/include
@@ -43,9 +43,9 @@ RUN curl -fsSL https://raw.githubusercontent.com/getdnsapi/stubby/develop/stubby
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "tzdata yaml libressl libuv libev unbound-libs "
+ENV RUN_PKGS "tzdata yaml libuv libev unbound-libs libressl2.7-libssl libressl2.7-libcrypto "
 RUN apk add --update --no-cache ${RUN_PKGS} \
-RUN rm -rf /var/cache/apk/* /usr/local/share/man/*
+    && rm -rf /var/cache/apk/* /usr/local/share/man/*
 
 
 # build stubby
@@ -62,7 +62,6 @@ RUN cd /usr/src/stubby \
     && ./configure CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib -fuse-ld=lld" \
     && make -j "$(nproc)" \
     && make install DESTDIR=/tmp/root
-RUN mkdir -p /tmp/root/etc/unbound
 RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
 
 
