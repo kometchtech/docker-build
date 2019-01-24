@@ -1,7 +1,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environmet
-ENV VERSION 4.1.9
+ENV VERSION 4.1.10
 ARG BUILD_PKGS="build-base clang libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev \
                 curl gawk lld "
 ARG CFLAGS="-O3 -pthread -pipe -fPIC -fPIC -fPIE "
