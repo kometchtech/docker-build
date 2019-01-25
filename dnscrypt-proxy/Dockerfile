@@ -1,14 +1,14 @@
 # 1st build 
-FROM arm64v8/golang:alpine as build
+FROM arm64v8/golang:rc-alpine as build
 
 # https://golang.org/doc/install/source#environment
-ENV CGO_ENABLED 0 
-ENV GOOS linux 
-ENV GOARCH arm64 
+ENV CGO_ENABLED 0
+ENV GOOS linux
+ENV GOARCH arm64
 ENV VERSION 2.0.19
 WORKDIR /go/src/github.com/jedisct1/
-RUN apk add --update --no-cache git 
-RUN git clone -b ${VERSION} --depth 1 https://github.com/jedisct1/dnscrypt-proxy /go/src/github.com/jedisct1/
+RUN apk add --update --no-cache git
+RUN git clone -b ${VERSION} --depth=1 https://github.com/jedisct1/dnscrypt-proxy /go/src/github.com/jedisct1/
 RUN cd /go/src/github.com/jedisct1/dnscrypt-proxy \
   && go build -v -ldflags="-s -w" -o /go/bin/dnscrypt-proxy
 
@@ -17,20 +17,20 @@ FROM scratch
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="Aarch64" \
       description="A flexible DNS proxy, with support for modern encrypted DNS protocols \
-      		   such as DNSCrypt v2 and DNS-over-HTTP/2." \
+                  such as DNSCrypt v2 and DNS-over-HTTP/2." \
       url="https://github.com/jedisct1/dnscrypt-proxy"
 
 # Environmet
 ENV TZ Asia/Tokyo
 
 # export DNS over UDP & TCP
-EXPOSE 53/TCP 53/UDP 
-
-# Multi stage build
-WORKDIR /etc/dnscrypt-proxy/
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ 
-COPY --from=build /go/bin/dnscrypt-proxy /usr/local/bin/
-COPY --from=build /go/src/github.com/jedisct1/dnscrypt-proxy/example-* /etc/dnscrypt-proxy/
+EXPOSE 53/TCP 53/UDP
 
 # command
 CMD [ "dnscrypt-proxy", "-config", "/etc/dnscrypt-proxy/example-dnscrypt-proxy.toml"]
+
+# Multi stage build
+WORKDIR /etc/dnscrypt-proxy/
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /go/bin/dnscrypt-proxy /usr/local/bin/
+COPY --from=build /go/src/github.com/jedisct1/dnscrypt-proxy/example-* /etc/dnscrypt-proxy/

@@ -1,10 +1,10 @@
 # 1st build 
-FROM golang:alpine as build
+FROM golang:rc-alpine as build
 
 # https://golang.org/doc/install/source#environment
-ENV CGO_ENABLED 0 
-ENV GOOS linux 
-ENV GOARCH arm64 
+ENV CGO_ENABLED 0
+ENV GOOS linux
+ENV GOARCH arm64
 ENV VERSION 0.6.1
 ARG BUILD_PKGS="git make automake autoconf libressl curl binutils "
 
@@ -15,7 +15,7 @@ RUN git config http.postBuffer 524288000 \
   && cd /go/src/github.com/yyyar/ \
   && make deps
 RUN mkdir -p /tmp/root/etc/gobetween \
-  && make -j"$(nproc)" install DESTDIR=/tmp/root 
+  && make -j"$(nproc)" install DESTDIR=/tmp/root
 RUN strip /tmp/root/usr/local/bin/gobetween
 
 # final build
