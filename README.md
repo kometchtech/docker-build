@@ -3,6 +3,7 @@
 ![](https://img.shields.io/github/commit-activity/y/kometchtech/docker-build.svg?style=popout-square)
 ![](https://img.shields.io/github/last-commit/kometchtech/docker-build.svg?style=popout-square)
 ![](https://img.shields.io/github/repo-size/kometchtech/docker-build.svg?style=popout-square)
+[![GitHub repo size in bytes](https://img.shields.io/github/repo-size/badges/shields.svg)](https://github.com/kometchtech/docker-build)
 
 personal docker build
 
