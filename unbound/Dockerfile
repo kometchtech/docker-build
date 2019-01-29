@@ -1,21 +1,19 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV UNBOUND_VERSION 1.8.3
+ENV VERSION 1.9.0rc1
 ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld "
-#ENV CFLAGS "-O2 -fPIE -DPIE --param ssp-buffer-size=4 -fstack-protector -fomit-frame-pointer -pipe \
-#            -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
-ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
-ENV CC=clang
-ENV CXX=clang++
+ARG CFLAGS="-O3 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CXXFLAGS="${CFLAGS} "
+ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ENV CC="clang"
+ENV CXX="clang++"
 
 # source build and install
 RUN apk add --update --no-cache ${BUILD_PKGS}
 # build
-RUN mkdir -p /usr/src \
-  && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${UNBOUND_VERSION}.tar.gz" -o unbound.tar.gz \
+RUN mkdir -p /usr/src /tmp/root/etc/unbound \
+  && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" -o unbound.tar.gz \
   && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
   && rm -f "unbound.tar.gz"
 RUN cd /usr/src \
@@ -33,21 +31,18 @@ RUN cd /usr/src \
       --disable-gost \
       --disable-ecdsa \
       --enable-pie \
-      --disable-flto \
       --enable-relro-now \
       PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
   && make -j"$(nproc)" \
   && make install DESTDIR=/tmp/root
-RUN mkdir -p /tmp/root/etc/unbound \
-  && ldconfig / || true
 
 
 # Intermediate container with runtime dependencies
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison "
+ARG RUN_PKGS="libressl2.7-libssl libressl2.7-libcrypto libevent ca-certificates ldns-tools tzdata expat flex bison "
 RUN apk add --no-cache ${RUN_PKGS} \
      && rm -rf /var/cache/apk/* /usr/local/share/man/* \
      && adduser -DH unbound
@@ -62,6 +57,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
                   based on open standards." \
       url="https://nlnetlabs.nl/projects/unbound/about/"
 
+# Environment
 ENV TZ Asia/Tokyo
 
 # export TCP and UDP
