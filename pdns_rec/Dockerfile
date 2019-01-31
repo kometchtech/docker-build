@@ -4,9 +4,9 @@ FROM arm64v8/alpine:latest AS build
 ENV VERSION 4.1.10
 ARG BUILD_PKGS="build-base clang libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev \
                 curl gawk lld "
-ARG CFLAGS="-O3 -pthread -pipe -fPIC -fPIC -fPIE "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC="clang"
 ENV CXX="clang++"
 
@@ -30,6 +30,7 @@ RUN cd /tmp/build \
       --with-lua \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j4 install-strip DESTDIR=/tmp/root
+RUN ldconfig / || true
 RUN rm -rf /tmp/root/usr/local/share/man/*
 
 
@@ -37,7 +38,7 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="boost lua5.3-libs libedit protobuf libsodium tzdata libressl2.7-libssl ca-certificates "
+ARG RUN_PKGS="boost-context lua5.3-libs libedit protobuf libsodium tzdata libressl2.7-libssl ca-certificates "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
     && adduser -DH pdnsrec
