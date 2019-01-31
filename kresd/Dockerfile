@@ -11,23 +11,20 @@ ARG KNOT_RESOLVER_BUILD_DEPS="build-base clang automake autoconf libtool pkgconf
                               bsd-compat-headers nettle-dev binutils cmocka-dev protobuf-c-dev protobuf-dev \
                               lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev lld "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
-#ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE \
-#            -fomit-frame-pointer -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
-ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
-ARG CC=clang
-ARG CXX=clang++
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -FORTIFY_SOURCE=2 "
+ARG CXXFLAGS="${CFLAGS} "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG CC="clang"
+ARG CXX="clang++"
 
 # Install dependencies and sources
-RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-    && apk add --update --no-cache ${BUILDENV_DEPS}
+RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+RUN apk add --update --no-cache ${BUILDENV_DEPS}
 # Install Knot DNS from sources
-RUN git clone -b ${KNOT_DNS_VERSION} --single-branch --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns \
-    && cd /tmp/knot-dns \
+RUN git clone -b ${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
+RUN cd /tmp/knot-dns \
     && autoreconf -if \
     && ./configure \
-     --disable-static \
      --disable-fastparser \
      --disable-documentation \
      --disable-daemon \
@@ -36,10 +33,10 @@ RUN git clone -b ${KNOT_DNS_VERSION} --single-branch --depth=1 https://gitlab.la
     && make -j"$(nproc)" install \
     && ldconfig / || true
 # Copy libknot, libdnssec, libzscanner to runtime
-RUN mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig \
-    && cp -r /usr/local/include/libknot /usr/local/include/libdnssec /usr/local/include/libzscanner /tmp/root/usr/local/include \
-    && cp -r /usr/local/lib/libknot* /usr/local/lib/libdnssec* /usr/local/lib/libzscanner* /tmp/root/usr/local/lib \
-    && cp -r /usr/local/lib/pkgconfig/libknot.pc /usr/local/lib/pkgconfig/libdnssec.pc /usr/local/lib/pkgconfig/libzscanner.pc /tmp/root/usr/local/lib/pkgconfig
+RUN mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig
+RUN cp -r /usr/local/include/libknot /usr/local/include/libdnssec /usr/local/include/libzscanner /tmp/root/usr/local/include
+RUN cp -r /usr/local/lib/libknot* /usr/local/lib/libdnssec* /usr/local/lib/libzscanner* /tmp/root/usr/local/lib
+RUN cp -r /usr/local/lib/pkgconfig/libknot.pc /usr/local/lib/pkgconfig/libdnssec.pc /usr/local/lib/pkgconfig/libzscanner.pc /tmp/root/usr/local/lib/pkgconfig
 
 
 # Intermediate container with runtime dependencies
@@ -53,9 +50,11 @@ ARG KNOT_RESOLVER_RUNTIME_DEPS_HTTP="lua5.1-http lua5.1-maxminddb "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm@test lua5.1-cqueues "
 ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
                   ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} "
+
 RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-     && apk add --update --no-cache ${RUNTIME_DEPS} \
-     && rm -rf /var/cache/apk/* /usr/local/share/man/*
+    && echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
+    && apk add --update --no-cache ${RUNTIME_DEPS} \
+    && rm -rf /var/cache/apk/* /usr/local/share/man/*
 
 # Intermediate container for Knot Resolver build
 FROM knot-dns-build AS build
@@ -63,13 +62,15 @@ FROM knot-dns-build AS build
 # Build Knot Resolver
 ENV RESOLV_VERSION v3.2.1
 #ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fomit-frame-pointer "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
-ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
-ARG CC=clang
-ARG CXX=clang++
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -FORTIFY_SOURCE=2 "
+ARG CXXFLAGS="${CFLAGS} "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG CC="clang"
+ARG CXX="clang++"
 
+# Knot Resolver build
 RUN mkdir -p /tmp/root/etc/knot-resolver
-RUN git clone -b ${RESOLV_VERSION} --depth=1 --recursive --single-branch https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
+RUN git clone -b ${RESOLV_VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
 RUN cd /tmp/knot-resolver \
     && make -j"$(nproc)" install DESTDIR=/tmp/root
 RUN cd /tmp/knot-resolver \

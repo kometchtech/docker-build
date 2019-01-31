@@ -3,9 +3,9 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ENV VERSION 1.9.0rc1
 ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld "
-ARG CFLAGS="-O3 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC="clang"
 ENV CXX="clang++"
 
@@ -42,10 +42,11 @@ RUN cd /usr/src \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libressl2.7-libssl libressl2.7-libcrypto libevent ca-certificates ldns-tools tzdata expat flex bison "
-RUN apk add --no-cache ${RUN_PKGS} \
-     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-     && adduser -DH unbound
+ARG RUN_PKGS="libressl2.7-libssl libressl2.7-libcrypto libevent ca-certificates ldns-tools tzdata expat \
+              flex bison "
+RUN apk add --update --no-cache ${RUN_PKGS} \
+    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+    && adduser -DH unbound
 
 
 # Final container

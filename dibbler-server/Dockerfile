@@ -4,13 +4,11 @@ FROM arm64v8/alpine:latest AS build
 ENV VERSION master
 #ENV VERSION RELEASE1.0.1
 ARG BUILD_PKGS="build-base clang ca-certificates automake autoconf linux-headers gawk git libtool lld "
-#ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fomit-frame-pointer \
-#            -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
-ENV CC=clang
-ENV CXX=clang++
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ENV CC="clang"
+ENV CXX="clang++"
 
 # compile and install
 RUN mkdir -p /usr/src /tmp/root/etc/dibbler/ \

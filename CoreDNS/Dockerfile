@@ -1,5 +1,5 @@
 # 1st build 
-FROM arm64v8/golang:rc-alpine as build-env
+FROM arm64v8/golang:alpine as build-env
 
 ARG VERSION="v1.3.1"
 WORKDIR /go/src

@@ -1,20 +1,18 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV NSD_VERSION 4.1.26
+ENV VERSION 4.1.26
 ARG BUILD_PKGS="build-base clang curl automake autoconf expat-dev libressl-dev libevent-dev lld "
-#ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -FORTIFY_SOURCE=2 \
-#            -fPIE -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O4 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
-ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O4 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
-ENV CC=clang
-ENV CXX=clang++
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CXXFLAGS="${CFLAGS} "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ENV CC="clang"
+ENV CXX="clang++"
 
 # source build and install
-RUN apk add --update --no-cache ${BUILD_PKGS} \
-    && mkdir -p /tmp/build /tmp/root/etc/nsd
-RUN curl -fSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${NSD_VERSION}.tar.gz" -o nsd.tar.gz \
+RUN apk add --update --no-cache ${BUILD_PKGS}
+RUN mkdir -p /tmp/build /tmp/root/etc/nsd
+RUN curl -fSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /tmp/build \
     && rm -f "nsd.tar.gz"
 RUN cd /tmp/build \
@@ -25,12 +23,11 @@ RUN cd /tmp/build \
       --sysconfdir=/etc \
       --with-libevent \
       --with-ssl \
-      --disable-flto \
+#      --disable-flto \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j"$(nproc)" install DESTDIR=/tmp/root \
-    && ldconfig / || true
+    && make -j"$(nproc)" install DESTDIR=/tmp/root
 RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 
 
@@ -53,6 +50,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
                   where speed, reliability, stability and security are of high importance." \
       url="https://nlnetlabs.nl/projects/nsd/about/"
 
+# Environment
 ENV TZ Asia/Tokyo
 
 # Application execution related information

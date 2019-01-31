@@ -1,5 +1,5 @@
 # 1st build 
-FROM golang:rc-alpine as build
+FROM golang:alpine as build
 
 # https://golang.org/doc/install/source#environment
 ENV CGO_ENABLED 0

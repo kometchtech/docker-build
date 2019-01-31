@@ -4,12 +4,12 @@ FROM arm64v8/alpine:latest AS build
 ENV KNOT_DNS_VERSION 2.7.6
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev \
-                        gnutls curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
+                        curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
                         musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev lld "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} "
-ARG CFLAGS="-O3 -pthread -pipe -fPIC -fPIC -fPIE -FORTIFY_SOURCE=2 "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC="clang"
 ENV CXX="clang++"
 
@@ -31,6 +31,7 @@ RUN cd /tmp/knot-dns \
       --enable-systemd=no \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
       && make -j "$(nproc)" install DESTDIR=/tmp/root
+RUN ldconfig / || true
 RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sample.conf
 
 
@@ -38,8 +39,7 @@ RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sam
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG KNOT_DNS_RUNTIME_DEPS="userspace-rcu lmdb gnutls libedit libidn tzdata libmaxminddb "
-
+ARG KNOT_DNS_RUNTIME_DEPS="protobuf protobuf-c userspace-rcu lmdb gnutls libedit libidn tzdata libmaxminddb "
 RUN apk add --update --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/*
 

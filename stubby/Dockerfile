@@ -3,16 +3,16 @@ FROM arm64v8/alpine:latest AS getdns-build
 ENV VERSION v1.5.1
 ARG BUILD_PKGS="build-base clang curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev \
                 libuv-dev libev-dev check-dev unbound-dev lld "
-#ARG CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -FORTIFY_SOURCE=2 -fPIE -fPIC \
-#            -ftree-vectorize -ftree-slp-vectorize "
-ARG CFLAGS="-O3 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC="clang"
 ENV CXX="clang++"
 
+# build dependencies install
 RUN apk add --update --no-cache ${BUILD_PKGS}
 RUN mkdir -p /usr/src /tmp/root/var/stubby/ /tmp/root/etc/stubby/ /tmp/root/usr/local/lib/ /tmp/root/usr/local/include
+# app build
 RUN git clone -b ${VERSION} --depth 1 https://github.com/getdnsapi/getdns.git /usr/src
 RUN cd /usr/src \
     && git submodule update --init \
