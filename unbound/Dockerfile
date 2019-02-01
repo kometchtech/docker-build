@@ -42,8 +42,7 @@ RUN cd /usr/src \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libressl2.7-libssl libressl2.7-libcrypto libevent ca-certificates ldns-tools tzdata expat \
-              flex bison "
+ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && adduser -DH unbound

@@ -20,6 +20,7 @@ RUN cd /usr/src \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
       --sysconfdir=/etc/dibbler \
     && make -j "$(nproc)" install DESTDIR=/tmp/root
+RUN ldconfig /
 RUN cp /tmp/root/usr/local/share/doc/dibbler/examples/server.conf /tmp/root/etc/dibbler/server.conf \
     && rm -rf /tmp/root/usr/local/share/man/* /tmp/root/usr/local/share/doc/*
 
@@ -46,7 +47,7 @@ ENV TZ Asia/Tokyo
 
 # volume
 WORKDIR /etc/dibbler
-VOLUME ["/etc/dibbler", "/var/lib/dibbler"]
+#VOLUME ["/etc/dibbler", "/var/lib/dibbler"]
 
 # export TCP and UDP
 EXPOSE 547/TCP 547/UDP
@@ -56,4 +57,4 @@ CMD ["/usr/local/sbin/dibbler-server", "run"]
 
 # Fetch binary images
 COPY --from=build /tmp/root /
-RUN ldconfig / || true
+RUN ldconfig /

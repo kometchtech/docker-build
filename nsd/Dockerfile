@@ -55,7 +55,7 @@ ENV TZ Asia/Tokyo
 
 # Application execution related information
 COPY ./run.sh /usr/local/sbin/run.sh
-VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd"]
+#VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd"]
 
 # export TCP and UDP
 EXPOSE 53/tcp 53/udp 8952/tcp

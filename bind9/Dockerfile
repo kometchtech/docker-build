@@ -33,8 +33,8 @@ RUN cd /tmp/build \
     --with-readline \
     --without-python \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-  && make -j"$(nproc)" install DESTDIR=/tmp/root \
-  && ldconfig /
+  && make -j"$(nproc)" install DESTDIR=/tmp/root
+RUN ldconfig /
 # Delete unnecessary directory
 RUN mkdir -p /tmp/root/var/named \
   && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/*
@@ -51,7 +51,7 @@ RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
 # add user and make dir
     && adduser -DH named \
-    && mkdir -p /var/named /var/run/named /etc/named
+    && mkdir -p /var/named /etc/named /var/cache/bind /run/named
 
 
 # Final container
@@ -69,7 +69,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ Asia/Tokyo
 
 # volume
-VOLUME ["/var/named", "/var/run/named", "/etc/named"] 
+#VOLUME ["/var/cache/bind"]
 
 # export TCP and UDP
 EXPOSE 53/tcp 53/udp 953/TCP
@@ -80,5 +80,5 @@ CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
 # Fetch isc BIND libraries from build image
 COPY --from=build /tmp/root/ /
 COPY ./named.conf /etc/named/named.conf
-RUN chown -R named:named /var/named /var/run/named /etc/named \
-    && ldconfig / || true
+RUN chown -R named:named /var/named /etc/named /var/run/named \
+    && ldconfig /

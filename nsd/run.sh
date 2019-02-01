@@ -11,4 +11,3 @@ if [ -f /etc/nsd/nsd.conf ]; then
 else
 	/usr/local/sbin/nsd -d -P /var/run/nsd/nsd.pid
 fi
-~                
