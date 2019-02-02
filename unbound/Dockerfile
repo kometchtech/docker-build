@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS build
 
 # Environment
@@ -10,7 +11,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # source build and install
-RUN apk add --update --no-cache ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 # build
 RUN mkdir -p /usr/src /tmp/root/etc/unbound \
   && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" -o unbound.tar.gz \
@@ -43,7 +45,8 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison "
-RUN apk add --update --no-cache ${RUN_PKGS} \
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && adduser -DH unbound
 

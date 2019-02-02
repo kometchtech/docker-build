@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS getdns-build
 
 ENV VERSION v1.5.1
@@ -10,7 +11,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # build dependencies install
-RUN apk add --update --no-cache ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/src /tmp/root/var/stubby/ /tmp/root/etc/stubby/ /tmp/root/usr/local/lib/ /tmp/root/usr/local/include
 # app build
 RUN git clone -b ${VERSION} --depth 1 https://github.com/getdnsapi/getdns.git /usr/src
@@ -54,7 +56,8 @@ FROM getdns-build AS build
 ENV STUBBY_VERSION v0.2.5
 ARG BUILD_PKGS="build-base clang autoconf automake gawk git yaml libressl unbound lld "
 
-RUN apk add --update --no-cache ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/src/stubby /tmp/root/etc/unbound
 RUN git clone -b ${STUBBY_VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stuby
 RUN cd /usr/src/stubby \

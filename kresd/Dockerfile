@@ -1,8 +1,9 @@
+# syntax = docker/dockerfile:experimental
 # Intermediate container for Knot DNS build (not persistent)
 FROM arm64v8/alpine:latest AS knot-dns-build
 
 # Environment
-ENV KNOT_DNS_VERSION v2.7.5
+ENV KNOT_DNS_VERSION v2.7.6
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev gnutls curl \
                         gawk git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev lld "
@@ -19,7 +20,8 @@ ARG CXX="clang++"
 
 # Install dependencies and sources
 RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-RUN apk add --update --no-cache ${BUILDENV_DEPS}
+RUN --mount=type=cache,target=/var/cache/apk \
+  apk add --update ${BUILDENV_DEPS}
 # Install Knot DNS from sources
 RUN git clone -b ${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
 RUN cd /tmp/knot-dns \
@@ -30,8 +32,8 @@ RUN cd /tmp/knot-dns \
      --disable-daemon \
      --disable-utilities \
      --with-lmdb=no \
-    && make -j"$(nproc)" install \
-    && ldconfig / || true
+    && make -j"$(nproc)" install
+RUN ldconfig /
 # Copy libknot, libdnssec, libzscanner to runtime
 RUN mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig
 RUN cp -r /usr/local/include/libknot /usr/local/include/libdnssec /usr/local/include/libzscanner /tmp/root/usr/local/include
@@ -54,14 +56,15 @@ ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_
 RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
     && echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
     && apk add --update --no-cache ${RUNTIME_DEPS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/*
+    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+    && mkdir -p /var/run/knot-resolver
 
 # Intermediate container for Knot Resolver build
 FROM knot-dns-build AS build
 
 # Build Knot Resolver
+# Environmet
 ENV RESOLV_VERSION v3.2.1
-#ARG CFLAGS="-O2 -fstack-protector -pthread -heap-arrays -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fomit-frame-pointer "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
@@ -86,13 +89,15 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       url="https://www.knot-resolver.cz"
 
 # Environment
-ENV TZ Asia/Tokyo 
+ENV TZ Asia/Tokyo
+WORKDIR ["/etc/knot-resolver"]
 
 # Export DNS over UDP & TCP, DNS-over-TLS
-EXPOSE 53/UDP 53/TCP 853/TCP
+EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
 
-CMD ["/usr/local/sbin/kresd", "-f", "1", "-c", "/etc/knot-resolver/kresd.conf"]
+ENTRYPOINT ["/usr/local/sbin/kresd"]
+CMD ["-c", "/etc/knot-resolver/kresd.conf"]
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
-RUN ldconfig / || true
+RUN ldconfig /

@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS build
 
 # source build
@@ -13,7 +14,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # dependencies package
-RUN apk add --update --no-cache -t .build-dep ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update -t .build-dep ${BUILD_PKGS}
 RUN cd /tmp/ \
     && curl -L ${ZBX_SOURCES} -o zabbix-${ZBX_VERSION}.tar.gz \
     && tar xf zabbix-${ZBX_VERSION}.tar.gz \
@@ -32,6 +34,7 @@ RUN cd /tmp/zabbix-${ZBX_VERSION} \
        CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j"$(nproc)" -s 1>/dev/null \
     && make install DESTDIR=/tmp/root
+RUN ldconfig /
 RUN cd /tmp/zabbix-${ZBX_VERSION} \
     && rm -rf /tmp/root/usr/share/man /tmp/root/usr/local/share/man \
     && cp src/zabbix_agent/zabbix_agentd /tmp/root/usr/sbin/zabbix_agentd \
@@ -81,7 +84,7 @@ ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 # Fetch app and libraries from build image
 COPY --from=build /tmp/root /
-RUN ldconfig / || true \
-    && chown -R zabbix:root /etc/zabbix \
+RUN chown -R zabbix:root /etc/zabbix \
     && chown -R zabbix:root /var/lib/zabbix \
-    && chmod +x /usr/bin/docker-entrypoint.sh
+    && chmod +x /usr/bin/docker-entrypoint.sh \
+    && ldconfig /

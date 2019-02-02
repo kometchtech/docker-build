@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 # 1st build 
 FROM arm64v8/golang:alpine as build
 
@@ -7,7 +8,8 @@ ENV GOOS linux
 ENV GOARCH arm64
 ENV VERSION 2.0.19
 WORKDIR /go/src/github.com/jedisct1/
-RUN apk add --update --no-cache git
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  apk add --update --no-cache git
 RUN git clone -b ${VERSION} --depth=1 https://github.com/jedisct1/dnscrypt-proxy /go/src/github.com/jedisct1/
 RUN cd /go/src/github.com/jedisct1/dnscrypt-proxy \
   && go build -v -ldflags="-s -w" -o /go/bin/dnscrypt-proxy

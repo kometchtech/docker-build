@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS build
 
 # Environment
@@ -10,7 +11,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # source build and install
-RUN apk add --update --no-cache ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 RUN mkdir -p /tmp/build /tmp/root/etc/nsd
 RUN curl -fSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /tmp/build \
@@ -36,7 +38,8 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ENV RUN_PKGS "libressl libevent ca-certificates ldns-tools tzdata"
-RUN apk add --update --no-cache ${RUN_PKGS} \
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && adduser -DH nsd \
     && mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones

@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS build
 
 # Environment
@@ -14,7 +15,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # Install dependencies and sources
-RUN apk add --update --no-cache ${BUILDENV_DEPS}
+RUN --mount=type=cache,target=/var/cache/apk \
+  apk add --update ${BUILDENV_DEPS}
 # Install Knot DNS from sources
 RUN mkdir -p /tmp/knot-dns/ /tmp/root/etc/knot-dns
 RUN git clone -b v${KNOT_DNS_VERSION} --depth=1 https://github.com/CZ-NIC/knot.git /tmp/knot-dns
@@ -31,7 +33,7 @@ RUN cd /tmp/knot-dns \
       --enable-systemd=no \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
       && make -j "$(nproc)" install DESTDIR=/tmp/root
-RUN ldconfig / || true
+RUN ldconfig /
 RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sample.conf
 
 
@@ -40,8 +42,9 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG KNOT_DNS_RUNTIME_DEPS="protobuf protobuf-c userspace-rcu lmdb gnutls libedit libidn tzdata libmaxminddb "
-RUN apk add --update --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/*
+RUN --mount=type=cache,target=/var/cache/apk \
+  apk add --update --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
+  && rm -rf /var/cache/apk/* /usr/local/share/man/*
 
 
 # Final container
@@ -58,7 +61,7 @@ ENV TZ Asia/Tokyo
 EXPOSE 53/UDP 53/TCP 853/TCP
 
 # voulme
-VOLUME ["/var/lib/knot/zones/timers", "/etc/knot-dns"]
+#VOLUME ["/var/lib/knot/zones/timers", "/etc/knot-dns"]
 
 # select entrypoint
 ADD entrypoint.sh /usr/local/sbin/
@@ -67,5 +70,5 @@ CMD ["/usr/local/sbin/entrypoint.sh"]
 
 # Fetch Knot DNS from build image
 COPY --from=build /tmp/root/ /
-RUN ldconfig / || true
+RUN ldconfig /
 

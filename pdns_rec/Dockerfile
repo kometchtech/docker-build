@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS build
 
 # Environmet
@@ -11,7 +12,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # dev package install
-RUN apk add --update --no-cache ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 RUN mkdir -p /tmp/build
 ## build
 RUN curl -fsSL "https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}.tar.bz2" -o pdns-recursor.tar.bz2
@@ -39,7 +41,8 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="boost-context lua5.3-libs libedit protobuf libsodium tzdata libressl2.7-libssl ca-certificates "
-RUN apk add --update --no-cache ${RUN_PKGS} \
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
     && adduser -DH pdnsrec
 
