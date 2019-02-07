@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV VERSION 1.9.0rc1
+ENV VERSION 1.9.0
 ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
@@ -11,8 +11,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # source build and install
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+#RUN --mount=type=cache,target=/var/cache/apk \
+RUN apk add --update ${BUILD_PKGS}
 # build
 RUN mkdir -p /usr/src /tmp/root/etc/unbound \
   && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" -o unbound.tar.gz \
@@ -34,6 +34,8 @@ RUN cd /usr/src \
       --disable-ecdsa \
       --enable-pie \
       --enable-relro-now \
+      --enable-tfo-server \
+      --enable-tfo-client \
       PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
   && make -j"$(nproc)" \
@@ -45,10 +47,10 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison "
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update --no-cache ${RUN_PKGS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-    && adduser -DH unbound
+#RUN --mount=type=cache,target=/var/cache/apk \
+RUN apk add --update --no-cache ${RUN_PKGS} \
+    && rm -rf /var/cache/apk/* /usr/local/share/man/*
+#    && adduser -DH unbound
 
 
 # Final container
@@ -72,8 +74,7 @@ CMD ["/usr/local/sbin/run.sh"]
 # Application execution related information
 ADD ./run.sh /usr/local/sbin/
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
-VOLUME ["/etc/unbound", "/var/run/unbound"]
 
 # Fetch unbound and libraries from build image
 COPY --from=build /tmp/root/ /
-RUN ldconfig / || true
+RUN ldconfig /
