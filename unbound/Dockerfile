@@ -69,6 +69,7 @@ ENV TZ Asia/Tokyo
 EXPOSE 53/tcp 53/udp 853/TCP
 
 # entrypoint
+WORKDIR /etc/unbound
 CMD ["/usr/local/sbin/run.sh"]
 
 # Application execution related information

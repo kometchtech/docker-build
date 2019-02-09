@@ -32,7 +32,7 @@ RUN cd /tmp/build \
       --with-lua \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j4 install-strip DESTDIR=/tmp/root
-RUN ldconfig / || true
+RUN ldconfig /
 RUN rm -rf /tmp/root/usr/local/share/man/*
 
 
@@ -66,8 +66,8 @@ STOPSIGNAL SIGTERM
 EXPOSE 53/UDP 53/TCP
 
 # select ENTRYPOINT
-VOLUME ["/etc/powerdns"]
+WORKDIR /etc/powerdns
 CMD ["/usr/local/sbin/pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
 
 COPY --from=build /tmp/root/ /
-RUN ldconfig / || true
+RUN ldconfig /

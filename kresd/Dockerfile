@@ -90,7 +90,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ Asia/Tokyo
-WORKDIR ["/etc/knot-resolver"]
+WORKDIR /etc/knot-resolver
 
 # Export DNS over UDP & TCP, DNS-over-TLS
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP

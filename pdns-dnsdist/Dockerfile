@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS build
 
 # Env
@@ -12,7 +13,8 @@ ENV CXX="clang++"
 
 # dev package install
 RUN mkdir -p /usr/src /tmp/root/etc/dnsdist
-RUN apk add --update --no-cache ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+  apk add --update --no-cache ${BUILD_PKGS}
 ## build
 RUN curl -fsSL "https://downloads.powerdns.com/releases/dnsdist-${VERSION}.tar.bz2" -o dnsdist.tar.bz2 \
     && tar xf dnsdist.tar.bz2 --strip-components=1 -C /usr/src \
@@ -32,7 +34,7 @@ RUN cd /usr/src \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j4  \
     && make install-strip DESTDIR=/tmp/root
-RUN ldconfig / || true
+RUN ldconfig /
 RUN rm -rf /tmp/root/usr/local/share/man/*
 
 
@@ -42,9 +44,10 @@ FROM arm64v8/alpine:latest AS runtime
 # Install runtime dependencies
 ARG RUN_PKGS="tzdata lua5.3-libs libsodium protobuf re2 net-snmp-libs libedit libressl2.7-libssl \
               libcrypto1.1 net-snmp-agent-libs "
-RUN apk add --update --no-cache ${RUN_PKGS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-    && adduser -DH _dnsdist
+RUN --mount=type=cache,target=/var/cache/apk \
+  apk add --update --no-cache ${RUN_PKGS} \
+  && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+  && adduser -DH _dnsdist
 
 # Final container
 FROM runtime
@@ -63,8 +66,10 @@ STOPSIGNAL SIGTERM
 
 # Expose
 EXPOSE 53/tcp 53/udp
+
 # Volume
-VOLUME ["/etc/dnsdist"]
+WORKDIR /etc/dnsdist
+
 # Select entrypoint
 CMD ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
@@ -78,4 +83,4 @@ RUN set -x \
       | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
   )" \
   && apk add --no-cache -t .rundeps $runDeps \
-  && ldconfig / || true
+  && ldconfig /

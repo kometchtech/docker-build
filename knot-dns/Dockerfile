@@ -62,6 +62,7 @@ EXPOSE 53/UDP 53/TCP 853/TCP
 
 # voulme
 #VOLUME ["/var/lib/knot/zones/timers", "/etc/knot-dns"]
+WORKDIR /etc/knot-dns
 
 # select entrypoint
 ADD entrypoint.sh /usr/local/sbin/

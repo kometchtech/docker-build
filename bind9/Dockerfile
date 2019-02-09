@@ -72,12 +72,12 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ Asia/Tokyo
 
 # volume
-#VOLUME ["/var/cache/bind"]
 
 # export TCP and UDP
 EXPOSE 53/tcp 53/udp 953/TCP
 
 # select entrypoint
+WORKDIR /etc/named
 CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
 
 # Fetch isc BIND libraries from build image

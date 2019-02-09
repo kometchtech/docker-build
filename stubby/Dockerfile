@@ -11,8 +11,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # build dependencies install
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+#RUN --mount=type=cache,target=/var/cache/apk \
+RUN apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/src /tmp/root/var/stubby/ /tmp/root/etc/stubby/ /tmp/root/usr/local/lib/ /tmp/root/usr/local/include
 # app build
 RUN git clone -b ${VERSION} --depth 1 https://github.com/getdnsapi/getdns.git /usr/src
@@ -31,7 +31,7 @@ RUN cd /usr/src \
     --with-libev \
     CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
     && make -j"$(nproc)" install \
-    && ldconfig / || true
+    && ldconfig /
 # Copy libgetdns, libgetdns_ext_ev, libgetdns_ext_uv
 RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
     && cp -r /usr/local/include/* /tmp/root/usr/local/include/ \
@@ -56,8 +56,8 @@ FROM getdns-build AS build
 ENV STUBBY_VERSION v0.2.5
 ARG BUILD_PKGS="build-base clang autoconf automake gawk git yaml libressl unbound lld "
 
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+#RUN --mount=type=cache,target=/var/cache/apk \
+RUN apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/src/stubby /tmp/root/etc/unbound
 RUN git clone -b ${STUBBY_VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stuby
 RUN cd /usr/src/stubby \
@@ -87,4 +87,4 @@ WORKDIR /etc/stubby
 CMD ["/usr/local/bin/stubby", "-C", "/etc/stubby/stubby.yml"]
 
 COPY --from=build /tmp/root/ /
-RUN ldconfig / || true
+RUN ldconfig /

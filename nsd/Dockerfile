@@ -11,8 +11,8 @@ ENV CC="clang"
 ENV CXX="clang++"
 
 # source build and install
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+#RUN --mount=type=cache,target=/var/cache/apk \
+RUN apk add --update ${BUILD_PKGS}
 RUN mkdir -p /tmp/build /tmp/root/etc/nsd
 RUN curl -fSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${VERSION}.tar.gz" -o nsd.tar.gz \
     && tar xf "nsd.tar.gz" --strip-components=1 -C /tmp/build \
@@ -23,6 +23,7 @@ RUN cd /tmp/build \
       --prefix=/usr/local \
       --with-zonesdir=/usr/local/etc/nsd/zones \
       --sysconfdir=/etc \
+#      --localstatedir=/var \
       --with-libevent \
       --with-ssl \
 #      --disable-flto \
@@ -38,11 +39,12 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ENV RUN_PKGS "libressl libevent ca-certificates ldns-tools tzdata"
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update --no-cache ${RUN_PKGS} \
+#RUN --mount=type=cache,target=/var/cache/apk \
+RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-    && adduser -DH nsd \
-    && mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones
+#    && adduser -DH nsd \
+    && mkdir -p /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones /usr/local/var/db/nsd
+#    && chown -R nsd:nsd /var/cache/nsd /var/run/nsd /usr/local/etc/nsd/zones /usr/local/var/db/nsd
 
 # Final container
 FROM runtime
@@ -55,19 +57,21 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ Asia/Tokyo
+WORKDIR /etc/nsd
 
 # Application execution related information
 COPY ./run.sh /usr/local/sbin/run.sh
-#VOLUME ["/usr/local/etc/nsd", "/usr/local/etc/nsd/zones", "/usr/local/var/db/nsd"]
 
 # export TCP and UDP
 EXPOSE 53/tcp 53/udp 8952/tcp
+
+# Execute app
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
 CMD ["/usr/local/sbin/run.sh"]
 
 # Fetch nsd libraries from build image
 COPY --from=build /tmp/root/ /
-RUN ldconfig / || true \
-    && chmod 0700 /usr/local/var/db/nsd /var/run/nsd /var/cache/nsd \
+RUN ldconfig / \
+    && chmod -R 0644 /usr/local/var/db/nsd /var/run/nsd /var/cache/nsd /usr/local/var/db/nsd/ \
     && chmod 0777 /tmp
 

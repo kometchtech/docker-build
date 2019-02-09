@@ -23,6 +23,7 @@ ENV TZ Asia/Tokyo
 EXPOSE 53/TCP 53/UDP
 
 # Select entrypoint
+WORKDIR /etc/coredns
 ENTRYPOINT ["/coredns"]
 
 # copy file 
