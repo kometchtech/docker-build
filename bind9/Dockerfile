@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV BIND_VERSION="9_13_5_W1"
+ENV BIND_VERSION="9_13_6"
 ARG BUILD_PKGS="build-base git curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers \
                 bsd-compat-headers libedit-dev readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libtool "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
@@ -38,10 +38,10 @@ RUN cd /tmp/build \
   && make -j"$(nproc)" install DESTDIR=/tmp/root
 RUN ldconfig /
 # Delete unnecessary directory
-RUN mkdir -p /tmp/root/var/named \
+RUN mkdir -p /tmp/root/var/cache/named \
   && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/*
 # download named.root 
-RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/named/named.ca
+RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cache/named/named.ca
 
 
 # Intermediate container with runtime dependencies
@@ -54,7 +54,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
 # add user and make dir
     && adduser -DH named \
-    && mkdir -p /var/named /etc/named /var/cache/bind /run/named
+    && mkdir -p /etc/named /var/cache/named /var/run/named
 
 
 # Final container
@@ -71,10 +71,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 
-# volume
-
-# export TCP and UDP
+# publish port TCP and UDP
 EXPOSE 53/tcp 53/udp 953/TCP
+
+# service running
+STOPSIGNAL SIGTERM
 
 # select entrypoint
 WORKDIR /etc/named
@@ -83,5 +84,5 @@ CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
 # Fetch isc BIND libraries from build image
 COPY --from=build /tmp/root/ /
 COPY ./named.conf /etc/named/named.conf
-RUN chown -R named:named /var/named /etc/named /var/run/named \
+RUN chown -R named:named /var/cache/named /etc/named /var/run/named \
     && ldconfig /
