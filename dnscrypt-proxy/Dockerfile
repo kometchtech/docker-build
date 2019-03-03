@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
   apk add --update --no-cache git
 RUN git clone -b ${VERSION} --depth=1 https://github.com/jedisct1/dnscrypt-proxy /go/src/github.com/jedisct1/
 RUN cd /go/src/github.com/jedisct1/dnscrypt-proxy \
-  && go build -v -ldflags="-s -w" -o /go/bin/dnscrypt-proxy
+  && go build -v -tags "osusergo netgo" -ldflags '-extldflags "-static -s -w"' -o /go/bin/dnscrypt-proxy
 
 # 2nd build
 FROM scratch
@@ -25,8 +25,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environmet
 ENV TZ Asia/Tokyo
 
-# export DNS over UDP & TCP
+# publish port DNS over UDP & TCP
 EXPOSE 53/TCP 53/UDP
+
+# service running
+STOPSIGNAL SIGTERM
 
 # command
 CMD [ "dnscrypt-proxy", "-config", "/etc/dnscrypt-proxy/example-dnscrypt-proxy.toml"]

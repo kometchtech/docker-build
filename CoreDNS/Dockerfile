@@ -7,7 +7,7 @@ RUN apk add --no-cache --update build-base git automake libtool autoconf pkgconf
 RUN git clone -b ${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/ \
     && cd  /go/src/github.com/coredns/coredns/ \
     && make -j"$(procs)" all \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -v -ldflags="-s -w"
+    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -v -tags "osusergo netgo" -ldflags '-extldflags "-static -s -w"'
 
 # 2nd build
 FROM scratch
@@ -19,8 +19,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 
-# export DNS over UDP & TCP
+# publish port DNS over UDP & TCP
 EXPOSE 53/TCP 53/UDP
+
+# service running
+STOPSIGNAL SIGTERM
 
 # Select entrypoint
 WORKDIR /etc/coredns
