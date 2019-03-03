@@ -1,7 +1,7 @@
 # 1st build 
 FROM arm64v8/golang:alpine as build-env
 
-ARG VERSION="v1.3.1"
+ARG VERSION="v1.4.0"
 WORKDIR /go/src
 RUN apk add --no-cache --update build-base git automake libtool autoconf pkgconfig 
 RUN git clone -b ${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/ \
