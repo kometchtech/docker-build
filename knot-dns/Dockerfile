@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV KNOT_DNS_VERSION 2.7.6
+ENV KNOT_DNS_VERSION 2.8.0
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev \
                         curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
@@ -57,8 +57,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 
-# Export DNS over UDP & TCP, DNS-over-TLS
+# publish port DNS over UDP & TCP, DNS-over-TLS
 EXPOSE 53/UDP 53/TCP 853/TCP
+
+# service running
+STOPSIGNAL SIGTERM
 
 # voulme
 #VOLUME ["/var/lib/knot/zones/timers", "/etc/knot-dns"]
