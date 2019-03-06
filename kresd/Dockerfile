@@ -3,7 +3,7 @@
 FROM arm64v8/alpine:latest AS knot-dns-build
 
 # Environment
-ENV KNOT_DNS_VERSION v2.7.6
+ENV KNOT_DNS_VERSION v2.8.0
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev gnutls curl \
                         gawk git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev lld "
@@ -90,7 +90,6 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ Asia/Tokyo
-WORKDIR /etc/knot-resolver
 
 # publish port DNS over UDP & TCP, DNS-over-TLS
 EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
@@ -98,10 +97,12 @@ EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
 # service running
 STOPSIGNAL SIGTERM
 
+WORKDIR kometchtech/kresd
 ENTRYPOINT ["/usr/local/sbin/run.sh"]
 CMD ["-c", "/etc/knot-resolver/kresd.conf"]
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
 COPY ./run.sh /usr/local/sbin/run.sh
-RUN ldconfig /
+RUN chmod +x /usr/local/sbin/run.sh \
+    && ldconfig /
