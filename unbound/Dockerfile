@@ -2,8 +2,8 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV VERSION 1.9.0
-ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld "
+ENV VERSION 1.9.1
+ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld hiredis-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
@@ -36,6 +36,8 @@ RUN cd /usr/src \
       --enable-relro-now \
       --enable-tfo-server \
       --enable-tfo-client \
+      --enable-cachedb \
+      --with-libhiredis \
       PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
   && make -j"$(nproc)" \
@@ -46,7 +48,7 @@ RUN cd /usr/src \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison "
+ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis "
 #RUN --mount=type=cache,target=/var/cache/apk \
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/*
@@ -65,12 +67,15 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 
-# export TCP and UDP
+# publish port TCP and UDP
 EXPOSE 53/tcp 53/udp 853/TCP
+
+# service running
+STOPSIGNAL SIGTERM
 
 # entrypoint
 WORKDIR /etc/unbound
-CMD ["/usr/local/sbin/run.sh"]
+ENTRYPOINT ["/usr/local/sbin/run.sh"]
 
 # Application execution related information
 ADD ./run.sh /usr/local/sbin/
