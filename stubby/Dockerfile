@@ -1,12 +1,12 @@
 # syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS getdns-build
 
-ENV VERSION v1.5.1
-ARG BUILD_PKGS="build-base clang curl git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev \
-                libuv-dev libev-dev check-dev unbound-dev lld "
+ENV VERSION v1.5.2-rc1
+ARG BUILD_PKGS="build-base clang git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev \
+                libuv-dev libev-dev check-dev unbound-dev libcrypto1.1 "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
 
@@ -25,7 +25,6 @@ RUN cd /usr/src \
     && ../configure \
     --without-libidn \
     --without-libidn2 \
-#    --enable-stub-only \
     --with-stubby \
     --with-libuv \
     --with-libev \
@@ -36,9 +35,6 @@ RUN cd /usr/src \
 RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
     && cp -r /usr/local/include/* /tmp/root/usr/local/include/ \
     && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/*
-# copy example conf
-RUN curl -fsSL https://raw.githubusercontent.com/getdnsapi/stubby/develop/stubby.yml.example \
-         -o /tmp/root/etc/stubby/stubby.yml
 
 
 # Intermediate container with runtime dependencies
@@ -54,7 +50,7 @@ RUN apk add --update --no-cache ${RUN_PKGS} \
 FROM getdns-build AS build
 
 ENV STUBBY_VERSION v0.2.5
-ARG BUILD_PKGS="build-base clang autoconf automake gawk git yaml libressl unbound lld "
+ARG BUILD_PKGS="build-base clang autoconf automake gawk git yaml libressl unbound "
 
 #RUN --mount=type=cache,target=/var/cache/apk \
 RUN apk add --update ${BUILD_PKGS}
@@ -62,10 +58,12 @@ RUN mkdir -p /usr/src/stubby /tmp/root/etc/unbound
 RUN git clone -b ${STUBBY_VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stuby
 RUN cd /usr/src/stubby \
     && autoreconf -fi \
-    && ./configure CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib -fuse-ld=lld" \
+    && ./configure CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib " \
     && make -j "$(nproc)" \
     && make install DESTDIR=/tmp/root
 RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
+# copy example conf
+RUN cp /usr/src/stubby/stubby.yml.example /tmp/root/etc/stubby/stubby.yml
 
 
 # Final container
@@ -79,8 +77,11 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 
-# export DNS over UDP
+# Publish port DNS over UDP
 EXPOSE 53/UDP 53/TCP
+
+# service running
+STOPSIGNAL SIGTERM
 
 # select ENTRYPOINT
 WORKDIR /etc/stubby
