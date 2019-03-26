@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV VERSION 4.1.26
+ENV VERSION 4.1.27
 ARG BUILD_PKGS="build-base clang curl automake autoconf expat-dev libressl-dev libevent-dev lld "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
@@ -23,10 +23,8 @@ RUN cd /tmp/build \
       --prefix=/usr/local \
       --with-zonesdir=/usr/local/etc/nsd/zones \
       --sysconfdir=/etc \
-#      --localstatedir=/var \
       --with-libevent \
       --with-ssl \
-#      --disable-flto \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
@@ -57,17 +55,20 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # Environment
 ENV TZ Asia/Tokyo
-WORKDIR /etc/nsd
 
-# Application execution related information
-COPY ./run.sh /usr/local/sbin/run.sh
-
-# export TCP and UDP
+# publish port TCP and UDP
 EXPOSE 53/tcp 53/udp 8952/tcp
 
+# service running
+STOPSIGNAL SIGTERM
+
 # Execute app
+WORKDIR /etc/nsd
+ENTRYPOINT ["/usr/local/sbin/run.sh"]
+
+# Application execution related information
+ADD ./run.sh /usr/local/sbin/run.sh
 RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
-CMD ["/usr/local/sbin/run.sh"]
 
 # Fetch nsd libraries from build image
 COPY --from=build /tmp/root/ /
