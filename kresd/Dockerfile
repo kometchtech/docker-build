@@ -12,14 +12,14 @@ ARG KNOT_RESOLVER_BUILD_DEPS="build-base clang automake autoconf libtool pkgconf
                               bsd-compat-headers nettle-dev binutils cmocka-dev protobuf-c-dev protobuf-dev \
                               lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev lld "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -FORTIFY_SOURCE=2 "
+ARG CFLAGS="-std=c99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ARG CC="clang"
 ARG CXX="clang++"
 
 # Install dependencies and sources
-RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update ${BUILDENV_DEPS}
 # Install Knot DNS from sources
@@ -53,8 +53,7 @@ ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm@test lua5.1-cqueues "
 ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
                   ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} "
 
-RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
-    && echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
+RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
     && apk add --update --no-cache ${RUNTIME_DEPS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && mkdir -p /var/run/knot-resolver
@@ -65,9 +64,9 @@ FROM knot-dns-build AS build
 # Build Knot Resolver
 # Environmet
 ENV RESOLV_VERSION v3.2.1
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -FORTIFY_SOURCE=2 "
+ARG CFLAGS="-std=c99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ARG CC="clang"
 ARG CXX="clang++"
 
@@ -92,7 +91,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ Asia/Tokyo
 
 # publish port DNS over UDP & TCP, DNS-over-TLS
-EXPOSE 53/UDP 53/TCP 853/TCP 8053/TCP
+EXPOSE 53/UDP 53/TCP 853/TCP
 
 # service running
 STOPSIGNAL SIGTERM
