@@ -3,7 +3,7 @@ FROM arm64v8/alpine:latest AS build
 
 # source build
 ARG MAJOR_VERSION=4.0
-ARG ZBX_VERSION=${MAJOR_VERSION}.5
+ARG ZBX_VERSION=${MAJOR_VERSION}.6
 ENV ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 ENV ZBX_SOURCES=http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${ZBX_VERSION}.orig.tar.gz
 ENV BUILD_PKGS="build-base clang autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl lld "
