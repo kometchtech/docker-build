@@ -1,13 +1,13 @@
 # 1st build 
 FROM arm64v8/golang:alpine as build-env
 
-ARG VERSION="v1.4.0"
+ARG VERSION="v1.5.0"
 WORKDIR /go/src
 RUN apk add --no-cache --update build-base git automake libtool autoconf pkgconfig 
-RUN git clone -b ${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/ \
-    && cd  /go/src/github.com/coredns/coredns/ \
-    && make -j"$(procs)" all \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -v -tags "osusergo netgo" -ldflags '-extldflags "-static -s -w"'
+RUN git clone -b ${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
+RUN cd  /go/src/github.com/coredns/coredns/ \
+    && make
+#    && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -v -tags "osusergo netgo" -ldflags '-extldflags "-static -s -w"'
 
 # 2nd build
 FROM scratch
