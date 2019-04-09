@@ -2,15 +2,15 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV KNOT_DNS_VERSION 2.8.0
+ENV KNOT_DNS_VERSION 2.8.1
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev \
                         curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
-                        musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev lld "
+                        musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
 
