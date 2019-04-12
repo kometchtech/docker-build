@@ -1,27 +1,25 @@
-# syntax = docker/dockerfile:experimental
 # Intermediate container for Knot DNS build (not persistent)
 FROM arm64v8/alpine:latest AS knot-dns-build
 
 # Environment
-ENV KNOT_DNS_VERSION v2.8.0
+ENV KNOT_DNS_VERSION v2.8.1
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev gnutls curl \
-                        gawk git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev lld "
+                        gawk git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev "
 ARG KNOT_RESOLVER_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig git luajit-dev libuv-dev \
                               lua-compat53 gnutls-dev fstrm-dev@test jansson-dev userspace-rcu-dev curl vim \
                               bsd-compat-headers nettle-dev binutils cmocka-dev protobuf-c-dev protobuf-dev \
-                              lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev lld "
+                              lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
-ARG CFLAGS="-std=c99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
+ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
 ARG CC="clang"
 ARG CXX="clang++"
 
 # Install dependencies and sources
 RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
-RUN --mount=type=cache,target=/var/cache/apk \
-  apk add --update ${BUILDENV_DEPS}
+RUN apk add --update ${BUILDENV_DEPS}
 # Install Knot DNS from sources
 RUN git clone -b ${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
 RUN cd /tmp/knot-dns \
@@ -64,9 +62,9 @@ FROM knot-dns-build AS build
 # Build Knot Resolver
 # Environmet
 ENV RESOLV_VERSION v3.2.1
-ARG CFLAGS="-std=c99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
+ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
 ARG CC="clang"
 ARG CXX="clang++"
 
