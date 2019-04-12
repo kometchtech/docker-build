@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Env
-ENV VERSION 1.3.3
+ENV VERSION 1.4.0-alpha1
 ARG BUILD_PKGS="build-base clang pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
                libedit-dev gawk curl lld  openssl-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE "
@@ -24,10 +24,11 @@ RUN cd /usr/src \
       --prefix=/usr/local \
       --sysconfdir=/etc/dnsdist \
       --localstatedir=/var \
-      --enable-libsodium \
+      --with-libsodium \
+      --with-libssl \
       --enable-dnscrypt \
       --enable-dns-over-tls \
-      --enable-re2 \
+      --with-re2 \
       --with-protobuf \
       --with-ebpf \
       --disable-dependency-tracking \
@@ -64,8 +65,11 @@ ENV TZ Asia/Tokyo
 # service running
 STOPSIGNAL SIGTERM
 
-# Expose
+# Publish port
 EXPOSE 53/tcp 53/udp
+
+# service running
+STOPSIGNAL SIGTERM
 
 # Volume
 WORKDIR /etc/dnsdist
