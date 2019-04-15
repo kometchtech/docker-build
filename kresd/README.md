@@ -16,6 +16,8 @@ Currently, the following error of LuaJIT involvement has occurred, it is not pos
 ```bash
 PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 ```
+- [](https://github.com/kometchtech/docker-build/issues/2)
+- [](https://github.com/kometchtech/docker-build/issues/7)
 
 #### Relation"?"
 
