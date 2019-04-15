@@ -11,13 +11,16 @@ Knot DNS Resolver <https://www.knot-resolver.cz/>
 
 ### issue (May 14, 2018)
 
-Currently, the following error of LuaJIT involvement has occurred, it is not possible to check the operation.
+Currently, the following error of LuaJIT involvement has occurred, it is not possible to check the operation.　　
+
+Also, when building with alpine, the base image is changed to debian because the problem of mounting LMDB fails or the problem of "root.keys': does not exist, bootstrapping" is not solved.
 
 ```bash
 PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 ```
-- [](https://github.com/kometchtech/docker-build/issues/2)
-- [](https://github.com/kometchtech/docker-build/issues/7)
+- [https://github.com/kometchtech/docker-build/issues/2]
+- [https://github.com/kometchtech/docker-build/issues/7]
+
 
 #### Relation"?"
 
