@@ -54,7 +54,8 @@ ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_
 RUN echo "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/backports.list
 RUN apt-get update -qq \
     && apt-get -y -qqq install  ${RUNTIME_DEPS} \
-    && apt-get -y -qqq install -t stretch-backports luajit libluajit-5.1-dev \
+#    && apt-get -y -qqq install -t stretch-backports luajit libluajit-5.1-dev \
+    && apt-get -y -qqq install -t stretch-backports luajit \
     && apt-get clean \
     && rm -rf /var/lib/apt/list/* /usr/local/share/man/* \
     && mkdir -p /var/run/knot-resolver
@@ -75,8 +76,7 @@ RUN git clone -b ${RESOLV_VERSION} --depth=1 --recursive https://github.com/CZ-N
 RUN cd /tmp/knot-resolver \
     && make -j"$(nproc)" install DESTDIR=/tmp/root
 RUN cd /tmp/knot-resolver \
-    && cp ./etc/config.docker /tmp/root/etc/knot-resolver/kresd.conf \
-    && cp ./distro/common/root.keys /tmp/root/etc/knot-resolver/
+    && cp ./etc/config.docker /tmp/root/etc/knot-resolver/kresd.conf
 
 
 # Final container
