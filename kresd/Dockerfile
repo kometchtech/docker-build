@@ -32,6 +32,7 @@ RUN cd /tmp/knot-dns \
      --with-lmdb=no \
     && make -j"$(nproc)" install
 RUN ldconfig /
+
 # Copy libknot, libdnssec, libzscanner to runtime
 RUN mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig
 RUN cp -r /usr/local/include/libknot /usr/local/include/libdnssec /usr/local/include/libzscanner /tmp/root/usr/local/include
@@ -49,7 +50,7 @@ ENV KNOT_RESOLVER_RUNTIME_DEPS_HTTP="lua-http lua-mmdb "
 ENV KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="libfstrm0 lua-cqueues "
 ENV KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates "
 ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
-                  ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} "
+                  ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} ${KNOT_RESOLVER_RUNTIME_DEPS_SSL}"
 
 RUN echo "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/backports.list
 RUN apt-get update -qq \
@@ -65,7 +66,7 @@ FROM knot-dns-build AS build
 
 # Build Knot Resolver
 # Environmet
-ENV RESOLV_VERSION v3.2.1
+ENV RESOLV_VERSION v4.0.0
 ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
@@ -73,10 +74,14 @@ ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
 # Knot Resolver build
 RUN mkdir -p /tmp/root/etc/knot-resolver
 RUN git clone -b ${RESOLV_VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
+#RUN cd /tmp/knot-resolver \
+#    && make -j"$(nproc)" install DESTDIR=/tmp/root
+#RUN cd /tmp/knot-resolver \
+#    && cp ./etc/config.docker /tmp/root/etc/knot-resolver/kresd.conf
 RUN cd /tmp/knot-resolver \
-    && make -j"$(nproc)" install DESTDIR=/tmp/root
-RUN cd /tmp/knot-resolver \
-    && cp ./etc/config.docker /tmp/root/etc/knot-resolver/kresd.conf
+    && CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
+    && DESTDIR=/tmp/root ninja -C build_docker install \
+    && cp /tmp/root/usr/share/doc/knot-resolver/examples/config.docker /tmp/root/etc/knot-resolver/kresd.conf
 
 
 # Final container
