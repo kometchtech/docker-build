@@ -52,8 +52,9 @@ RUN mkdir -p /tmp/build \
 RUN cd /tmp/build \
   && ./configure \
     --prefix=/usr \
-    --sysconfdir=/etc/kea \
+    --sysconfdir=/etc \
     --disable-rpath \
+    --disable-static \
     --with-boost-include \
     --with-botan-config \
     --with-mysql \
@@ -63,14 +64,15 @@ RUN cd /tmp/build \
   && make -j"$(nproc)" install DESTDIR=/tmp/root
 RUN ldconfig /
 # Delete unnecessary directory
-RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local/include
+RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local/include /tmp/root/usr/include \
+           /tmp/root/usr/share/kea /tmp/root/usr/share/doc/kea
 
 
 # Intermediate container with runtime dependencies
 FROM arm64v8/alpine:edge AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS=" libgcc libstdc++ boost-system mariadb-connector-c libpq "
+ARG RUN_PKGS=" libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata "
 #RUN echo "@testing http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
 COPY --from=log4cplus /tmp/root /
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -98,7 +100,9 @@ STOPSIGNAL SIGTERM
 
 # select entrypoint
 WORKDIR /etc/kea
-CMD ["/usr/local/sbin/keactrl", "start"]
+#CMD ["/usr/local/sbin/keactrl", "start"]
+COPY ./run.sh /usr/local/bin/
+ENTRYPOINT ["run.sh"]
 
 # Fetch isc Kea libraries from build image
 COPY --from=build /tmp/root/ /
