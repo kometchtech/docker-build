@@ -2,10 +2,10 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV BIND_VERSION="9_14_0"
-ARG BUILD_PKGS="build-base git curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers \
+ENV BIND_VERSION="9.14.1"
+ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers gawk \
                 bsd-compat-headers libedit-dev readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libtool "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -D_GNU_SOURCE -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 
@@ -13,8 +13,10 @@ ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 ## build
-RUN mkdir -p /tmp/build \
-  && git clone -b v${BIND_VERSION} --depth 1 https://github.com/isc-projects/bind9.git /tmp/build
+RUN mkdir -p /tmp/build
+RUN curl -fsSL "https://ftp.isc.org/isc/bind9/${BIND_VERSION}/bind-${BIND_VERSION}.tar.gz" -o bind9.tar.gz
+RUN tar xf bind9.tar.gz --strip-components=1 -C /tmp/build \
+    && rm bind9.tar.gz
 RUN cd /tmp/build \
   && ./autogen.sh \
   && ./configure \
