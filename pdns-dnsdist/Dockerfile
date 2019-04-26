@@ -2,14 +2,14 @@
 FROM arm64v8/alpine:latest AS build
 
 # Env
-ENV VERSION 1.4.0-alpha1
+ENV VERSION 1.4.0-alpha2
 ARG BUILD_PKGS="build-base clang pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
-               libedit-dev gawk curl lld  openssl-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE "
+               libedit-dev gawk curl openssl-dev lld "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fuse-ld=lld "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
-ENV CC="clang"
-ENV CXX="clang++"
+ENV CC="clang "
+ENV CXX="clang++ "
 
 # dev package install
 RUN mkdir -p /usr/src /tmp/root/etc/dnsdist
