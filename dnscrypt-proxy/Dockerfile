@@ -6,7 +6,7 @@ FROM arm64v8/golang:alpine as build
 ENV CGO_ENABLED 0
 ENV GOOS linux
 ENV GOARCH arm64
-ENV VERSION 2.0.22
+ENV VERSION 2.0.23
 WORKDIR /go/src/github.com/jedisct1/
 RUN --mount=type=cache,target=/root/.cache/go-build \
   apk add --update --no-cache git
