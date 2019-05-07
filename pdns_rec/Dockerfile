@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environmet
-ENV VERSION 4.2.0-alpha1
+ENV VERSION 4.2.0-beta1
 ARG BUILD_PKGS="build-base clang libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev \
                 curl gawk lld "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE "
@@ -26,6 +26,7 @@ RUN cd /tmp/build \
       --localstatedir=/var \
       --libdir=${prefix}/lib/aarch64-linux-gnu \
       --libexecdir=${prefix}/lib/aarch64-linux-gnu \
+      --disable-static \
       --disable-dependency-tracking \
       --enable-libsodium \
       --with-protobuf \
@@ -67,7 +68,7 @@ EXPOSE 53/UDP 53/TCP
 
 # select ENTRYPOINT
 WORKDIR /etc/powerdns
-CMD ["/usr/local/sbin/pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
+CMD ["pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
 
 COPY --from=build /tmp/root/ /
 RUN ldconfig /
