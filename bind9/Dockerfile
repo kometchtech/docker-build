@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV BIND_VERSION="9.14.1"
+ENV BIND_VERSION="9.15.0"
 ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers gawk \
                 bsd-compat-headers libedit-dev readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libtool "
 ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -D_GNU_SOURCE -fPIE "
