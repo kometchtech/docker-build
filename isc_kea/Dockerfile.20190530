@@ -26,37 +26,12 @@ RUN cd /usr/local/src \
 RUN ldconfig /
 
 
-## botan
-FROM arm64v8/alpine:edge AS botan
-
-# Environment
-ENV BOTAN="2.10.0"
-ARG BUILD_PKGS="build-base gawk python boost-dev bzip2-dev libressl-dev zlib-dev sqlite-dev "
-
-# build library
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
-RUN mkdir -p /usr/local/src \
-    && wget "https://botan.randombit.net/releases/Botan-${BOTAN}.tgz" -O botan.tar.gz \
-    && tar xf botan.tar.gz --strip-components=1 -C /usr/local/src \
-    && rm botan.tar.gz
-RUN cd /usr/local/src \
-    && ./configure.py \
-        --disable-static-library \
-        --optimize-for-size \
-        --amalgamation \
-        --minimized-build \
-        --without-documentation \
-    && make -j"$(nproc)" install DESTDIR=/tmp/root
-RUN ldconfig /
-
-
 # build binary
 FROM arm64v8/alpine:edge AS build
 
 # Environment
 ENV KEA_VERSION="1.6.0-beta"
-ARG BUILD_PKGS="build-base clang boost-dev postgresql-dev mariadb-dev gawk bison flex lld perl autoconf automake libtool "
+ARG BUILD_PKGS="build-base botan-dev clang boost-dev postgresql-dev mariadb-dev gawk bison flex lld perl autoconf automake libtool "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="-O2 -DOS_LINUX -DBOOST_ASIO_HEADER_ONLY "
@@ -66,7 +41,6 @@ ENV CXX="clang++ "
 
 # dev package install
 COPY --from=log4cplus /tmp/root /
-COPY --from=botan /tmp/root /
 #RUN echo "@comm http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
@@ -102,10 +76,9 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 FROM arm64v8/alpine:edge AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata "
+ARG RUN_PKGS="botan libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata "
 #RUN echo "@comm http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
 COPY --from=log4cplus /tmp/root /
-COPY --from=botan /tmp/root /
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
