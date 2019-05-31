@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 ## log4cplus
-FROM arm64v8/alpine:edge AS log4cplus
+FROM arm64v8/alpine:latest AS log4cplus
 
 # Environment
 ENV LOG4CPLUS="1.2.2"
@@ -27,7 +27,7 @@ RUN ldconfig /
 
 
 ## botan
-FROM arm64v8/alpine:edge AS botan
+FROM arm64v8/alpine:latest AS botan
 
 # Environment
 ENV BOTAN="2.10.0"
@@ -52,7 +52,7 @@ RUN ldconfig /
 
 
 # build binary
-FROM arm64v8/alpine:edge AS build
+FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV KEA_VERSION="1.6.0-beta"
@@ -99,7 +99,7 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/alpine:edge AS runtime
+FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata "
