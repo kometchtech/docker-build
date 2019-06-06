@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV VERSION 1.9.1
+ENV VERSION 1.9.2rc1
 ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld hiredis-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
