@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Env
-ENV VERSION 1.4.0-alpha2
+ENV VERSION 1.4.0-beta1
 ARG BUILD_PKGS="build-base clang pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
                libedit-dev gawk curl openssl-dev lld "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fuse-ld=lld "
