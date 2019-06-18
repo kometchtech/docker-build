@@ -72,7 +72,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 ## build
 RUN mkdir -p /tmp/build \
-  && wget "https://ftp.isc.org/isc/kea/${KEA_VERSION}/kea-${VERSION}.tar.gz" -O kea.tar.gz \
+  && wget "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" -O kea.tar.gz \
   && tar xf kea.tar.gz --strip-components=1 -C /tmp/build \
   && rm kea.tar.gz
 RUN cd /tmp/build \
