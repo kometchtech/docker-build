@@ -55,7 +55,7 @@ RUN ldconfig /
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV KEA_VERSION="1.6.0-beta"
+ENV VERSION="1.6.0-beta"
 ARG BUILD_PKGS="build-base clang boost-dev postgresql-dev mariadb-dev gawk bison flex lld perl autoconf automake libtool "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
@@ -72,7 +72,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 ## build
 RUN mkdir -p /tmp/build \
-  && wget "https://ftp.isc.org/isc/kea/${KEA_VERSION}/kea-${KEA_VERSION}.tar.gz" -O kea.tar.gz \
+  && wget "https://ftp.isc.org/isc/kea/${KEA_VERSION}/kea-${VERSION}.tar.gz" -O kea.tar.gz \
   && tar xf kea.tar.gz --strip-components=1 -C /tmp/build \
   && rm kea.tar.gz
 RUN cd /tmp/build \
