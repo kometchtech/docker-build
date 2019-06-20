@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV KNOT_DNS_VERSION 2.8.2
+ENV VERSION 2.8.2
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev \
                         curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update ${BUILDENV_DEPS}
 # Install Knot DNS from sources
 RUN mkdir -p /tmp/knot-dns/ /tmp/root/etc/knot-dns
-RUN git clone -b v${KNOT_DNS_VERSION} --depth=1 https://github.com/CZ-NIC/knot.git /tmp/knot-dns
+RUN git clone -b v${VERSION} --depth=1 https://github.com/CZ-NIC/knot.git /tmp/knot-dns
 RUN cd /tmp/knot-dns \
   && autoreconf -if \
   && ./configure \
