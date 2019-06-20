@@ -1,12 +1,12 @@
 # syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS getdns-build
 
-ENV VERSION v1.5.2
+ARG GETDNS_VERSION="1.5.2"
 ARG BUILD_PKGS="build-base clang git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev \
-                libuv-dev libev-dev check-dev unbound-dev libcrypto1.1 lld "
+                libuv-dev libev-dev check-dev unbound-dev libcrypto1.1 "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
 
@@ -15,7 +15,7 @@ ENV CXX="clang++"
 RUN apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/src /tmp/root/var/stubby/ /tmp/root/etc/stubby/ /tmp/root/usr/local/lib/ /tmp/root/usr/local/include
 # app build
-RUN git clone -b ${VERSION} --depth 1 https://github.com/getdnsapi/getdns.git /usr/src
+RUN git clone -b v${GETDNS_VERSION} --depth 1 https://github.com/getdnsapi/getdns.git /usr/src
 RUN cd /usr/src \
     && git submodule update --init \
     && libtoolize -ci \
@@ -23,6 +23,7 @@ RUN cd /usr/src \
     && mkdir build \
     && cd build \
     && ../configure \
+    --disable-static \
     --without-libidn \
     --without-libidn2 \
     --with-stubby \
@@ -49,16 +50,18 @@ RUN apk add --update --no-cache ${RUN_PKGS} \
 # build stubby
 FROM getdns-build AS build
 
-ENV STUBBY_VERSION v0.2.6
-ARG BUILD_PKGS="build-base clang autoconf automake gawk git yaml libressl unbound lld "
+ARG VERSION="0.2.6"
+ARG BUILD_PKGS="build-base clang autoconf automake gawk git yaml libressl unbound "
 
 #RUN --mount=type=cache,target=/var/cache/apk \
 RUN apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/src/stubby /tmp/root/etc/unbound
-RUN git clone -b ${STUBBY_VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stuby
+RUN git clone -b v${VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stuby
 RUN cd /usr/src/stubby \
     && autoreconf -fi \
-    && ./configure CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib -fuse-ld=lld " \
+    && ./configure \
+        --disable-static \
+        CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib " \
     && make -j "$(nproc)" \
     && make install DESTDIR=/tmp/root
 RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
