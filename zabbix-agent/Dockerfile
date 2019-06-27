@@ -4,8 +4,8 @@ FROM arm64v8/alpine:latest AS build
 # source build
 ARG MAJOR_VERSION=4.2
 ARG ZBX_VERSION=${MAJOR_VERSION}.3
-ENV VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
-ARG ZBX_SOURCES="http://repo.zabbix.com/zabbix/${MAJOR_VERSION}/ubuntu/pool/main/z/zabbix/zabbix_${VERSION}.orig.tar.gz"
+ARG VERSION=${ZBX_VERSION} 
+ENV ZBX_SOURCES="https://sourceforge.net/projects/zabbix/files/ZABBIX Latest Stable/${VERSION}/zabbix-${VERSION}.tar.gz"
 ENV BUILD_PKGS="build-base clang autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl lld "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
@@ -17,11 +17,11 @@ ENV CXX="clang++"
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update -t .build-dep ${BUILD_PKGS}
 RUN cd /tmp/ \
-    && curl -fSsL ${ZBX_SOURCES} -o zabbix-${ZBX_VERSION}.tar.gz \
-    && tar xf zabbix-${ZBX_VERSION}.tar.gz \
-    && rm -rf zabbix-${ZBX_VERSION}.tar.gz
+    && curl -fSsL "${ZBX_SOURCES}" -o "zabbix-${VERSION}.tar.gz" \
+    && tar xf "zabbix-${VERSION}.tar.gz" \
+    && rm -rf "zabbix-${VERSION}.tar.gz"
 # build
-RUN cd /tmp/zabbix-${ZBX_VERSION} \
+RUN cd /tmp/zabbix-${VERSION} \
     && ./configure \
        --datadir=/usr/lib \
        --libdir=/usr/lib/zabbix \
@@ -35,7 +35,7 @@ RUN cd /tmp/zabbix-${ZBX_VERSION} \
     && make -j"$(nproc)" -s 1>/dev/null \
     && make install DESTDIR=/tmp/root
 RUN ldconfig /
-RUN cd /tmp/zabbix-${ZBX_VERSION} \
+RUN cd /tmp/zabbix-${VERSION} \
     && rm -rf /tmp/root/usr/share/man /tmp/root/usr/local/share/man \
     && cp src/zabbix_agent/zabbix_agentd /tmp/root/usr/sbin/zabbix_agentd \
     && cp src/zabbix_get/zabbix_get /tmp/root/usr/bin/zabbix_get \
