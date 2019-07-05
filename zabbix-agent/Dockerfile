@@ -4,7 +4,7 @@ FROM arm64v8/alpine:latest AS build
 # source build
 ARG MAJOR_VERSION=4.2
 ARG ZBX_VERSION=${MAJOR_VERSION}.3
-ARG VERSION=${ZBX_VERSION} 
+ARG VERSION=${ZBX_VERSION}
 ENV ZBX_SOURCES="https://sourceforge.net/projects/zabbix/files/ZABBIX Latest Stable/${VERSION}/zabbix-${VERSION}.tar.gz"
 ENV BUILD_PKGS="build-base clang autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl lld "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
