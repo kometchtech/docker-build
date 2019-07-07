@@ -3,7 +3,7 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV VERSION 1.9.2
-ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld hiredis-dev "
+ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev lld hiredis-dev libsodium-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
@@ -38,6 +38,7 @@ RUN cd /usr/src \
       --enable-tfo-client \
       --enable-cachedb \
       --with-libhiredis \
+      --enable-dnscrypt \
       PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
   && make -j"$(nproc)" \
@@ -48,7 +49,7 @@ RUN cd /usr/src \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis "
+ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium "
 #RUN --mount=type=cache,target=/var/cache/apk \
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/*
