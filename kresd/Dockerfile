@@ -2,11 +2,11 @@
 FROM arm64v8/alpine:latest AS knot-dns-build
 
 # Environment
-ENV KNOT_DNS_VERSION 2.8.2
+ARG KNOT_DNS_VERSION="2.8.2"
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev gnutls curl \
                         gawk git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev "
-ARG KNOT_RESOLVER_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig git luajit-dev libuv-dev \
+ENV KNOT_RESOLVER_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig git luajit-dev libuv-dev \
                               lua-compat53 gnutls-dev fstrm-dev@test jansson-dev userspace-rcu-dev curl vim \
                               bsd-compat-headers nettle-dev binutils cmocka-dev protobuf-c-dev protobuf-dev \
                               lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev meson lmdb-dev "
@@ -48,14 +48,15 @@ ARG KNOT_RESOLVER_RUNTIME_DEPS="lmdb luajit libuv lua5.1-sec lua5.1-socket lua5.
                                ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_HTTP="lua5.1-http lua5.1-maxminddb "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm@test lua5.1-cqueues "
-ARG KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates "
+ARG KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates openssl "
 ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
                   ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} ${KNOT_RESOLVER_RUNTIME_DEPS_SSL} "
 
 RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
     && apk add --update --no-cache ${RUNTIME_DEPS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-    && mkdir -p /var/run/knot-resolver
+    && mkdir -p /var/run/knot-resolver \
+    && update-ca-certificates
 
 # Intermediate container for Knot Resolver build
 FROM knot-dns-build AS build
@@ -94,7 +95,6 @@ EXPOSE 53/UDP 53/TCP 853/TCP
 # service running
 STOPSIGNAL SIGTERM
 
-WORKDIR kometchtech/kresd
 ENTRYPOINT ["/usr/local/sbin/run.sh"]
 CMD ["-c", "/etc/knot-resolver/kresd.conf"]
 
