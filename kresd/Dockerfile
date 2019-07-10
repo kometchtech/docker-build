@@ -62,7 +62,7 @@ FROM knot-dns-build AS build
 
 # Build Knot Resolver
 # Environmet
-ENV VERSION 4.0.0
+ARG VERSION="4.0.0"
 ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
