@@ -95,8 +95,8 @@ EXPOSE 53/UDP 53/TCP 853/TCP
 # service running
 STOPSIGNAL SIGTERM
 
-ENTRYPOINT ["/usr/local/sbin/run.sh"]
-CMD ["-c", "/etc/knot-resolver/kresd.conf"]
+#ENTRYPOINT ["/usr/local/sbin/run.sh"]
+#CMD ["-c", "/etc/knot-resolver/kresd.conf"]
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
