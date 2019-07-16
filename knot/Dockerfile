@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV VERSION 2.8.2
+ARG VERSION="2.8.2"
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev \
                         curl gawk git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
