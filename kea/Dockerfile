@@ -55,7 +55,7 @@ RUN ldconfig /
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV VERSION="1.6.0-beta"
+ARG VERSION="1.6.0-beta"
 ARG BUILD_PKGS="build-base clang boost-dev postgresql-dev mariadb-dev gawk bison flex lld perl autoconf automake libtool "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
