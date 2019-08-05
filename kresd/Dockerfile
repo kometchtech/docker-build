@@ -2,14 +2,14 @@
 FROM arm64v8/alpine:latest AS knot-dns-build
 
 # Environment
-ARG KNOT_DNS_VERSION="2.8.2"
+ARG KNOT_DNS_VERSION="2.8.3"
 # Build dependencies
 ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev gnutls curl \
                         gawk git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev "
 ENV KNOT_RESOLVER_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig git luajit-dev libuv-dev \
                               lua-compat53 gnutls-dev fstrm-dev@test jansson-dev userspace-rcu-dev curl vim \
                               bsd-compat-headers nettle-dev binutils cmocka-dev protobuf-c-dev protobuf-dev \
-                              lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev meson lmdb-dev "
+                              lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev meson lmdb-dev lua5.1-ossl "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
 ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
 ARG CXXFLAGS="${CFLAGS} "
@@ -46,8 +46,8 @@ FROM arm64v8/alpine:latest AS runtime
 ARG KNOT_DNS_RUNTIME_DEPS="gnutls "
 ARG KNOT_RESOLVER_RUNTIME_DEPS="lmdb luajit libuv lua5.1-sec lua5.1-socket lua5.1-filesystem lua-compat53 \
                                ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit "
-ARG KNOT_RESOLVER_RUNTIME_DEPS_HTTP="lua5.1-http lua5.1-maxminddb "
-ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm@test lua5.1-cqueues "
+ARG KNOT_RESOLVER_RUNTIME_DEPS_HTTP=" lua5.1-maxminddb lua5.1-ossl "
+ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm@test "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates openssl "
 ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
                   ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} ${KNOT_RESOLVER_RUNTIME_DEPS_SSL} "
@@ -64,7 +64,7 @@ FROM knot-dns-build AS build
 # Build Knot Resolver
 # Environmet
 ARG VERSION="4.0.0"
-ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -fstack-protector -g "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
 
@@ -73,8 +73,7 @@ RUN mkdir -p /tmp/root/etc/knot-resolver
 RUN git clone -b v${VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
 
 RUN cd /tmp/knot-resolver \
-    && CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
-#    && CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" meson build_docker --buildtype=release --prefix=/usr --libdir=lib \
+    && CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
     && DESTDIR=/tmp/root ninja -C build_docker install \
     && cp /tmp/root/usr/share/doc/knot-resolver/examples/config.docker /tmp/root/etc/knot-resolver/kresd.conf
 
