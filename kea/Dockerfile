@@ -4,10 +4,10 @@ FROM arm64v8/alpine:latest AS log4cplus
 
 # Environment
 ENV LOG4CPLUS="1.2.2"
-ARG BUILD_PKGS="build-base gawk clang lld "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fuse-ld=lld "
+ARG BUILD_PKGS="build-base gawk clang "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang "
 ENV CXX="clang++ "
 
@@ -56,11 +56,11 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ARG VERSION="1.6.0-beta"
-ARG BUILD_PKGS="build-base clang boost-dev postgresql-dev mariadb-dev gawk bison flex lld perl autoconf automake libtool "
+ARG BUILD_PKGS="build-base clang boost-dev postgresql-dev mariadb-dev gawk bison flex perl autoconf automake libtool "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="-O2 -DOS_LINUX -DBOOST_ASIO_HEADER_ONLY "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang "
 ENV CXX="clang++ "
 
