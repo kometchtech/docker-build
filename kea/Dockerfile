@@ -102,7 +102,7 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata "
+ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps"
 #RUN echo "@comm http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
@@ -131,7 +131,6 @@ STOPSIGNAL SIGTERM
 
 # select entrypoint
 WORKDIR /etc/kea
-#CMD ["/usr/local/sbin/keactrl", "start"]
 COPY ./run.sh /usr/local/bin/
 ENTRYPOINT ["run.sh"]
 
