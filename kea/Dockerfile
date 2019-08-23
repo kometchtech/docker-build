@@ -4,22 +4,24 @@ FROM arm64v8/alpine:latest AS log4cplus
 
 # Environment
 ENV LOG4CPLUS="1.2.2"
-ARG BUILD_PKGS="build-base gawk clang "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG BUILD_BASE="build-base binutils-gold clang make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE}"
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang "
-ENV CXX="clang++ "
+ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
+ARG CC="clang"
+ARG CXX="clang++"
 
 # build library
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/local/src \
-    && wget "https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2/" -O log4cplus.tar.bz2 \
+    && curl -fSsL "${LOG4CPLUS_SOURCE}" -o log4cplus.tar.bz2 \
     && tar xf log4cplus.tar.bz2 --strip-components=1 -C /usr/local/src \
     && rm log4cplus.tar.bz2
 RUN cd /usr/local/src \
-    && ./configure  \
+    && ./configure \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j$(nproc) \
     && make install DESTDIR=/tmp/root
@@ -31,13 +33,16 @@ FROM arm64v8/alpine:latest AS botan
 
 # Environment
 ENV BOTAN="2.10.0"
-ARG BUILD_PKGS="build-base gawk python boost-dev bzip2-dev libressl-dev zlib-dev sqlite-dev "
+ARG BUILD_BASE="build-base binutils-gold clang make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} python boost-dev bzip2-dev libressl-dev zlib-dev sqlite-dev "
+ARG CC="clang"
+ARG CXX="clang++"
 
 # build library
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/local/src \
-    && wget "https://botan.randombit.net/releases/Botan-${BOTAN}.tgz" -O botan.tar.gz \
+    && curl -fsSL "https://botan.randombit.net/releases/Botan-${BOTAN}.tgz" -o botan.tar.gz \
     && tar xf botan.tar.gz --strip-components=1 -C /usr/local/src \
     && rm botan.tar.gz
 RUN cd /usr/local/src \
@@ -56,10 +61,11 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ARG VERSION="1.6.0-beta"
-ARG BUILD_PKGS="build-base clang boost-dev postgresql-dev mariadb-dev gawk bison flex perl autoconf automake libtool "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG BUILD_BASE="build-base binutils-gold clang make clang gawk autoconf automake libtool "
+ARG BUILD_PKGS="${BUILD_BASE} boost-dev postgresql-dev mariadb-dev bison flex perl curl libressl-dev"
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
-ARG CPPFLAGS="-O2 -DOS_LINUX -DBOOST_ASIO_HEADER_ONLY "
+ARG CPPFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang "
 ENV CXX="clang++ "
@@ -72,12 +78,10 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 ## build
 RUN mkdir -p /tmp/build \
-  && wget "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" -O kea.tar.gz \
+  && curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" -o kea.tar.gz \
   && tar xf kea.tar.gz --strip-components=1 -C /tmp/build \
   && rm kea.tar.gz
 RUN cd /tmp/build \
-  && autoreconf -if \
-  && autoreconf --install \
   && ./configure \
     --prefix=/usr \
     --sysconfdir=/etc \
@@ -91,7 +95,8 @@ RUN cd /tmp/build \
 #    --disable-dependency-tracking \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /tmp/build \
-    && make -j"$(nproc)" install DESTDIR=/tmp/root
+    && make -j"$(nproc)" \
+    && make install DESTDIR=/tmp/root
 RUN ldconfig /
 # Delete unnecessary directory
 RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local/include /tmp/root/usr/include \
@@ -102,7 +107,7 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps"
+ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps libressl"
 #RUN echo "@comm http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
@@ -110,7 +115,6 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && mkdir -p /var/lib/kea
-
 
 # Final container
 FROM runtime
