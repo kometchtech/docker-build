@@ -3,7 +3,8 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV VERSION 1.9.2
-ARG BUILD_PKGS="build-base clang curl expat-dev libressl-dev libevent-dev flex-dev hiredis-dev libsodium-dev "
+ARG BUILD_BASE="build-base binutils-gold clang make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} expat-dev libressl-dev libevent-dev flex-dev hiredis-dev libsodium-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
