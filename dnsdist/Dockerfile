@@ -3,15 +3,20 @@ FROM arm64v8/alpine:latest AS build
 
 # Env
 ARG VERSION="1.4.0-beta1"
-ARG BUILD_PKGS="build-base clang pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
-               libedit-dev gawk curl openssl-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE "
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
+               libedit-dev openssl-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang "
-ENV CXX="clang++ "
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
-# dev package install
+#4 dev package install
 RUN mkdir -p /usr/src /tmp/root/etc/dnsdist
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update --no-cache ${BUILD_PKGS}
@@ -33,7 +38,7 @@ RUN cd /usr/src \
       --with-ebpf \
       --disable-dependency-tracking \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j4  \
+    && make -j"$(nproc)"  \
     && make install-strip DESTDIR=/tmp/root
 RUN ldconfig /
 RUN rm -rf /tmp/root/usr/local/share/man/*
