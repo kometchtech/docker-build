@@ -3,17 +3,21 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ENV VERSION 1.9.2
-ARG BUILD_BASE="build-base binutils-gold clang make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} expat-dev libressl-dev libevent-dev flex-dev hiredis-dev libsodium-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # source build and install
-#RUN --mount=type=cache,target=/var/cache/apk \
-RUN apk add --update ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 # build
 RUN mkdir -p /usr/src /tmp/root/etc/unbound \
   && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" -o unbound.tar.gz \
@@ -51,8 +55,8 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium "
-#RUN --mount=type=cache,target=/var/cache/apk \
-RUN apk add --update --no-cache ${RUN_PKGS} \
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/*
 #    && adduser -DH unbound
 
@@ -77,11 +81,11 @@ STOPSIGNAL SIGTERM
 
 # entrypoint
 WORKDIR /etc/unbound
-ENTRYPOINT ["/usr/local/sbin/run.sh"]
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 
 # Application execution related information
-ADD ./run.sh /usr/local/sbin/
-RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
+ADD ./entrypoint.sh /usr/local/sbin/
+RUN chmod +x /usr/local/sbin/run.sh
 
 # Fetch unbound and libraries from build image
 COPY --from=build /tmp/root/ /
