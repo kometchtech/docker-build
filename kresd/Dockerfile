@@ -4,18 +4,23 @@ FROM arm64v8/alpine:latest AS knot-dns-build
 # Environment
 ARG KNOT_DNS_VERSION="2.8.3"
 # Build dependencies
-ARG KNOT_DNS_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig userspace-rcu-dev gnutls curl \
-                        gawk git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev "
-ENV KNOT_RESOLVER_BUILD_DEPS="build-base clang automake autoconf libtool pkgconfig git luajit-dev libuv-dev \
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls \
+                        git bsd-compat-headers musl-utils fstrm-dev@test protobuf-c-dev protobuf-dev "
+ENV KNOT_RESOLVER_BUILD_DEPS="${BUILD_BASE} pkgconfig git luajit-dev libuv-dev \
                               lua-compat53 gnutls-dev fstrm-dev@test jansson-dev userspace-rcu-dev curl vim \
                               bsd-compat-headers nettle-dev binutils cmocka-dev protobuf-c-dev protobuf-dev \
                               lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev meson lmdb-dev lua5.1-ossl "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
-ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
+ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIE -D_GNU_SOURCE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
-ARG CC="clang"
-ARG CXX="clang++"
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # Install dependencies and sources
 RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
@@ -64,9 +69,15 @@ FROM knot-dns-build AS build
 # Build Knot Resolver
 # Environmet
 ARG VERSION="4.0.0"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -fstack-protector -g "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fstack-protector -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # Knot Resolver build
 RUN mkdir -p /tmp/root/etc/knot-resolver
@@ -94,11 +105,11 @@ EXPOSE 53/UDP 53/TCP 853/TCP
 # service running
 STOPSIGNAL SIGTERM
 
-#ENTRYPOINT ["/usr/local/sbin/run.sh"]
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 #CMD ["-c", "/etc/knot-resolver/kresd.conf"]
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
-COPY ./run.sh /usr/local/sbin/run.sh
-RUN chmod +x /usr/local/sbin/run.sh \
+COPY ./entrypoint.sh /usr/local/sbin/entrypoint.sh
+RUN chmod +x /usr/local/sbin/entrypoint.sh \
     && ldconfig /
