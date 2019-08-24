@@ -3,12 +3,17 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ARG VERSION=4.2.0
-ARG BUILD_PKGS="build-base clang curl automake autoconf expat-dev libressl-dev libevent-dev lld "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG BUILD_BASE="build-base binutils clang llvm make gawk autoconf automake libtool curl lld "
+ARG BUILD_PKGS="${BUILD_BASE} expat-dev libressl-dev libevent-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # source build and install
 #RUN --mount=type=cache,target=/var/cache/apk \
@@ -65,11 +70,11 @@ STOPSIGNAL SIGTERM
 
 # Execute app
 WORKDIR /etc/nsd
-ENTRYPOINT ["/usr/local/sbin/run.sh"]
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 
 # Application execution related information
-ADD ./run.sh /usr/local/sbin/run.sh
-RUN ["chmod", "+x", "/usr/local/sbin/run.sh"]
+ADD ./entrypoint.sh /usr/local/sbin/
+RUN chmod +x /usr/local/sbin/entrypoint.sh
 
 # Fetch nsd libraries from build image
 COPY --from=build /tmp/root/ /
