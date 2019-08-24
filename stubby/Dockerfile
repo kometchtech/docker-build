@@ -2,17 +2,21 @@
 FROM arm64v8/alpine:latest AS getdns-build
 
 ARG GETDNS_VERSION="1.5.2"
-ARG BUILD_PKGS="build-base clang git libtool m4 yaml-dev autoconf automake linux-headers gawk libressl-dev \
-                libuv-dev libev-dev check-dev unbound-dev libcrypto1.1 "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libressl-dev libuv-dev libev-dev check-dev unbound-dev libcrypto1.1 "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # build dependencies install
-#RUN --mount=type=cache,target=/var/cache/apk \
-RUN apk add --update ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/src /tmp/root/var/stubby/ /tmp/root/etc/stubby/ /tmp/root/usr/local/lib/ /tmp/root/usr/local/include
 # app build
 RUN git clone -b v${GETDNS_VERSION} --depth 1 https://github.com/getdnsapi/getdns.git /usr/src
@@ -30,8 +34,8 @@ RUN cd /usr/src \
     --with-libuv \
     --with-libev \
     CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
-    && make -j"$(nproc)" install \
-    && ldconfig /
+    && make -j"$(nproc)" install
+RUN ldconfig /
 # Copy libgetdns, libgetdns_ext_ev, libgetdns_ext_uv
 RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
     && cp -r /usr/local/include/* /tmp/root/usr/local/include/ \
@@ -51,10 +55,20 @@ RUN apk add --update --no-cache ${RUN_PKGS} \
 FROM getdns-build AS build
 
 ARG VERSION="0.2.6"
-ARG BUILD_PKGS="build-base clang autoconf automake gawk git yaml libressl unbound "
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} git yaml libressl unbound "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
-#RUN --mount=type=cache,target=/var/cache/apk \
-RUN apk add --update ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/src/stubby /tmp/root/etc/unbound
 RUN git clone -b v${VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stuby
 RUN cd /usr/src/stubby \
