@@ -2,14 +2,18 @@
 FROM arm64v8/alpine:latest AS build
 
 # Environmet
-ARG VERSION="4.2.0-rc1"
-ARG BUILD_PKGS="build-base clang libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev \
-                curl gawk lld "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE "
-ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG VERSION="4.2.0"
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG CXXFLAGS="${CFLAGS} "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # dev package install
 RUN --mount=type=cache,target=/var/cache/apk \
