@@ -1,21 +1,32 @@
 # syntax = docker/dockerfile:experimental
+
+## base image
+FROM arm64v8/alpine:latest AS base-image
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE}"
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
+
+
 ## log4cplus
-FROM arm64v8/alpine:latest AS log4cplus
+FROM base-image AS log4cplus
 
 # Environment
 ENV LOG4CPLUS="1.2.2"
-ARG BUILD_BASE="build-base binutils-gold clang make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE}"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
-ARG CC="clang"
-ARG CXX="clang++"
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # build library
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+#RUN --mount=type=cache,target=/var/cache/apk \
+#    apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/local/src \
     && curl -fSsL "${LOG4CPLUS_SOURCE}" -o log4cplus.tar.bz2 \
     && tar xf log4cplus.tar.bz2 --strip-components=1 -C /usr/local/src \
@@ -29,20 +40,26 @@ RUN ldconfig /
 
 
 ## botan
-FROM arm64v8/alpine:latest AS botan
+FROM base-image AS botan
 
 # Environment
-ENV BOTAN="2.10.0"
-ARG BUILD_BASE="build-base binutils-gold clang make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} python boost-dev bzip2-dev libressl-dev zlib-dev sqlite-dev "
-ARG CC="clang"
-ARG CXX="clang++"
+ENV BOTAN="2.11.0"
+ARG BUILD_PKGS="boost-dev bzip2-dev libressl-dev zlib-dev sqlite-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS} "
+ARG CPPFLAGS="${CFLAGS} "
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # build library
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/local/src \
-    && curl -fsSL "https://botan.randombit.net/releases/Botan-${BOTAN}.tgz" -o botan.tar.gz \
+    && curl -fsSL "https://github.com/randombit/botan/archive/${BOTAN}.tar.gz" -o botan.tar.gz \
     && tar xf botan.tar.gz --strip-components=1 -C /usr/local/src \
     && rm botan.tar.gz
 RUN cd /usr/local/src \
@@ -57,23 +74,25 @@ RUN ldconfig /
 
 
 # build binary
-FROM arm64v8/alpine:latest AS build
+FROM base-image AS build
 
 # Environment
 ARG VERSION="1.6.0-beta"
-ARG BUILD_BASE="build-base binutils-gold clang make clang gawk autoconf automake libtool "
-ARG BUILD_PKGS="${BUILD_BASE} boost-dev postgresql-dev mariadb-dev bison flex perl curl libressl-dev"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE "
+ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl libressl-dev"
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang "
-ENV CXX="clang++ "
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # dev package install
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
-#RUN echo "@comm http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 ## build
@@ -83,7 +102,7 @@ RUN mkdir -p /tmp/build \
   && rm kea.tar.gz
 RUN cd /tmp/build \
   && ./configure \
-    --prefix=/usr \
+    --prefix=/usr/local \
     --sysconfdir=/etc \
     --disable-rpath \
     --disable-static \
@@ -135,8 +154,8 @@ STOPSIGNAL SIGTERM
 
 # select entrypoint
 WORKDIR /etc/kea
-COPY ./run.sh /usr/local/bin/
-ENTRYPOINT ["run.sh"]
+COPY ./entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # Fetch isc Kea libraries from build image
 COPY --from=build /tmp/root/ /
