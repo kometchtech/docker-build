@@ -85,7 +85,7 @@ ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 
 # Application execution related information
 ADD ./entrypoint.sh /usr/local/sbin/
-RUN chmod +x /usr/local/sbin/run.sh
+RUN chmod +x /usr/local/sbin/entrypoint.sh
 
 # Fetch unbound and libraries from build image
 COPY --from=build /tmp/root/ /
