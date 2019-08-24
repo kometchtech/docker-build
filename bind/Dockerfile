@@ -3,11 +3,16 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ARG VERSION="9.15.0"
-ARG BUILD_PKGS="build-base curl automake autoconf libressl-dev libcap-dev perl-dev linux-headers gawk \
-                bsd-compat-headers libedit-dev readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libtool "
-ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIC -D_GNU_SOURCE -fPIE "
+ARG BUILD_BASE="build-base binutils llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} libressl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
+                readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev "
+ARG CFLAGS="-std=gnu11 -O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # dev package install
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -16,13 +21,16 @@ RUN --mount=type=cache,target=/var/cache/apk \
 RUN mkdir -p /tmp/build
 RUN curl -fsSL "https://ftp.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.gz" -o bind9.tar.gz
 RUN tar xf bind9.tar.gz --strip-components=1 -C /tmp/build \
-    && rm bind9.tar.gz
+    && rm -f bind9.tar.gz
 RUN cd /tmp/build \
   && ./autogen.sh \
   && ./configure \
     --prefix=/usr/local \
     --sysconfdir=/etc/named \
     --localstatedir=/var \
+    --disable-linux-caps \
+    --with-libxml2 \
+    --with-dlopen=yes \
     --with-libtool \
     --disable-static \
     --with-openssl \
