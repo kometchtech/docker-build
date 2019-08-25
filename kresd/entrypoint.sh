@@ -7,6 +7,6 @@ var="$@"
 # Knot Resolver Garbage Collector daemon
 kres-cache-gc -c /var/cache/knot-resolver -d 1000 &
 # Knot Resolver daemon
-/usr/sbin/kresd $var &
+sh -c "/usr/sbin/kresd $var" 
 # process foreground
 tail -f /dev/null
