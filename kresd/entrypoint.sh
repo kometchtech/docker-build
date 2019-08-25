@@ -1,7 +1,12 @@
 #!/usr/bin/env sh
 
-rm -f /etc/knot-resolver/root.keys
-sh -c "/usr/sbin/kresd $@"
-sh -c "kres-cache-gc -c /etc/knot-resolveri/cache -d 10000"
-
+# Deleting the trust anchor key file
+rm -f /var/cache/knot-resolver/root.keys
+# Process execution
+var="$@"
+# Knot Resolver Garbage Collector daemon
+kres-cache-gc -c /var/cache/knot-resolver -d 1000 &
+# Knot Resolver daemon
+/usr/sbin/kresd $var &
+# process foreground
 tail -f /dev/null

@@ -12,9 +12,9 @@ ENV KNOT_RESOLVER_BUILD_DEPS="${BUILD_BASE} pkgconfig git luajit-dev libuv-dev \
                               bsd-compat-headers nettle-dev binutils cmocka-dev protobuf-c-dev protobuf-dev \
                               lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev meson lmdb-dev lua5.1-ossl "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
-ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIE -D_GNU_SOURCE -fomit-frame-pointer "
-ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
 ENV AR="llvm-ar"
@@ -60,7 +60,7 @@ ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_
 RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
     && apk add --update --no-cache ${RUNTIME_DEPS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-    && mkdir -p /var/run/knot-resolver \
+    && mkdir -p /var/cache/knot-resolver \
     && update-ca-certificates
 
 # Intermediate container for Knot Resolver build
@@ -69,22 +69,12 @@ FROM knot-dns-build AS build
 # Build Knot Resolver
 # Environmet
 ARG VERSION="4.0.0"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fstack-protector -fomit-frame-pointer "
-ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
 
 # Knot Resolver build
 RUN mkdir -p /tmp/root/etc/knot-resolver
 RUN git clone -b v${VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
-
 RUN cd /tmp/knot-resolver \
-    && CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
+    && meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
     && DESTDIR=/tmp/root ninja -C build_docker install \
     && cp /tmp/root/usr/share/doc/knot-resolver/examples/config.docker /tmp/root/etc/knot-resolver/kresd.conf
 
