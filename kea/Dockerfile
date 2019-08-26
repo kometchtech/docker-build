@@ -2,6 +2,16 @@
 
 ## base image
 FROM arm64v8/alpine:latest AS base-image
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS} "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
+
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE}"
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -13,16 +23,7 @@ FROM base-image AS log4cplus
 
 # Environment
 ENV LOG4CPLUS="1.2.2"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
-ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
 
 # build library
 #RUN --mount=type=cache,target=/var/cache/apk \
@@ -48,12 +49,6 @@ ARG BUILD_PKGS="boost-dev bzip2-dev libressl-dev zlib-dev sqlite-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="${CFLAGS} "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
 
 # build library
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -80,15 +75,6 @@ FROM base-image AS build
 ARG VERSION="1.6.0-beta"
 ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl libressl-dev"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
-ARG CXXFLAGS="${CFLAGS} "
-ARG CPPFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
 
 # dev package install
 COPY --from=log4cplus /tmp/root /
@@ -101,6 +87,7 @@ RUN mkdir -p /tmp/build \
   && tar xf kea.tar.gz --strip-components=1 -C /tmp/build \
   && rm kea.tar.gz
 RUN cd /tmp/build \
+  && autoreconf -ifv \
   && ./configure \
     --prefix=/usr/local \
     --sysconfdir=/etc \
