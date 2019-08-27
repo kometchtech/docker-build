@@ -1,20 +1,24 @@
 #!/usr/bin/env ash
 
-if [ ! -f /etc/unbound/unbound_server.pem ]; then
+set -m
+
+ETC="/etc/unbound"
+
+if [ ! -f ${ETC}/unbound_server.pem ]; then
   unbound-control-setup
 fi
 
 # generate root.key
-if [ ! -f /etc/unbound/root.key ]; then
-  unbound-anchor -a "/etc/unbound/root.key"
+if [ ! -f ${ETC}/root.key ]; then
+  unbound-anchor -a "${ETC}/root.key"
 fi
 
 ## change owner
 #chown -R unbound:unbound /etc/unbound
 
-if [ ! -f /etc/unbound/unbound.conf ]; then
-  /usr/local/sbin/unbound -d $@
+if [ ! -f ${ETC}/unbound.conf ]; then
+  unbound -d $@
 else
-  /usr/local/sbin/unbound -d -c /etc/unbound/unbound.conf
+  unbound -d -c ${ETC}/unbound.conf
 fi
-
+fg %1
