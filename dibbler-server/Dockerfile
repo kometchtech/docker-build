@@ -1,24 +1,31 @@
+# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS build
 
 # Environment
-ENV VERSION master
+ARG VERSION="master"
 #ENV VERSION RELEASE1.0.1
-ARG BUILD_PKGS="build-base clang ca-certificates automake autoconf linux-headers gawk git libtool lld "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} ca-certificates linux-headers git  "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang"
 ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # compile and install
 RUN mkdir -p /usr/src /tmp/root/etc/dibbler/ \
     && apk add --update --no-cache ${BUILD_PKGS}
 RUN git clone -b ${VERSION} --depth=1 https://github.com/tomaszmrugalski/dibbler.git /usr/src
 RUN cd /usr/src \
-    && autoreconf -if \
+    && autoreconf -ifv \
     && ./configure \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
       --sysconfdir=/etc/dibbler \
+      --disable-static \
     && make -j "$(nproc)" install DESTDIR=/tmp/root
 RUN ldconfig /
 RUN cp /tmp/root/usr/local/share/doc/dibbler/examples/server.conf /tmp/root/etc/dibbler/server.conf \
@@ -45,12 +52,15 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 
+# publish port TCP and UDP
+EXPOSE 547/TCP 547/UDP
+
+# service running
+STOPSIGNAL SIGTERM
+
 # volume
 WORKDIR /etc/dibbler
 #VOLUME ["/etc/dibbler", "/var/lib/dibbler"]
-
-# export TCP and UDP
-EXPOSE 547/TCP 547/UDP
 
 # Select entrypoint
 CMD ["/usr/local/sbin/dibbler-server", "run"]
