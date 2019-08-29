@@ -87,7 +87,7 @@ RUN mkdir -p /tmp/build \
   && tar xf kea.tar.gz --strip-components=1 -C /tmp/build \
   && rm kea.tar.gz
 RUN cd /tmp/build \
-  && autoreconf -ifv \
+  && autoreconf -if \
   && ./configure \
     --prefix=/usr/local \
     --sysconfdir=/etc \
@@ -133,8 +133,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TZ Asia/Tokyo
 
-# publish port
-EXPOSE 67/udp 547/udp
+# publish port TCP and UDP
+EXPOSE 67/UDP 547/TCP 547/UDP
 
 # service running
 STOPSIGNAL SIGTERM
