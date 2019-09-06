@@ -11,6 +11,10 @@ ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC="clang"
 ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
+ENV LD="ld.lld"
 
 # dependencies package
 RUN --mount=type=cache,target=/var/cache/apk \
