@@ -72,7 +72,12 @@ EXPOSE 53/UDP 53/TCP
 
 # select ENTRYPOINT
 WORKDIR /etc/powerdns
-CMD ["pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
+#CMD ["pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
+
+# Application execution related information
+ADD ./entrypoint.sh /usr/local/sbin/entrypoint.sh
+RUN chmod +x /usr/local/sbin/entrypoint.sh
 
 COPY --from=build /tmp/root/ /
 RUN ldconfig /
