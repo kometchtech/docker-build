@@ -21,4 +21,4 @@ if [ ! -f ${ETC}/unbound.conf ]; then
 else
   unbound -d -c ${ETC}/unbound.conf
 fi
-fg %1
+tail -f /dev/null
