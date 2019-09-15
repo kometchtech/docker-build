@@ -64,7 +64,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
 # add user and make dir
     && adduser -DH named \
-    && mkdir -p /etc/named /var/cache/named /var/run/named
+    && mkdir -p /etc/named /var/cache/named /var/run/named /var/cache/named/dynamic
 
 
 # Final container
@@ -94,5 +94,7 @@ CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
 # Fetch isc BIND libraries from build image
 COPY --from=build /tmp/root/ /
 COPY ./named.conf /etc/named/named.conf
-RUN chown -R named:named /var/cache/named /etc/named /var/run/named \
+ADD ./local.zone /var/cache/named/pri/local.zone
+ADD ./local.rev /var/cache/named/pri/local.rev
+RUN chown -R named:named /var/cache/named /etc/named /var/run/named /var/cache/named/dynamic \
     && ldconfig /
