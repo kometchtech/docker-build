@@ -1,13 +1,22 @@
 #!/usr/bin/env ash
 
+set -e
+
 if [ ! -f /usr/local/etc/nsd_server.pem ]; then
   nsd-control-setup
 fi
 # change owner and group
 #chown -R nsd:nsd /usr/local/etc/nsd /usr/local/etc/nsd/zones /usr/local/var/db/nsd /var/run/nsd
 
-if [ ! -f /etc/nsd/nsd.conf ]; then
-	/usr/local/sbin/nsd -d -P /var/run/nsd/nsd.pid $@
-else
-	/usr/local/sbin/nsd -d -P /var/run/nsd/nsd.pid -c /etc/nsd/nsd.conf
+if [ ! -d /var/run/nsd ]; then
+    mkdir -p /var/run/nsd
 fi
+
+if [ ! -f /etc/nsd/nsd.conf ]; then
+	nsd -d $@
+else
+	nsd -d -c /etc/nsd/nsd.conf
+fi
+
+fg %1
+#tail -f /dev/null
