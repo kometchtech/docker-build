@@ -1,14 +1,14 @@
 # 1st build 
-FROM golang:rc-alpine as build
+FROM golang:alpine as build
 
 # https://golang.org/doc/install/source#environment
 ENV CGO_ENABLED 0
 ENV GOOS linux
 ENV GOARCH arm64
-ENV VERSION v0.6.11
+ARG VERSION="0.6.11"
 WORKDIR /go/src/github.com/nadoo/
 RUN apk add --update --no-cache git build-base
-RUN git clone -b ${VERSION} --depth=1 https://github.com/nadoo/glider.git /go/src/github.com/nadoo/glider
+RUN git clone -b v${VERSION} --depth=1 https://github.com/nadoo/glider.git /go/src/github.com/nadoo/glider
 RUN cd /go/src/github.com/nadoo/glider \
     && go build -v -ldflags="-s -w"
 
