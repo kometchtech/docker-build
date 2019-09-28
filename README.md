@@ -5,12 +5,12 @@
 ![](https://img.shields.io/github/repo-size/kometchtech/docker-build.svg?style=popout-square)
 [![GitHub repo size in bytes](https://img.shields.io/github/repo-size/badges/shields.svg)](https://github.com/kometchtech/docker-build)
 
-personal docker build
-
-It exists to check the operation of container in the ARM environment (arm64/Aarch64).
-> For arm32, tackle depending on the mood.
-
-Basically we will check the operation of the following application.
+- personal docker build
+- It exists to check the operation of container in the ARM environment (arm64/Aarch64).
+  > For arm32, tackle depending on the mood.
+- Basically we will check the operation of the following application.
+- Extensions are not necessarily build targets.
+- Prioritize minimizing container size in build
 
 ## base images
 
