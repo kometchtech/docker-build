@@ -43,7 +43,7 @@ Basically we will check the operation of the following application.
 ## container registry
 
 - Docker hub <https://hub.docker.com/u/kometchtech/>
-- GitHub Package REgistry <https://github.com/kometchtech/docker-build/packages>
+- GitHub Package Registry <https://github.com/kometchtech/docker-build/packages>
 
 
 ## Tips
