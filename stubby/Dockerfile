@@ -3,7 +3,8 @@ FROM arm64v8/alpine:latest AS getdns-build
 
 ARG GETDNS_VERSION="1.5.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libressl-dev libuv-dev libev-dev check-dev unbound-dev libcrypto1.1 "
+ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libressl-dev libuv-dev libev-dev check-dev \
+                unbound-dev libcrypto1.1 libidn-dev libevent-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -28,11 +29,12 @@ RUN cd /usr/src \
     && cd build \
     && ../configure \
     --disable-static \
-    --without-libidn \
+    --with-libidn \
     --without-libidn2 \
     --with-stubby \
     --with-libuv \
     --with-libev \
+    --with-libevent \
     CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
     && make -j"$(nproc)" install
 RUN ldconfig /
@@ -46,7 +48,7 @@ RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "tzdata yaml libuv libev unbound-libs libressl2.7-libssl libressl2.7-libcrypto "
+ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs libressl2.7-libssl libressl2.7-libcrypto gnutls libidn "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/*
 
@@ -56,7 +58,7 @@ FROM getdns-build AS build
 
 ARG VERSION="0.2.6"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} git yaml libressl unbound "
+ARG BUILD_PKGS="${BUILD_BASE} git yaml libressl unbound gnutls-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -75,6 +77,8 @@ RUN cd /usr/src/stubby \
     && autoreconf -fi \
     && ./configure \
         --disable-static \
+        --with-ssl \
+        --with-gnutls \
         CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib " \
     && make -j "$(nproc)" \
     && make install DESTDIR=/tmp/root

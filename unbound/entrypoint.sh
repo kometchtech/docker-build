@@ -19,6 +19,6 @@ fi
 if [ ! -f ${ETC}/unbound.conf ]; then
   unbound -d $@
 else
-  unbound -d -c ${ETC}/unbound.conf
+  unbound -d $@ -c ${ETC}/unbound.conf
 fi
 tail -f /dev/null
