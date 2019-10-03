@@ -1,6 +1,6 @@
 #!/usr/bin/env ash
 
-set -m
+set -e
 
 ETC="/etc/unbound"
 
@@ -21,4 +21,6 @@ if [ ! -f ${ETC}/unbound.conf ]; then
 else
   unbound -d $@ -c ${ETC}/unbound.conf
 fi
-tail -f /dev/null
+
+#tail -f /dev/null
+fg %1

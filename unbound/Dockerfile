@@ -14,6 +14,7 @@ ENV AR="llvm-ar"
 ENV NM="llvm-nm"
 ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
+ENV STRIP="llvm-strip"
 
 # source build and install
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -57,8 +58,8 @@ FROM arm64v8/alpine:latest AS runtime
 ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/*
-#    && adduser -DH unbound
+    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+    && adduser -DH unbound
 
 
 # Final container
