@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 
+set -e
 
 RUNPATH="/usr/local/var/run/kea"
 

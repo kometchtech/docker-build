@@ -11,6 +11,7 @@ ENV AR="llvm-ar"
 ENV NM="llvm-nm"
 ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
+ENV STRIP="llvm-strip"
 
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE}"
@@ -106,7 +107,8 @@ RUN cd /tmp/build \
 RUN ldconfig /
 # Delete unnecessary directory
 RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local/include /tmp/root/usr/include \
-           /tmp/root/usr/share/kea /tmp/root/usr/share/doc/kea
+           /tmp/root/usr/share/kea /tmp/root/usr/share/doc/kea /tmp/root/usr/local/lib/kea/hooks/*.la \
+           /tmp/root/usr/local/lib/*.la
 
 
 # Intermediate container with runtime dependencies
