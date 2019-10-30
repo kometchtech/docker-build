@@ -45,7 +45,7 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="boost-context lua5.3-libs libedit protobuf libsodium tzdata libressl2.7-libssl ca-certificates "
+ARG RUN_PKGS="boost-libs lua5.3-libs libedit protobuf libsodium tzdata libressl2.7-libssl ca-certificates "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
