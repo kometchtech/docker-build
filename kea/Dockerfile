@@ -45,7 +45,7 @@ RUN ldconfig /
 FROM base-image AS botan
 
 # Environment
-ENV BOTAN="2.11.0"
+ENV BOTAN="2.12.1"
 ARG BUILD_PKGS="boost-dev bzip2-dev libressl-dev zlib-dev sqlite-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
