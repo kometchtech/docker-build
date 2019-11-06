@@ -1,18 +1,21 @@
-# 1st build 
+# syntax = docker/dockerfile:experimental
+# 1st build
 #FROM arm64v8/golang:1.12-alpine as build-env
 FROM arm64v8/golang:alpine as build-env
 
 ARG VERSION="1.5.0"
-ENV CGO_ENABLED 0
+#ENV CGO_ENABLED 0
 ENV GOOS linux
 ENV GOARCH arm64
 WORKDIR /go/src
-RUN apk add --no-cache --update build-base git automake libtool autoconf pkgconfig curl
+RUN apk add --no-cache --update build-base git automake libtool autoconf pkgconfig curl unbound-dev hiredis-dev
 RUN git config --global http.postBuffer 524288000
 RUN git clone -b v${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
-RUN cd  /go/src/github.com/coredns/coredns/ \
-#    &&  LDFLAGS="-static -s -w" make
-    &&  make
+#RUN echo "redis:github.com/miekg/redisc" >> /go/src/github.com/coredns/coredns/plugin.cfg
+#RUN     echo "unbound:github.com/coredns/unbound" >> /go/src/github.com/coredns/coredns/plugin.cfg
+#    && echo "redis:github.com/hawell/redisc" >> /go/src/github.com/coredns/coredns/plugin.cfg
+RUN cd /go/src/github.com/coredns/coredns/ \
+    && make all
 
 # 2nd build
 FROM scratch
