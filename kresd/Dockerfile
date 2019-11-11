@@ -3,7 +3,7 @@
 FROM arm64v8/alpine:latest AS knot-dns-build
 
 # Environment
-ARG KNOT_DNS_VERSION="2.8.4"
+ARG KNOT_DNS_VERSION="2.9.1"
 # Build dependencies
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls git bsd-compat-headers musl-utils \
