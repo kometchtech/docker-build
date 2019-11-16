@@ -27,8 +27,8 @@ ENV LOG4CPLUS="1.2.2"
 ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
 
 # build library
-#RUN --mount=type=cache,target=/var/cache/apk \
-#    apk add --update ${BUILD_PKGS}
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/local/src \
     && curl -fSsL "${LOG4CPLUS_SOURCE}" -o log4cplus.tar.bz2 \
     && tar xf log4cplus.tar.bz2 --strip-components=1 -C /usr/local/src \
@@ -104,6 +104,11 @@ RUN cd /tmp/build \
 RUN cd /tmp/build \
     && make -j"$(nproc)" \
     && make install DESTDIR=/tmp/root
+RUN llvm-strip /tmp/root/usr/local/sbin/kea-dhcp4 \
+        /tmp/root/usr/local/sbin/kea-dhcp6 \
+        /tmp/root/usr/local/sbin/kea-dhcp-ddns \
+        /tmp/root/usr/local/sbin/kea-ctrl-agent \
+        /tmp/root/usr/local/sbin/kea-lfc
 RUN ldconfig /
 # Delete unnecessary directory
 RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local/include /tmp/root/usr/include \
@@ -116,7 +121,6 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps libressl"
-#RUN echo "@comm http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
 RUN --mount=type=cache,target=/var/cache/apk \
