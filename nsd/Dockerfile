@@ -14,6 +14,7 @@ ENV AR="llvm-ar"
 ENV NM="llvm-nm"
 ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
+ENV STRIP="llvm-strip"
 
 # source build and install
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -37,7 +38,8 @@ RUN cd /tmp/build \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j"$(nproc)" install DESTDIR=/tmp/root
+    && make -j"$(nproc)" \
+    && make install DESTDIR=/tmp/root
 RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 
 
