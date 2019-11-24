@@ -7,9 +7,9 @@ ARG KNOT_DNS_VERSION="2.9.1"
 # Build dependencies
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls git bsd-compat-headers musl-utils \
-                        fstrm-dev@test protobuf-c-dev protobuf-dev "
+                        fstrm-dev protobuf-c-dev protobuf-dev "
 ENV KNOT_RESOLVER_BUILD_DEPS="${BUILD_BASE} luajit-dev libuv-dev lua5.1-compat53 gnutls-dev \
-                              fstrm-dev@test jansson-dev userspace-rcu-dev nettle-dev cmocka-dev protobuf-c-dev protobuf-dev \
+                              fstrm-dev jansson-dev userspace-rcu-dev nettle-dev cmocka-dev protobuf-c-dev protobuf-dev \
                               lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev meson lmdb-dev lua5.1-ossl lua5.1-cqueues "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
@@ -21,9 +21,10 @@ ENV AR="llvm-ar"
 ENV NM="llvm-nm"
 ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
+ENV STRIP="llvm-strip"
 
 # Install dependencies and sources
-RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+#RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
 RUN apk add --update ${BUILDENV_DEPS}
 # Install Knot DNS from sources
 RUN git clone -b v${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
@@ -52,13 +53,13 @@ ARG KNOT_DNS_RUNTIME_DEPS="gnutls "
 ARG KNOT_RESOLVER_RUNTIME_DEPS="lmdb luajit libuv lua5.1-sec lua5.1-socket lua5.1-filesystem lua5.1-compat53 \
                                ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_HTTP=" lua5.1-maxminddb lua5.1-ossl "
-ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm@test lua5.1-cqueues "
+ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm lua5.1-cqueues "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates openssl "
 ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
                   ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} ${KNOT_RESOLVER_RUNTIME_DEPS_SSL} "
 
-RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
-    && apk add --update --no-cache ${RUNTIME_DEPS} \
+#RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
+RUN apk add --update --no-cache ${RUNTIME_DEPS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && mkdir -p /var/cache/knot-resolver \
     && update-ca-certificates
@@ -96,7 +97,6 @@ EXPOSE 53/UDP 53/TCP 853/TCP
 STOPSIGNAL SIGTERM
 
 ENTRYPOINT ["/usr/local/sbin/entrypoint.sh", ""]
-#CMD ["-c", "/etc/knot-resolver/kresd.conf"]
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
