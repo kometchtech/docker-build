@@ -14,6 +14,7 @@ ENV AR="llvm-ar"
 ENV NM="llvm-nm"
 ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
+ENV STRIP="llvm-strip"
 
 # build dependencies install
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -68,6 +69,7 @@ ENV AR="llvm-ar"
 ENV NM="llvm-nm"
 ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
+ENV STRIP="llvm-strip"
 
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
