@@ -48,11 +48,10 @@ RUN cd /usr/src \
       PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}"
 RUN cd /usr/src \
-    make -j"$(nproc)"
+    && make -j"$(nproc)" \
+    && make strip
 RUN cd /usr/src \
-    make strip
-RUN cd /usr/src \
-    make install DESTDIR=/tmp/root
+    && make install DESTDIR=/tmp/root
 
 
 # Intermediate container with runtime dependencies
