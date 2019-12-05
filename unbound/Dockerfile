@@ -46,10 +46,13 @@ RUN cd /usr/src \
       --with-libhiredis \
       --enable-dnscrypt \
       PKG_CONFIG=/usr/bin/pkg-config \
-      CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
-  && make -j"$(nproc)" \
-  && make strip \
-  && make install DESTDIR=/tmp/root
+      CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}"
+RUN cd /usr/src \
+    make -j"$(nproc)"
+RUN cd /usr/src \
+    make strip
+RUN cd /usr/src \
+    make install DESTDIR=/tmp/root
 
 
 # Intermediate container with runtime dependencies
