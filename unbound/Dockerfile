@@ -48,9 +48,9 @@ RUN cd /usr/src \
       PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}"
 RUN cd /usr/src \
-    && make -j"$(nproc)" \
-    && make strip
+    && make -j"$(nproc)"
 RUN cd /usr/src \
+    && make strip \
     && make install DESTDIR=/tmp/root
 
 
