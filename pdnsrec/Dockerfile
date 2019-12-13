@@ -14,6 +14,7 @@ ENV AR="llvm-ar"
 ENV NM="llvm-nm"
 ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
+ENV STRIP="llvm-strip"
 
 # dev package install
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -37,8 +38,8 @@ RUN cd /tmp/build \
       --with-lua \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j4 install-strip DESTDIR=/tmp/root
-RUN ldconfig /
 RUN rm -rf /tmp/root/usr/local/share/man/*
+RUN ldconfig /
 
 
 # Intermediate container with runtime dependencies
