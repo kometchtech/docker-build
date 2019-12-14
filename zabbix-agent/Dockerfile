@@ -9,12 +9,13 @@ ENV BUILD_PKGS="build-base clang autoconf automake openssl-dev pcre-dev coreutil
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
 # dependencies package
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -70,8 +71,8 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 # Environment
 ENV TERM=xterm \
     ZBX_TYPE=agent \
-    ZBX_OPT_TYPE=none
-ENV TZ Asia/Tokyo
+    ZBX_OPT_TYPE=none \
+	TZ="Asia/Tokyo"
 
 # service running
 STOPSIGNAL SIGTERM
