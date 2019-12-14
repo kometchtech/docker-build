@@ -12,12 +12,13 @@ ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
 # Install dependencies and sources
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -37,7 +38,8 @@ RUN cd /tmp/knot-dns \
       --enable-recvmmsg=auto \
       --enable-systemd=no \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-      && make -j "$(nproc)" install DESTDIR=/tmp/root
+      && make -j "$(nproc)" \
+      && make install DESTDIR=/tmp/root
 RUN ldconfig /
 RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sample.conf
 
