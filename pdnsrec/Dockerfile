@@ -8,13 +8,13 @@ ARG BUILD_PKGS="${BUILD_BASE} libressl-dev boost-dev lua5.3-dev libedit-dev libs
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
-ENV STRIP="llvm-strip"
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
 # dev package install
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -46,7 +46,8 @@ RUN ldconfig /
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata libressl2.7-libssl ca-certificates "
+ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata \
+              libressl2.7-libssl ca-certificates "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
