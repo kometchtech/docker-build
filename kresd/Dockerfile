@@ -3,7 +3,7 @@
 FROM arm64v8/alpine:latest AS knot-dns-build
 
 # Environment
-ARG KNOT_DNS_VERSION="2.9.1"
+ARG KNOT_DNS_VERSION="2.9.2"
 # Build dependencies
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls git bsd-compat-headers musl-utils \
@@ -15,16 +15,15 @@ ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
-ENV STRIP="llvm-strip"
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
 # Install dependencies and sources
-#RUN echo "@test http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
 RUN apk add --update ${BUILDENV_DEPS}
 # Install Knot DNS from sources
 RUN git clone -b v${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
