@@ -5,13 +5,13 @@ FROM arm64v8/alpine:latest AS base-image
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
-ENV STRIP="llvm-strip"
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE}"
