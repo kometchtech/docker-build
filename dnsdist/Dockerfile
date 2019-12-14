@@ -9,14 +9,15 @@ ARG BUILD_PKGS="${BUILD_BASE} pkgconf boost-dev lua5.3-dev libsodium-dev protobu
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
-#4 dev package install
+# dev package install
 RUN mkdir -p /usr/src /tmp/root/etc/dnsdist
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update --no-cache ${BUILD_PKGS}
