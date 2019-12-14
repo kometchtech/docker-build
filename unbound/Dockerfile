@@ -8,13 +8,13 @@ ARG BUILD_PKGS="${BUILD_BASE} expat-dev libressl-dev libevent-dev flex-dev hired
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
-ENV STRIP="llvm-strip"
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
 # source build and install
 RUN --mount=type=cache,target=/var/cache/apk \
