@@ -3,15 +3,12 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ARG VERSION="9.15.0"
-ARG BUILD_BASE="build-base binutils llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-base binutils lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} libressl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
-                readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev "
-ARG CFLAGS="-std=gnu11 -O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+                readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
 
 # dev package install
@@ -28,9 +25,9 @@ RUN cd /tmp/build \
     --prefix=/usr/local \
     --sysconfdir=/etc/named \
     --localstatedir=/var \
-    --disable-linux-caps \
+#    --disable-linux-caps \
     --with-libxml2 \
-    --with-dlopen=yes \
+#    --with-dlopen=yes \
     --with-libtool \
     --disable-static \
     --with-openssl \
@@ -45,7 +42,8 @@ RUN cd /tmp/build \
     --with-readline \
     --without-python \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-  && make -j"$(nproc)" install DESTDIR=/tmp/root
+  && make -j"$(nproc)" \
+  && make install DESTDIR=/tmp/root
 RUN ldconfig /
 # Delete unnecessary directory
 RUN mkdir -p /tmp/root/var/cache/named \
@@ -58,7 +56,7 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cac
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="protobuf-c tzdata zlib libressl2.7-libcrypto libcap json-c libxml2 "
+ARG RUN_PKGS="protobuf-c tzdata zlib libressl2.7-libcrypto libcap json-c libxml2 libuv "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
