@@ -6,7 +6,7 @@ ARG VERSION="9.15.0"
 ARG BUILD_BASE="build-base binutils lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} libressl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
                 readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV LD="ld.lld"
@@ -16,18 +16,17 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 ## build
 RUN mkdir -p /tmp/build
-RUN curl -fsSL "https://ftp.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.gz" -o bind9.tar.gz
-RUN tar xf bind9.tar.gz --strip-components=1 -C /tmp/build \
-    && rm -f bind9.tar.gz
+RUN curl -fsSL "https://ftp.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" -o bind9.tar.xz
+RUN tar xf bind9.tar.xz --strip-components=1 -C /tmp/build \
+    && rm -f bind9.tar.xz
 RUN cd /tmp/build \
   && ./autogen.sh \
   && ./configure \
     --prefix=/usr/local \
     --sysconfdir=/etc/named \
     --localstatedir=/var \
-#    --disable-linux-caps \
     --with-libxml2 \
-#    --with-dlopen=yes \
+    --with-dlopen=yes \
     --with-libtool \
     --disable-static \
     --with-openssl \
@@ -87,7 +86,12 @@ STOPSIGNAL SIGTERM
 
 # select entrypoint
 WORKDIR /etc/named
-CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
+#CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
+
+# Application execution related information
+ADD ./entrypoint.sh /usr/local/sbin/
+RUN chmod +x /usr/local/sbin/entrypoint.sh
 
 # Fetch isc BIND libraries from build image
 COPY --from=build /tmp/root/ /
@@ -96,3 +100,4 @@ ADD ./local.zone /var/cache/named/pri/local.zone
 ADD ./local.rev /var/cache/named/pri/local.rev
 RUN chown -R named:named /var/cache/named /etc/named /var/run/named /var/cache/named/dynamic \
     && ldconfig /
+
