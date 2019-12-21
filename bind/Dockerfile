@@ -55,7 +55,7 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cac
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="protobuf-c tzdata zlib libressl2.7-libcrypto libcap json-c libxml2 libuv "
+ARG RUN_PKGS="protobuf-c tzdata zlib libressl3.0-libcrypto libcap json-c libxml2 libuv "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
