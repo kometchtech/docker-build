@@ -7,7 +7,7 @@ ARG VERSION="2.8.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev \
                         git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
-                        musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn-dev "
+                        musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn2-dev "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
@@ -48,7 +48,7 @@ RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sam
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG KNOT_DNS_RUNTIME_DEPS="protobuf protobuf-c userspace-rcu lmdb gnutls libedit libidn tzdata libmaxminddb "
+ARG KNOT_DNS_RUNTIME_DEPS="protobuf protobuf-c userspace-rcu lmdb gnutls libedit libidn2 tzdata libmaxminddb "
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
   && rm -rf /var/cache/apk/* /usr/local/share/man/*
