@@ -49,7 +49,7 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="tzdata lua5.3-libs libsodium protobuf re2 net-snmp-libs libedit libressl2.7-libssl \
+ARG RUN_PKGS="tzdata lua5.3-libs libsodium protobuf re2 net-snmp-libs libedit libressl3.0-libssl \
               libcrypto1.1 net-snmp-agent-libs "
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update --no-cache ${RUN_PKGS} \
