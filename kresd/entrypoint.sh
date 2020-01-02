@@ -12,7 +12,7 @@ fi
 # Process execution
 var="$@"
 # Knot Resolver Garbage Collector daemon
-kres-cache-gc -c ${CACHE} -d 1000 &
+kres-cache-gc -c ${CACHE} -d 10000 &
 # Knot Resolver daemon
 /usr/sbin/kresd ${var}
 # process foreground

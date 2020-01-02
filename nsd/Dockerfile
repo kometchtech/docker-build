@@ -4,7 +4,7 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ARG VERSION=4.2.0
 ARG BUILD_BASE="build-base binutils clang llvm make gawk autoconf automake libtool curl lld "
-ARG BUILD_PKGS="${BUILD_BASE} expat-dev libressl-dev libevent-dev "
+ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -47,7 +47,7 @@ RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "libressl libevent ca-certificates ldns-tools tzdata"
+ENV RUN_PKGS "openssl libevent ca-certificates ldns-tools tzdata tini "
 RUN --mount=type=cache,target=/var/cache/apk \
        apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
@@ -75,7 +75,8 @@ STOPSIGNAL SIGTERM
 
 # Execute app
 WORKDIR /etc/nsd
-ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
+CMD ["-c", "/etc/nsd/nsd.conf"]
 
 # Application execution related information
 ADD ./entrypoint.sh /usr/local/sbin/

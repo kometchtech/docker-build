@@ -48,7 +48,8 @@ RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sam
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG KNOT_DNS_RUNTIME_DEPS="protobuf protobuf-c userspace-rcu lmdb gnutls libedit libidn2 tzdata libmaxminddb "
+ARG KNOT_DNS_RUNTIME_DEPS="protobuf protobuf-c userspace-rcu lmdb gnutls libedit libidn2 tzdata \
+                           libmaxminddb tini "
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
   && rm -rf /var/cache/apk/* /usr/local/share/man/*
@@ -77,7 +78,7 @@ WORKDIR /etc/knot-dns
 # select entrypoint
 ADD entrypoint.sh /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/entrypoint.sh
-CMD ["/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 
 # Fetch Knot DNS from build image
 COPY --from=build /tmp/root/ /

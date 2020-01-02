@@ -47,7 +47,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata \
-              libressl3.0-libssl ca-certificates "
+              libressl3.0-libssl ca-certificates tini "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
@@ -74,8 +74,9 @@ EXPOSE 53/UDP 53/TCP
 
 # select ENTRYPOINT
 WORKDIR /etc/powerdns
-#CMD ["pdns_recursor", "--disable-syslog", "--log-timestamp=yes"]
-ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
+CMD ["--disable-syslog", "--log-timestamp=yes", "--config-dir=/etc/powerdns"
+
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 
 # Application execution related information
 ADD ./entrypoint.sh /usr/local/sbin/entrypoint.sh

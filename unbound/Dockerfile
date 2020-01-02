@@ -58,7 +58,7 @@ RUN cd /usr/src \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium "
+ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium tini "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
@@ -85,7 +85,7 @@ STOPSIGNAL SIGTERM
 
 # entrypoint
 WORKDIR /etc/unbound
-ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 
 # Application execution related information
 ADD ./entrypoint.sh /usr/local/sbin/

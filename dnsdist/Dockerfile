@@ -50,7 +50,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="tzdata lua5.3-libs libsodium protobuf re2 net-snmp-libs libedit libressl3.0-libssl \
-              libcrypto1.1 net-snmp-agent-libs "
+              libcrypto1.1 net-snmp-agent-libs tini "
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update --no-cache ${RUN_PKGS} \
   && rm -rf /var/cache/apk/* /usr/local/share/man/* \
@@ -78,6 +78,8 @@ STOPSIGNAL SIGTERM
 WORKDIR /etc/dnsdist
 
 # Select entrypoint
+COPY ["entrypoint.sh", "/usr/bin/"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/entrypoint.sh"]
 CMD ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
 # Fetch pdns-dnsdist libraries from build image

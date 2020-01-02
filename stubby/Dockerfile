@@ -49,7 +49,7 @@ RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs libressl2.7-libssl libressl2.7-libcrypto gnutls libidn "
+ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs libressl3.0-libssl libressl3.0-libcrypto gnutls libidn tini "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/*
 
@@ -108,7 +108,10 @@ STOPSIGNAL SIGTERM
 
 # select ENTRYPOINT
 WORKDIR /etc/stubby
+COPY ["entrypoint.sh", "/usr/bin/"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/entrypoint.sh"]
 CMD ["/usr/local/bin/stubby", "-C", "/etc/stubby/stubby.yml"]
 
 COPY --from=build /tmp/root/ /
 RUN ldconfig /
+

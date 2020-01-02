@@ -8,9 +8,9 @@ ARG KNOT_DNS_VERSION="2.9.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls git bsd-compat-headers musl-utils \
                         fstrm-dev protobuf-c-dev protobuf-dev "
-ENV KNOT_RESOLVER_BUILD_DEPS="${BUILD_BASE} luajit-dev libuv-dev lua5.1-compat53 gnutls-dev \
-                              fstrm-dev jansson-dev userspace-rcu-dev nettle-dev cmocka-dev protobuf-c-dev protobuf-dev \
-                              lua5.1-sec lua5.1-socket lua5.1-filesystem libedit-dev meson lmdb-dev lua5.1-ossl lua5.1-cqueues "
+ENV KNOT_RESOLVER_BUILD_DEPS="${BUILD_BASE} luajit-dev libuv-dev lua5.1-compat53 gnutls-dev fstrm-dev jansson-dev \
+                              userspace-rcu-dev nettle-dev cmocka-dev protobuf-c-dev protobuf-dev lua5.1-sec \
+                              lua5.1-socket lua5.1-filesystem libedit-dev meson lmdb-dev lua5.1-ossl lua5.1-cqueues "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
@@ -50,7 +50,8 @@ FROM arm64v8/alpine:latest AS runtime
 # Install runtime dependencies
 ARG KNOT_DNS_RUNTIME_DEPS="gnutls "
 ARG KNOT_RESOLVER_RUNTIME_DEPS="lmdb luajit libuv lua5.1-sec lua5.1-socket lua5.1-filesystem lua5.1-compat53 \
-                               ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit "
+                               ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit \
+                               tini "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_HTTP=" lua5.1-maxminddb lua5.1-ossl "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm lua5.1-cqueues "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates openssl "
@@ -95,7 +96,9 @@ EXPOSE 53/UDP 53/TCP 853/TCP
 # service running
 STOPSIGNAL SIGTERM
 
-ENTRYPOINT ["/usr/local/sbin/entrypoint.sh", ""]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh", ""]
+CMD ["-f", "1", "-c", "/etc/knot-resolver/kresd.conf"]
+
 
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
