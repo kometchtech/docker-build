@@ -3,8 +3,8 @@ FROM arm64v8/alpine:latest AS getdns-build
 
 ARG GETDNS_VERSION="1.5.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libressl-dev libuv-dev libev-dev check-dev \
-                unbound-dev libcrypto1.1 libidn-dev libevent-dev "
+ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers openssl-dev libuv-dev libev-dev check-dev \
+                unbound-dev libidn-dev libevent-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -49,7 +49,7 @@ RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs libressl3.0-libssl libressl3.0-libcrypto gnutls libidn tini "
+ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs openssl gnutls libidn tini "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/*
 
@@ -59,7 +59,7 @@ FROM getdns-build AS build
 
 ARG VERSION="0.2.6"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} git yaml libressl unbound gnutls-dev "
+ARG BUILD_PKGS="${BUILD_BASE} git yaml openssl unbound gnutls-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
