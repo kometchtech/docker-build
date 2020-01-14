@@ -4,7 +4,7 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ARG VERSION="9.15.0"
 ARG BUILD_BASE="build-base binutils lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} libressl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
+ARG BUILD_PKGS="${BUILD_BASE} openssl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
                 readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev "
 ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
@@ -55,7 +55,7 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cac
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="protobuf-c tzdata zlib libressl3.0-libcrypto libcap json-c libxml2 libuv tini "
+ARG RUN_PKGS="protobuf-c tzdata zlib openssl libcap json-c libxml2 libuv tini "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
@@ -84,20 +84,20 @@ EXPOSE 53/tcp 53/udp 953/TCP
 # service running
 STOPSIGNAL SIGTERM
 
-# select entrypoint
-WORKDIR /etc/named
-#CMD ["named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
-
-# Application execution related information
-ADD ./entrypoint.sh /usr/local/sbin/
-RUN chmod +x /usr/local/sbin/entrypoint.sh
-
 # Fetch isc BIND libraries from build image
 COPY --from=build /tmp/root/ /
 COPY ./named.conf /etc/named/named.conf
-ADD ./local.zone /var/cache/named/pri/local.zone
-ADD ./local.rev /var/cache/named/pri/local.rev
+COPY ./local.zone /var/cache/named/pri/local.zone
+COPY ./local.rev /var/cache/named/pri/local.rev
 RUN chown -R named:named /var/cache/named /etc/named /var/run/named /var/cache/named/dynamic \
     && ldconfig /
+
+# Application execution related information
+COPY ./entrypoint.sh /usr/local/sbin/
+RUN chmod +x /usr/local/sbin/entrypoint.sh
+
+# select entrypoint
+WORKDIR /etc/named
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
+CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
 
