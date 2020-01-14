@@ -47,7 +47,7 @@ FROM base-image AS botan
 
 # Environment
 ENV BOTAN="2.12.1"
-ARG BUILD_PKGS="boost-dev bzip2-dev libressl-dev zlib-dev sqlite-dev "
+ARG BUILD_PKGS="boost-dev bzip2-dev openssl-dev zlib-dev sqlite-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="${CFLAGS} "
@@ -75,7 +75,7 @@ FROM base-image AS build
 
 # Environment
 ARG VERSION="1.6.0-beta"
-ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl libressl-dev libatomic "
+ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl openssl-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 
 # dev package install
@@ -121,7 +121,8 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps libressl libatomic "
+ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps openssl libatomic \
+              tini "
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -149,7 +150,7 @@ STOPSIGNAL SIGTERM
 # select entrypoint
 WORKDIR /etc/kea
 COPY ./entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 
 # Fetch isc Kea libraries from build image
 COPY --from=build /tmp/root/ /
