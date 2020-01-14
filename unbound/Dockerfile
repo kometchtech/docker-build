@@ -4,7 +4,7 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ARG VERSION="1.9.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} expat-dev libressl-dev libevent-dev flex-dev hiredis-dev libsodium-dev "
+ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev flex-dev hiredis-dev libsodium-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -58,7 +58,7 @@ RUN cd /usr/src \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libressl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium tini "
+ARG RUN_PKGS="openssl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium tini "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
@@ -87,10 +87,11 @@ STOPSIGNAL SIGTERM
 WORKDIR /etc/unbound
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 
-# Application execution related information
-ADD ./entrypoint.sh /usr/local/sbin/
-RUN chmod +x /usr/local/sbin/entrypoint.sh
-
 # Fetch unbound and libraries from build image
 COPY --from=build /tmp/root/ /
 RUN ldconfig /
+
+# Application execution related information
+COPY ./entrypoint.sh /usr/local/sbin/
+RUN chmod +x /usr/local/sbin/entrypoint.sh
+CMD ["unbound", "-d", "-c", "/etc/unbound/unbound.conf"]

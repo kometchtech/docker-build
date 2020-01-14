@@ -1,6 +1,6 @@
 #!/usr/bin/env ash
 
-set -e
+set +e
 
 ETC="/etc/unbound"
 
@@ -13,14 +13,8 @@ if [ ! -f ${ETC}/root.key ]; then
   unbound-anchor -a "${ETC}/root.key"
 fi
 
-## change owner
-#chown -R unbound:unbound /etc/unbound
-
-if [ ! -f ${ETC}/unbound.conf ]; then
-  unbound -d $@
-else
-  unbound -d $@ -c ${ETC}/unbound.conf
+if [ "${1#-}" != "$1" ]; then
+    set -- unbound "$@"
 fi
 
-#tail -f /dev/null
-fg %1
+exec "$@"
