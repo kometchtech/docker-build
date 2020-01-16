@@ -4,7 +4,7 @@ FROM arm64v8/alpine:latest AS build
 # Environmet
 ARG VERSION="4.2.0"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} libressl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev "
+ARG BUILD_PKGS="${BUILD_BASE} openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -47,7 +47,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata \
-              libressl3.0-libssl ca-certificates tini "
+              openssl ca-certificates tini "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
@@ -73,15 +73,14 @@ STOPSIGNAL SIGTERM
 # export DNS over UDP
 EXPOSE 53/UDP 53/TCP
 
-# select ENTRYPOINT
-WORKDIR /etc/powerdns
-CMD ["--disable-syslog", "--log-timestamp=yes", "--config-dir=/etc/powerdns"
-
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
-
 # Application execution related information
-ADD ./entrypoint.sh /usr/local/sbin/entrypoint.sh
+COPY ./entrypoint.sh /usr/local/sbin/entrypoint.sh
 RUN chmod +x /usr/local/sbin/entrypoint.sh
 
 COPY --from=build /tmp/root/ /
 RUN ldconfig /
+
+# select ENTRYPOINT
+WORKDIR /etc/powerdns
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
+CMD ["pdns_recursor", "--disable-syslog", "--log-timestamp=yes", "--config-dir=/etc/powerdns"]
