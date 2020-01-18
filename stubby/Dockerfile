@@ -49,7 +49,7 @@ RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs openssl gnutls libidn tini "
+ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs openssl gnutls libidn libidn2 tini "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/*
 
