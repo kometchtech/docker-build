@@ -2,7 +2,7 @@
 FROM arm64v8/alpine:latest AS getdns-build
 
 ARG GETDNS_VERSION="1.5.2"
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl cmake "
 ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers openssl-dev libuv-dev libev-dev check-dev \
                 unbound-dev libidn-dev libevent-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
@@ -31,7 +31,7 @@ RUN cd /usr/src \
     && ../configure \
     --disable-static \
     --with-libidn \
-    --without-libidn2 \
+    --with-libidn2 \
     --with-stubby \
     --with-libuv \
     --with-libev \
