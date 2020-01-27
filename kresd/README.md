@@ -36,7 +36,7 @@ PANIC: unprotected error in call to Lua API (bad light userdata pointer)
 ### minimum operating
 
 ```bash
-kresd -f 1 -c /etc/knot-resolver/kresd.conf /run/knot-resolver
+kresd -n -c /etc/knot-resolver/kresd.conf /run/knot-resolver
 ```
 
 ### Notes on running Docker
