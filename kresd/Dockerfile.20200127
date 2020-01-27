@@ -7,10 +7,10 @@ RUN apk add --update ${BUILD_LUAS}
 # lua build
 RUN luarocks-5.1 install cqueues \
     && luarocks-5.1 install luaossl \
-    && luarocks-5.1 install http \
-#    && luarocks-5.1 install luasocket \
-#    && luarocks-5.1 install luafilesystem \
-#    && luarocks-5.1 install luasec \
+    && luarocks-5.1 install luasocket \
+    && luarocks-5.1 install luafilesystem \
+    && luarocks-5.1 install luasec \
+    && luarocks-5.1 install luaossl \
     && luarocks-5.1 install mmdblua
 
 
@@ -120,4 +120,4 @@ RUN chmod +x /usr/local/sbin/entrypoint.sh \
 
 # set entrypoint
 ENTRYPOINT ["/sbin/tini", "-s", "--", "/usr/local/sbin/entrypoint.sh"]
-CMD ["kresd", "-n", "-c", "/etc/knot-resolver/kresd.conf"]
+CMD ["kresd", "-f", "1", "-c", "/etc/knot-resolver/kresd.conf"]

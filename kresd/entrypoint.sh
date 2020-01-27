@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-set -e
+set +e
 
 ROOTKEY=${ROOTKEY:-"/var/cache/knot-resolver/root.keys"}
 CACHE=${CACHE:-"/var/cache/knot-resolver"}
@@ -9,11 +9,16 @@ CACHE=${CACHE:-"/var/cache/knot-resolver"}
 if [ -e ${ROOTKEY} ]; then
     rm -f ${ROOTKEY}
 fi
-# Process execution
-var="$@"
+
 # Knot Resolver Garbage Collector daemon
 kres-cache-gc -c ${CACHE} -d 10000 &
+
 # Knot Resolver daemon
-/usr/sbin/kresd ${var}
+if [ "${1#-}" != "$1" ]; then
+    set -- /usr/local/sbin/kresd "$@"
+fi
+
+exec "$@"
+
 # process foreground
 fg %1
