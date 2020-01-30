@@ -97,9 +97,11 @@ RUN cd /tmp/build \
     --disable-static \
     --with-boost-include \
     --with-botan-config \
+#    --with-openssl \
     --with-mysql \
     --with-pgsql \
     --with-log4cplus \
+    --with-botan \
 #    --disable-dependency-tracking \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /tmp/build \
