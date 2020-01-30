@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM alpine:latest
 
 LABEL org.opencontainers.image.title="Zabbix agent 2" \
@@ -31,13 +32,13 @@ RUN set -eux && \
     rm -rf /var/cache/apk/*
 
 ARG MAJOR_VERSION=4.4
-ARG ZBX_VERSION=${MAJOR_VERSION}.4
+ARG VERSION=${MAJOR_VERSION}.4
 ARG ZBX_SOURCES=https://git.zabbix.com/scm/zbx/zabbix.git
 
-ENV TERM=xterm ZBX_VERSION=${ZBX_VERSION} ZBX_SOURCES=${ZBX_SOURCES}
+ENV TERM=xterm VERSION=${VERSION} ZBX_SOURCES=${ZBX_SOURCES}
 
 LABEL org.opencontainers.image.documentation="https://www.zabbix.com/documentation/${MAJOR_VERSION}/manual/installation/containers" \
-      org.opencontainers.image.version="${ZBX_VERSION}" \
+      org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.source="${ZBX_SOURCES}"
 
 RUN set -eux && \
@@ -52,13 +53,13 @@ RUN set -eux && \
             zlib-dev \
             coreutils && \
     cd /tmp/ && \
-    git clone ${ZBX_SOURCES} --branch ${ZBX_VERSION} --depth 1 --single-branch zabbix-${ZBX_VERSION} && \
-    cd /tmp/zabbix-${ZBX_VERSION} && \
+    git clone ${ZBX_SOURCES} --branch ${VERSION} --depth 1 --single-branch zabbix-${VERSION} && \
+    cd /tmp/zabbix-${VERSION} && \
     zabbix_revision=`git rev-parse --short HEAD` && \
     sed -i "s/{ZABBIX_REVISION}/$zabbix_revision/g" src/go/pkg/version/version.go && \
     ./bootstrap.sh && \
     export CFLAGS="-fPIC -pie -Wl,-z,relro -Wl,-z,now" && \
-    export GOPATH=/tmp/zabbix-${ZBX_VERSION}/go && \
+    export GOPATH=/tmp/zabbix-${VERSION}/go && \
 #    go env -w GOOS=linux && \
 #    go env -w GOARCH=arm && \
     ./configure \
@@ -73,14 +74,14 @@ RUN set -eux && \
             --enable-agent \
             --silent && \
     make -j"$(nproc)" -s && \
-#    cp /tmp/zabbix-${ZBX_VERSION}/src/cmd/zabbix_agent2/zabbix_agent2 /usr/sbin/zabbix_agent2 && \
-    cp /tmp/zabbix-${ZBX_VERSION}/src/go/bin/zabbix_agent2 /usr/sbin/zabbix_agent2 && \
-    cp /tmp/zabbix-${ZBX_VERSION}/src/zabbix_get/zabbix_get /usr/bin/zabbix_get && \
-    cp /tmp/zabbix-${ZBX_VERSION}/src/zabbix_sender/zabbix_sender /usr/bin/zabbix_sender && \
-    cp /tmp/zabbix-${ZBX_VERSION}/src/go/conf/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.conf && \
+#    cp /tmp/zabbix-${VERSION}/src/cmd/zabbix_agent2/zabbix_agent2 /usr/sbin/zabbix_agent2 && \
+    cp /tmp/zabbix-${VERSION}/src/go/bin/zabbix_agent2 /usr/sbin/zabbix_agent2 && \
+    cp /tmp/zabbix-${VERSION}/src/zabbix_get/zabbix_get /usr/bin/zabbix_get && \
+    cp /tmp/zabbix-${VERSION}/src/zabbix_sender/zabbix_sender /usr/bin/zabbix_sender && \
+    cp /tmp/zabbix-${VERSION}/src/go/conf/zabbix_agent2.conf /etc/zabbix/zabbix_agent2.conf && \
     chown -R zabbix:zabbix /etc/zabbix/ && \
     cd /tmp/ && \
-    rm -rf /tmp/zabbix-${ZBX_VERSION}/ && \
+    rm -rf /tmp/zabbix-${VERSION}/ && \
     apk del --purge --no-network \
             build-dependencies && \
     rm -rf /var/cache/apk/*
