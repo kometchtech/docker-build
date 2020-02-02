@@ -13,7 +13,7 @@ ENV CC="clang" \
     LD="ld.lld" \
     STRIP="llvm-strip"
 
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl clang-dev "
 ARG BUILD_PKGS="${BUILD_BASE}"
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
@@ -23,7 +23,6 @@ RUN --mount=type=cache,target=/var/cache/apk \
 FROM base-image AS log4cplus
 
 # Environment
-#ENV LOG4CPLUS="1.2.2"
 ENV LOG4CPLUS="2.0.5"
 ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
 
@@ -61,12 +60,18 @@ RUN mkdir -p /usr/local/src \
     && rm botan.tar.gz
 RUN cd /usr/local/src \
     && ./configure.py \
+        --with-boost \
+        --with-bzip2 \
+        --with-openssl \
+        --with-sqlite3 \
+        --with-zlib \
         --disable-static-library \
         --optimize-for-size \
         --amalgamation \
-        --minimized-build \
+#        --minimized-build \
         --without-documentation \
-    && make -j"$(nproc)" install DESTDIR=/tmp/root
+    && make -j"$(nproc)" install DESTDIR=/tmp/root \
+    && llvm-strip /tmp/root/usr/local/bin/botan
 RUN ldconfig /
 
 
@@ -75,7 +80,7 @@ FROM base-image AS build
 
 # Environment
 ARG VERSION="1.6.0-beta"
-ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl openssl-dev "
+ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl openssl-dev  "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 
 # dev package install
@@ -97,11 +102,10 @@ RUN cd /tmp/build \
     --disable-static \
     --with-boost-include \
     --with-botan-config \
-#    --with-openssl \
+    --with-openssl \
     --with-mysql \
     --with-pgsql \
     --with-log4cplus \
-    --with-botan \
 #    --disable-dependency-tracking \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /tmp/build \
@@ -124,7 +128,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps openssl libatomic \
-              tini "
+              tini sqlite-libs libbz2 "
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
 RUN --mount=type=cache,target=/var/cache/apk \
