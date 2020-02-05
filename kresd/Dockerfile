@@ -8,9 +8,6 @@ RUN apk add --update ${BUILD_LUAS}
 RUN luarocks-5.1 install cqueues \
     && luarocks-5.1 install luaossl \
     && luarocks-5.1 install http \
-#    && luarocks-5.1 install luasocket \
-#    && luarocks-5.1 install luafilesystem \
-#    && luarocks-5.1 install luasec \
     && luarocks-5.1 install mmdblua
 
 
