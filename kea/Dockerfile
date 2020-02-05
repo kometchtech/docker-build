@@ -80,7 +80,7 @@ FROM base-image AS build
 
 # Environment
 ARG VERSION="1.6.0-beta"
-ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl openssl-dev  "
+ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl openssl-dev cassandra-cpp-driver-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 
 # dev package install
@@ -105,6 +105,7 @@ RUN cd /tmp/build \
     --with-openssl \
     --with-mysql \
     --with-pgsql \
+    --with-cql \
     --with-log4cplus \
 #    --disable-dependency-tracking \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
@@ -127,8 +128,8 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps openssl libatomic \
-              tini sqlite-libs libbz2 "
+ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps libatomic tini sqlite-libs \
+              libbz2 cassandra-cpp-driver "
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
 RUN --mount=type=cache,target=/var/cache/apk \
