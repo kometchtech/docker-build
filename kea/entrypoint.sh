@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-set -e
+set -e -u
 
 RUNPATH="/usr/local/var/run/kea"
 
@@ -11,6 +11,6 @@ if [ -e "${RUNPATH}/kea-dhcp6.kea-dhcp6.pid" ]; then
     rm -f "${RUNPATH}/kea-dhcp6.kea-dhcp6.pid"
 fi
 
-sh -c  "keactrl start -c /etc/kea/keactrl.conf"
+keactrl start -c /etc/kea/keactrl.conf
 
 tail -f /dev/null
