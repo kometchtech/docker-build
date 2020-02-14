@@ -46,8 +46,8 @@ RUN ldconfig /
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata \
-              openssl ca-certificates tini "
+ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata openssl \
+              ca-certificates tini "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
