@@ -6,7 +6,7 @@ ARG VERSION="1.9.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev flex-dev hiredis-dev libsodium-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
-ARG CXXFLAGS="${CFLAGS} "
+ARG CXXFLAGS="${CFLAGS} -march=armv8-a -mtune=cortex-a53 -mfloat-abi=softfp "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang" \
     CXX="clang++" \
@@ -30,7 +30,7 @@ RUN cd /usr/src \
       --with-libevent \
       --with-pthreads \
       --with-ssl \
-      --disable-rpath \
+#      --disable-rpath \
       --sysconfdir=/etc/unbound \
       --with-conf-file=/etc/unbound/unbound.conf \
       --with-pidfile=/var/run/unbound.pid \
@@ -83,10 +83,6 @@ EXPOSE 53/tcp 53/udp 853/TCP
 # service running
 STOPSIGNAL SIGTERM
 
-# entrypoint
-WORKDIR /etc/unbound
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
-
 # Fetch unbound and libraries from build image
 COPY --from=build /tmp/root/ /
 RUN ldconfig /
@@ -94,4 +90,8 @@ RUN ldconfig /
 # Application execution related information
 COPY ./entrypoint.sh /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/entrypoint.sh
+
+# entrypoint
+WORKDIR /etc/unbound
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 CMD ["unbound", "-d", "-c", "/etc/unbound/unbound.conf"]
