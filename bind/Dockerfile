@@ -20,33 +20,34 @@ RUN curl -fsSL "https://ftp.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz"
 RUN tar xf bind9.tar.xz --strip-components=1 -C /tmp/build \
     && rm -f bind9.tar.xz
 RUN cd /tmp/build \
-  && ./autogen.sh \
-  && ./configure \
-    --prefix=/usr/local \
-    --sysconfdir=/etc/named \
-    --localstatedir=/var \
-    --with-libxml2 \
-    --with-dlopen=yes \
-    --with-libtool \
-    --disable-static \
-    --with-openssl \
-    --with-tuning=default \
-    --enable-largefile \
-    --enable-backtrace \
-    --enable-symtable \
-    --with-dlz-filesystem \
-    --with-dlz-stub \
-    --enable-fixed-rrset \
-    --with-zlib \
-    --with-readline \
-    --without-python \
-    CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-  && make -j"$(nproc)" \
-  && make install DESTDIR=/tmp/root
+    && ./autogen.sh \
+    && ./configure \
+        --prefix=/usr/local \
+        --sysconfdir=/etc/named \
+        --localstatedir=/var \
+#       --disable-linux-caps \
+        --with-libxml2 \
+#       --with-dlopen=yes \
+        --with-libtool \
+        --disable-static \
+        --with-openssl \
+        --with-tuning=default \
+        --enable-largefile \
+        --enable-backtrace \
+        --enable-symtable \
+        --with-dlz-filesystem \
+        --with-dlz-stub \
+        --enable-fixed-rrset \
+        --with-zlib \
+        --with-readline \
+        --without-python \
+        CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
+    && make -j"$(nproc)" \
+    && make install DESTDIR=/tmp/root
 RUN ldconfig /
 # Delete unnecessary directory
 RUN mkdir -p /tmp/root/var/cache/named \
-  && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/*
+    && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/*
 # download named.root 
 RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cache/named/named.ca
 
