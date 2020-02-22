@@ -28,12 +28,15 @@ RUN cd /usr/src \
     && mkdir build \
     && cd build \
     && cmake \
+       -DENABLE_STATIC=OFF \
        -DBUILD_STUBBY=ON \
        -DBUILD_LIBEV=ON \
        -DBUILD_LIBEVENT2=ON \
        -DBUILD_LIBUV=ON \
        -DUSE_LIBIDN2=ON \
        -DCMAKE_C_FLAGS=${CFLAGS} \
+       -DCMAKE_MODULE_LINKER_FLAGS=${LDFLAGS} \
+       -DCMAKE_SHARED_LINKER_FLAGS=${LDFLAGS} \
        -DCMAKE_INSTALL_PREFIX=/usr/local \
        ..
 RUN cd /usr/src/build \
@@ -84,7 +87,8 @@ RUN cd /usr/src/stubby \
 RUN cd /usr/src/stubby \
     && make -j "$(nproc)" \
     && make install DESTDIR=/tmp/root
-RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
+RUN strip /tmp/root/usr/local/bin/stubby \
+    && unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
 # copy example conf
 RUN cp /usr/src/stubby/stubby.yml.example /tmp/root/etc/stubby/stubby.yml
 
