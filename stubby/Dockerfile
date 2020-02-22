@@ -1,10 +1,11 @@
 # syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS getdns-build
 
-ARG GETDNS_VERSION="1.5.2"
+#ARG GETDNS_VERSION="1.5.2"
+ARG GETDNS_VERSION="1.6.0-rc.1"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl cmake "
 ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers openssl-dev libuv-dev libev-dev check-dev \
-                unbound-dev libidn-dev libevent-dev "
+                unbound-dev libidn-dev libevent-dev libidn2-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -24,20 +25,20 @@ RUN mkdir -p /usr/src /tmp/root/var/stubby/ /tmp/root/etc/stubby/ /tmp/root/usr/
 RUN git clone -b v${GETDNS_VERSION} --depth 1 https://github.com/getdnsapi/getdns.git /usr/src
 RUN cd /usr/src \
     && git submodule update --init \
-    && libtoolize -ci \
-    && autoreconf -if \
     && mkdir build \
     && cd build \
-    && ../configure \
-    --disable-static \
-    --with-libidn \
-    --with-libidn2 \
-    --with-stubby \
-    --with-libuv \
-    --with-libev \
-    --with-libevent \
-    CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}" \
-    && make -j"$(nproc)" install
+    && cmake \
+       -DBUILD_STUBBY=ON \
+       -DBUILD_LIBEV=ON \
+       -DBUILD_LIBEVENT2=ON \
+       -DBUILD_LIBUV=ON \
+       -DUSE_LIBIDN2=ON \
+       -DCMAKE_C_FLAGS=${CFLAGS} \
+       -DCMAKE_INSTALL_PREFIX=/usr/local \
+       ..
+RUN cd /usr/src/build \
+    && make -j"$(nproc)" \
+    && make install
 RUN ldconfig /
 # Copy libgetdns, libgetdns_ext_ev, libgetdns_ext_uv
 RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
@@ -73,15 +74,14 @@ ENV STRIP="llvm-strip"
 
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
-RUN mkdir -p /usr/src/stubby /tmp/root/etc/unbound
-RUN git clone -b v${VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stuby
+#RUN mkdir -p /usr/src/stubby /tmp/root/etc/unbound
+RUN mkdir -p /tmp/root/etc/unbound
+#RUN git clone -b v${VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stubby
 RUN cd /usr/src/stubby \
-    && autoreconf -fi \
-    && ./configure \
-        --disable-static \
-        --with-ssl \
-        --with-gnutls \
-        CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib " \
+    && cmake . \
+       -DGETDNS_LIBRARIES=/tmp/root/usr/local/lib/ \
+       -DGETDNS_INCLUDE_DIR=/tmp/root/usr/local/include \
+RUN cd /usr/src/stubby \
     && make -j "$(nproc)" \
     && make install DESTDIR=/tmp/root
 RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
