@@ -32,11 +32,11 @@ ENV TZ Asia/Tokyo
 # export DNS over UDP & TCP
 
 # command
-#CMD ["gobetween", "from-file", "/etc/gobetween/gobetween.toml"]
-ENTRYPOINT ["/glider"]
+CMD ["/glider", "-config", "/etc/glider/glider.conf"]
 
 # Multi stage build
 WORKDIR /etc/glider/
 COPY --from=runtime /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /go/src/github.com/nadoo/glider/config/glider.conf.example /etc/glider/glider.conf
 COPY --from=build /go/src/github.com/nadoo/glider/glider /glider
 
