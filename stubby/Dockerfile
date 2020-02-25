@@ -31,8 +31,8 @@ RUN cd /usr/src \
        --disable-srp-authentication \
        --disable-psk-authentication \
        --disable-anon-authentication \
-       --disable-dhe \
-       --disable-ecdhe \
+#       --disable-dhe \
+#       --disable-ecdhe \
        --enable-openssl-compatibility \
        --disable-dtls-srtp-support \
        --disable-alpn-support \
