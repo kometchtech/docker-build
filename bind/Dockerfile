@@ -3,13 +3,20 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ARG VERSION="9.15.0"
-ARG BUILD_BASE="build-base binutils lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} openssl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
-                readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev "
-ARG CFLAGS="-std=gnu99 -O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
-ARG CXXFLAGS="${CFLAGS} "
+                readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev libstdc++ clang-dev \
+                libc6-compat libgcc "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++ "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+ENV CC="clang"
+ENV CXX="clang++"
+ENV AR="llvm-ar"
+ENV NM="llvm-nm"
+ENV RANLIB="llvm-ranlib"
 ENV LD="ld.lld"
+ENV STRIP="llvm-strip"
 
 # dev package install
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -31,7 +38,8 @@ RUN cd /tmp/build \
         --with-libtool \
         --disable-static \
         --with-openssl \
-        --with-tuning=default \
+        --with-tuning=large \
+        --with-tuning \
         --enable-largefile \
         --enable-backtrace \
         --enable-symtable \
