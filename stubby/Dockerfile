@@ -55,7 +55,7 @@ FROM arm64v8/alpine:latest AS getdns-build
 ARG GETDNS_VERSION="1.6.0-rc.1"
 ARG BUILD_BASE="build-base binutils clang llvm make gawk autoconf automake libtool curl cmake "
 ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libuv-dev libev-dev check-dev unbound-dev \
-                libevent-dev libidn2-dev openssl-dev libtasn1-dev libc6-compat libgcc nettle-dev "
+                libevent-dev libidn2-dev libtasn1-dev libc6-compat libgcc nettle-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -114,7 +114,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 COPY --from=gnutls-build /tmp/root/usr/local/lib /usr/local/lib
-ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs openssl tini libidn2 libtasn1 nettle "
+ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs tini libidn2 libtasn1 nettle "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/*
 
@@ -124,7 +124,7 @@ FROM getdns-build AS build
 
 ARG VERSION="0.2.6"
 ARG BUILD_BASE="build-base binutils clang llvm make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} yaml openssl unbound git "
+ARG BUILD_PKGS="${BUILD_BASE} yaml unbound git "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
