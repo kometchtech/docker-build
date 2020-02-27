@@ -2,6 +2,8 @@
 
 ## base image
 FROM arm64v8/alpine:latest AS base-image
+ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl clang-dev "
+ARG BUILD_PKGS="${BUILD_BASE}"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -13,8 +15,6 @@ ENV CC="clang" \
     LD="ld.lld" \
     STRIP="llvm-strip"
 
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl clang-dev "
-ARG BUILD_PKGS="${BUILD_BASE}"
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 
@@ -82,6 +82,8 @@ FROM base-image AS build
 ARG VERSION="1.6.0-beta"
 ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl openssl-dev cassandra-cpp-driver-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+#ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++ "
+ARG CXXFLAGS="${CFLAGS} -std=c++11 "
 
 # dev package install
 COPY --from=log4cplus /tmp/root /
