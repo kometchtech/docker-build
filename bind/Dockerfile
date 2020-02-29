@@ -7,9 +7,9 @@ ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake l
 ARG BUILD_PKGS="${BUILD_BASE} openssl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
                 readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev libstdc++ clang-dev \
                 libc6-compat libgcc "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=lld -lz "
 ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++ "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed "
 ENV CC="clang"
 ENV CXX="clang++"
 ENV AR="llvm-ar"
