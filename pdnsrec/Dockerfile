@@ -4,8 +4,9 @@ FROM arm64v8/alpine:latest AS build
 # Environmet
 ARG VERSION="4.2.0"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG BUILD_PKGS="${BUILD_BASE} openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev libatomic \
+                net-snmp-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang" \
@@ -32,8 +33,9 @@ RUN cd /tmp/build \
       --libdir=${prefix}/lib/aarch64-linux-gnu \
       --libexecdir=${prefix}/lib/aarch64-linux-gnu \
       --disable-static \
-      --disable-dependency-tracking \
       --enable-libsodium \
+      --enable-nod \
+      --with-net-snmp \
       --with-protobuf \
       --with-lua \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
@@ -47,7 +49,7 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata openssl \
-              ca-certificates tini "
+              ca-certificates tini net-snmp "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
