@@ -5,11 +5,11 @@ FROM arm64v8/alpine:latest AS build
 ARG VERSION="2.8.2"
 # Build dependencies
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev \
-                        git bsd-compat-headers gnutls-dev lmdb-dev libmaxminddb-dev \
-                        musl-utils protobuf-c-dev protobuf-dev libedit-dev libidn2-dev "
+ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev git bsd-compat-headers gnutls-dev \
+                         lmdb-dev libmaxminddb-dev musl-utils protobuf-c-dev protobuf-dev libedit-dev \
+                         zlib-dev libidn2-dev "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang" \
@@ -72,7 +72,6 @@ EXPOSE 53/UDP 53/TCP 853/TCP
 STOPSIGNAL SIGTERM
 
 # voulme
-#VOLUME ["/var/lib/knot/zones/timers", "/etc/knot-dns"]
 WORKDIR /etc/knot-dns
 
 # select entrypoint
