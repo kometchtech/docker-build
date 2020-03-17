@@ -12,11 +12,6 @@ if [ ! -d /var/run/nsd ]; then
     mkdir -p /var/run/nsd
 fi
 
-if [ ! -f /etc/nsd/nsd.conf ]; then
-	nsd -d $@
-else
-	nsd -d -c /etc/nsd/nsd.conf
-fi
+$@
 
-fg %1
-#tail -f /dev/null
+tail -f /dev/null

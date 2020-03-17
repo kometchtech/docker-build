@@ -4,8 +4,8 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ARG VERSION=4.2.0
 ARG BUILD_BASE="build-base binutils clang llvm make gawk autoconf automake libtool curl lld "
-ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev zlib-dev bison flex-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang" \
@@ -76,7 +76,7 @@ STOPSIGNAL SIGTERM
 # Execute app
 WORKDIR /etc/nsd
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
-CMD ["-c", "/etc/nsd/nsd.conf"]
+CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
 
 # Application execution related information
 ADD ./entrypoint.sh /usr/local/sbin/
