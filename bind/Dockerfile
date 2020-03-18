@@ -7,16 +7,16 @@ ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake l
 ARG BUILD_PKGS="${BUILD_BASE} openssl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
                 readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev libstdc++ clang-dev \
                 libc6-compat libgcc "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=lld -lz "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++ "
 ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
-ENV STRIP="llvm-strip"
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
 # dev package install
 RUN --mount=type=cache,target=/var/cache/apk \
@@ -32,14 +32,12 @@ RUN cd /tmp/build \
         --prefix=/usr/local \
         --sysconfdir=/etc/named \
         --localstatedir=/var \
-#       --disable-linux-caps \
         --with-libxml2 \
 #       --with-dlopen=yes \
         --with-libtool \
         --disable-static \
         --with-openssl \
         --with-tuning=large \
-        --with-tuning \
         --enable-largefile \
         --enable-backtrace \
         --enable-symtable \
