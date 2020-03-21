@@ -4,7 +4,7 @@ FROM arm64v8/alpine:latest AS build
 # Env
 ARG VERSION="1.4.0-beta1"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} pkgconf boost-dev lua5.1-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
+ARG BUILD_PKGS="${BUILD_BASE} pkgconf boost-dev lua5.3-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
                libedit-dev openssl-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
@@ -37,7 +37,6 @@ RUN cd /usr/src \
       --with-re2 \
       --with-protobuf \
       --with-ebpf \
-      --disable-dependency-tracking \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j"$(nproc)"  \
     && make install-strip DESTDIR=/tmp/root
@@ -49,8 +48,7 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="tzdata lua5.1-libs libsodium protobuf re2 net-snmp-libs libedit openssl \
-              net-snmp-agent-libs tini "
+ARG RUN_PKGS="tzdata lua5.3-libs libsodium protobuf re2 net-snmp-libs libedit openssl net-snmp-agent-libs tini "
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update --no-cache ${RUN_PKGS} \
   && rm -rf /var/cache/apk/* /usr/local/share/man/* \

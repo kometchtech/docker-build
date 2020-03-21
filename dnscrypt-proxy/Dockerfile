@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 # 1st build 
-FROM arm64v8/golang:1.13 as build
+FROM arm64v8/golang:1.12 as build
 
 # https://golang.org/doc/install/source#environment
 ENV CGO_ENABLED 0
@@ -9,11 +9,12 @@ ENV GOARCH arm64
 ARG VERSION=2.0.25
 WORKDIR /go/src/github.com/jedisct1/
 RUN --mount=type=cache,target=/root/.cache/go-build \
-  apt-get update \
-  && apt-get install -y --no-install-recommends git
+    apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
 RUN git clone -b ${VERSION} --depth=1 https://github.com/jedisct1/dnscrypt-proxy /go/src/github.com/jedisct1/
 RUN cd /go/src/github.com/jedisct1/dnscrypt-proxy \
-  && go build -v -tags "osusergo netgo" \
+    && go build -v -tags "osusergo netgo" \
                  -ldflags '-extldflags "-static -s -w"' \
                  -o /go/bin/dnscrypt-proxy
 
