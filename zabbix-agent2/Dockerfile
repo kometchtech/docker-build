@@ -2,8 +2,7 @@
 FROM alpine:latest
 
 LABEL org.opencontainers.image.title="Zabbix agent 2" \
-      org.opencontainers.image.authors="Alexey Pustovalov <alexey.pustovalov@zabbix.com>" \
-      org.opencontainers.image.vendor="Zabbix LLC" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
       org.opencontainers.image.url="https://zabbix.com/" \
       org.opencontainers.image.description="Zabbix agent 2 is deployed on a monitoring target to actively monitor local resources and applications" \
       org.opencontainers.image.licenses="GPL v2.0"
