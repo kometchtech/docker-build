@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 # 1st build 
-FROM arm64v8/golang:1.12 as build
+FROM arm64v8/golang:latest as build
 
 # https://golang.org/doc/install/source#environment
 ENV CGO_ENABLED 0
