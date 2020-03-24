@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 # 1st build
-FROM arm64v8/golang:1.13 as build-env
+FROM arm64v8/golang:1.14 as build-env
 
 ARG VERSION="1.5.0"
 ARG BUILD_PKGS="git automake libtool autoconf pkg-config curl libunbound-dev libhiredis-dev "
@@ -11,11 +11,12 @@ ENV GOARCH arm64
 WORKDIR /go/src
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-       ${BUILD_PKGS}
+       ${BUILD_PKGS} \
+    && rm -rf /var/lib/apt/lists/*
 RUN git config --global http.postBuffer 524288000
 RUN git clone -b v${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
 RUN cd /go/src/github.com/coredns/coredns/ \
-   && make all
+   && make
 
 
 # 2nd build
