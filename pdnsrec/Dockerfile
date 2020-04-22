@@ -37,6 +37,8 @@ RUN cd /tmp/build \
       --enable-nod \
       --with-net-snmp \
       --with-protobuf \
+      --with-service-group=pdns-recursor \
+      --with-service-user=pdns-recursor \
       --with-lua \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j4 install-strip DESTDIR=/tmp/root
@@ -53,7 +55,7 @@ ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsod
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
-    && adduser -DH pdnsrec \
+    && adduser -DH pdns-recursor \
     && mkdir -p /var/lib/pdns-recursor/nod /var/lib/pdns-recursor/udr
 
 
