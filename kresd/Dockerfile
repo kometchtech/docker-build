@@ -99,12 +99,13 @@ FROM knot-dns-build AS build
 ARG VERSION="4.0.0"
 
 ## Knot Resolver build
-RUN mkdir -p /usr/local/src \
-    && git clone --depth=1 https://github.com/moonjit/moonjit /usr/local/src \
-    && cd /usr/local/src \
-    && make -j "$(nproc)"  \
-    && make install \
-    && mv /usr/local/include/moonjit-2.3/* /usr/include/
+#RUN mkdir -p /usr/local/src \
+#    && git clone --depth=1 https://github.com/moonjit/moonjit /usr/local/src \
+#    && cd /usr/local/src \
+#    && make -j "$(nproc)"  \
+#    && make install
+#    && mv /usr/local/include/moonjit-2.3/* /usr/include/
+COPY --from=moonjit /tmp/root /
 RUN mkdir -p /tmp/root/etc/knot-resolver
 RUN git clone -b v${VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
 RUN cd /tmp/knot-resolver \
