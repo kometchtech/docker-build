@@ -4,26 +4,38 @@ FROM arm64v8/alpine:latest AS lua-build
 ARG BUILD_LUAS="build-base lua-dev openssl-dev bsd-compat-headers luarocks m4 "
 
 RUN apk add --update ${BUILD_LUAS}
-# lua build
+# build luarocks
 RUN luarocks-5.1 install cqueues \
     && luarocks-5.1 install luaossl \
     && luarocks-5.1 install http \
-    && luarocks-5.1 install mmdblua
+    && luarocks-5.1 install mmdblua \
+    && luarocks-5.1 install compat53
+
+
+# build moonjit
+FROM arm64v8/alpine:latest AS moonjit
+ARG BUILD_NOONJIT="build-base git "
+RUN apk add --update ${BUILD_NOONJIT}
+RUN mkdir -p /usr/local/src /tmp/root \
+    && git clone --depth=1 https://github.com/moonjit/moonjit /usr/local/src \
+    && cd /usr/local/src \
+    && make -j "$(nproc)" PREFIX=/usr \
+    && make install PREFIX=/tmp/root
 
 
 # Intermediate container for Knot DNS build (not persistent)
 FROM arm64v8/alpine:latest AS knot-dns-build
 # Environment
-ARG KNOT_DNS_VERSION="2.9.2"
+ARG KNOT_DNS_VERSION="2.9.3"
 # Build dependencies
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+COPY --from=moonjit /tmp/root /
+ARG BUILD_BASE="build-base binutils clang llvm lld make cmake gawk autoconf automake libtool curl "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls git bsd-compat-headers musl-utils \
                         fstrm-dev protobuf-c-dev protobuf-dev "
-ENV KNOT_RESOLVER_BUILD_DEPS="${BUILD_BASE} luajit-dev libuv-dev lua5.1-compat53 gnutls-dev fstrm-dev jansson-dev \
-                              userspace-rcu-dev nettle-dev cmocka-dev protobuf-c-dev protobuf-dev libedit-dev meson \
-                              lmdb-dev "
+ENV KNOT_RESOLVER_BUILD_DEPS="${BUILD_BASE} libuv-dev gnutls-dev fstrm-dev jansson-dev userspace-rcu-dev \
+                              nettle-dev cmocka-dev protobuf-c-dev protobuf-dev libedit-dev meson lmdb-dev "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang" \
@@ -39,6 +51,7 @@ RUN apk add --update ${BUILDENV_DEPS}
 # Install Knot DNS from sources
 COPY --from=lua-build /usr/local/share/lua/5.1/ /usr/local/share/lua/5.1/
 COPY --from=lua-build /usr/local/lib/lua/5.1/ /usr/local/lib/lua/5.1/
+RUN ln -s /usr/local/bin/moonjit-2.3.0-dev /usr/local/bin/luajit
 RUN git clone -b v${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
 RUN cd /tmp/knot-dns \
     && autoreconf -if \
@@ -62,14 +75,13 @@ FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG KNOT_DNS_RUNTIME_DEPS="gnutls "
-ARG KNOT_RESOLVER_RUNTIME_DEPS="lmdb luajit libuv lua5.1-compat53 \
-                               ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit \
-                               tini "
+ARG KNOT_RESOLVER_RUNTIME_DEPS="lmdb libuv musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit tini "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates openssl "
 ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
                   ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} ${KNOT_RESOLVER_RUNTIME_DEPS_SSL} "
 
+COPY --from=moonjit /tmp/root /
 COPY --from=lua-build /usr/local/share/lua/5.1/ /usr/local/share/lua/5.1/
 COPY --from=lua-build /usr/local/lib/lua/5.1/ /usr/local/lib/lua/5.1/
 RUN apk add --update --no-cache ${RUNTIME_DEPS} \
@@ -85,10 +97,11 @@ FROM knot-dns-build AS build
 ARG VERSION="4.0.0"
 
 # Knot Resolver build
+#COPY --from=moonjit /tmp/root /
 RUN mkdir -p /tmp/root/etc/knot-resolver
 RUN git clone -b v${VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
 RUN cd /tmp/knot-resolver \
-    && meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
+    && meson build_docker --buildtype=release --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
     && DESTDIR=/tmp/root ninja -C build_docker install \
     && cp /tmp/root/usr/share/doc/knot-resolver/examples/config.docker /tmp/root/etc/knot-resolver/kresd.conf
 
