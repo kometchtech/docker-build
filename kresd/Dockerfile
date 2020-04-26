@@ -20,7 +20,9 @@ RUN mkdir -p /usr/local/src /tmp/root \
     && git clone --depth=1 https://github.com/moonjit/moonjit /usr/local/src \
     && cd /usr/local/src \
     && make -j "$(nproc)" \
-    && make install PREFIX=/tmp/root \
+       LDFLAGS="-Wl,-E -lm -ldl" \
+    && make install DESTDIR=/tmp/root \
+    && mv /tmp/root/usr/local/include/moonjit-2.3/* /tmp/root/usr/local/include/ \
     && ldconfig /
 
 
@@ -52,8 +54,6 @@ RUN apk add --update ${BUILDENV_DEPS}
 COPY --from=moonjit /tmp/root /
 COPY --from=lua-build /usr/local/share/lua/5.1/ /usr/local/share/lua/5.1/
 COPY --from=lua-build /usr/local/lib/lua/5.1/ /usr/local/lib/lua/5.1/
-RUN cd /usr/local/bin \
-    && ln -s moonjit-2.3.0-dev luajit
 RUN git clone -b v${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
 RUN cd /tmp/knot-dns \
     && autoreconf -if \
@@ -102,18 +102,17 @@ ARG VERSION="4.0.0"
 RUN mkdir -p /usr/local/src \
     && git clone --depth=1 https://github.com/moonjit/moonjit /usr/local/src \
     && cd /usr/local/src \
-    && make -j "$(nproc)" \
+    && make -j "$(nproc)"  \
     && make install \
     && mv /usr/local/include/moonjit-2.3/* /usr/include/
 RUN mkdir -p /tmp/root/etc/knot-resolver
 RUN git clone -b v${VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
 RUN cd /tmp/knot-resolver \
-    && meson build_dir \
+    && meson . build_dir \
         --buildtype=release \
         --prefix=/usr \
-        --libdir=lib \
-        --includedir=/usr/local/include/moonjit-2.3 \
-        -Dc_args="${CFLAGS}"
+        -Dc_args="${CFLAGS}" \
+        -Dc_link_args="${LDFLAGS} "
 RUN cd /tmp/knot-resolver \
     && DESTDIR=/tmp/root ninja -C build_dir install
 RUN cp /tmp/root/usr/share/doc/knot-resolver/examples/config.docker /tmp/root/etc/knot-resolver/kresd.conf
