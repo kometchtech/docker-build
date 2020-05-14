@@ -1,11 +1,12 @@
 # syntax = docker/dockerfile:experimental
-FROM arm64v8/alpine:latest AS build
+FROM arm64v8/debian:10-slim AS build
 
 # Env
+ENV DEBIAN_FRONTEND=noninteractive
 ARG VERSION="1.4.0-beta1"
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} pkgconf boost-dev lua5.1-dev libsodium-dev protobuf-dev re2-dev net-snmp-dev \
-               libedit-dev openssl-dev "
+ARG BUILD_BASE="build-essential binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-all-dev liblua5.3-dev libsodium-dev libprotobuf-dev libre2-dev \
+               libedit-dev openssl protobuf-compiler ca-certificates libssl-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -19,8 +20,8 @@ ENV CC="clang" \
 
 # dev package install
 RUN mkdir -p /usr/src /tmp/root/etc/dnsdist
-RUN --mount=type=cache,target=/var/cache/apk \
-  apk add --update  ${BUILD_PKGS}
+#RUN --mount=type=cache,target=/var/cache/apt \
+RUN apt-get update && apt-get install --no-install-recommends -y ${BUILD_PKGS}
 ## build
 RUN curl -fsSL "https://downloads.powerdns.com/releases/dnsdist-${VERSION}.tar.bz2" -o dnsdist.tar.bz2 \
     && tar xf dnsdist.tar.bz2 --strip-components=1 -C /usr/src \
@@ -46,15 +47,16 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/alpine:latest AS runtime
+FROM arm64v8/debian:10-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="tzdata lua5.1-libs libsodium protobuf re2 net-snmp-libs libedit openssl \
-              net-snmp-agent-libs tini "
-RUN --mount=type=cache,target=/var/cache/apk \
-  apk add --update --no-cache ${RUN_PKGS} \
-  && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-  && adduser -DH _dnsdist
+ARG RUN_PKGS="liblua5.3-0 libsodium23 libprotobuf17 libre2-5 libedit2 libsnmp-base  openssl "
+#RUN --mount=type=cache,target=/var/cache/apt \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+		${RUN_PKGS} \
+ 	&& apt-get -y clean \
+	&& rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
+	&& adduser --force-badname _dnsdist
 
 # Final container
 FROM runtime
@@ -79,7 +81,7 @@ WORKDIR /etc/dnsdist
 
 # Select entrypoint
 COPY ["entrypoint.sh", "/usr/bin/"]
-ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/entrypoint.sh"]
 CMD ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
 # Fetch pdns-dnsdist libraries from build image
@@ -91,5 +93,7 @@ RUN set -x \
       | sort -u \
       | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
   )" \
-  && apk add --no-cache -t .rundeps $runDeps \
+  && apt-get install --no-install-recommends -y ${runDeps} \
+  && apt-get -y clean \
+  && rm -rf /var/lib/apt/lists/* \
   && ldconfig /
