@@ -5,8 +5,8 @@ FROM arm64v8/alpine:latest AS build
 ARG VERSION="1.9.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev flex-dev hiredis-dev libsodium-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
-ARG CXXFLAGS="${CFLAGS} -march=armv8-a -mtune=cortex-a53 -mfloat-abi=softfp "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS}  "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang" \
     CXX="clang++" \
@@ -30,7 +30,6 @@ RUN cd /usr/src \
       --with-libevent \
       --with-pthreads \
       --with-ssl \
-#      --disable-rpath \
       --sysconfdir=/etc/unbound \
       --with-conf-file=/etc/unbound/unbound.conf \
       --with-pidfile=/var/run/unbound.pid \
