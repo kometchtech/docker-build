@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:experimental
 # Intermediate container for Knot DNS build (not persistent)
 FROM debian:stable AS knot-dns-build
-ARG KNOT_DNS_VERSION=2.9.4
+ARG KNOT_DNS_VERSION=2.9.5
 
 # Build dependencies
 ENV KNOT_DNS_BUILD_DEPS="git-core build-essential libtool autoconf pkg-config \
@@ -66,6 +66,8 @@ ARG VERSION="5.1.0"
 RUN git clone -b v${VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-resolver.git /tmp/knot-resolver
 # Build Knot Resolver
 RUN cd /tmp/knot-resolver \
+    && sed -i 's/github.com\/cloudflare/gitlab.labs.nic.cz\/knot\/3rdparty/g' .gitmodules \
+    && sed -i 's/github.com\/telemachus\//gitlab.labs.nic.cz\/knot\/3rdparty\/lua-/g' .gitmodules \
     && git submodule update --init --recursive \
     && meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
 	&& DESTDIR=/tmp/root ninja -C build_docker install \
