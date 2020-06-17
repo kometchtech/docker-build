@@ -27,7 +27,7 @@ RUN curl -fsSL "https://ftp.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz"
 RUN tar xf bind9.tar.xz --strip-components=1 -C /tmp/build \
     && rm -f bind9.tar.xz
 RUN cd /tmp/build \
-    && ./autogen.sh \
+#    && ./autogen.sh \
     && ./configure \
         --prefix=/usr/local \
         --sysconfdir=/etc/named \
