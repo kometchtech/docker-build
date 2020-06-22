@@ -46,8 +46,8 @@ RUN ldconfig /
 FROM base-image AS botan
 
 # Environment
-ENV BOTAN="2.13.0"
-ARG BUILD_PKGS="boost-dev bzip2-dev openssl-dev zlib-dev sqlite-dev "
+ENV BOTAN="2.14.0"
+ARG BUILD_PKGS="boost-dev bzip2-dev openssl-dev zlib-dev sqlite-dev python3"
 ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="${CFLAGS} "
@@ -59,6 +59,7 @@ RUN mkdir -p /usr/local/src \
     && curl -fsSL "https://github.com/randombit/botan/archive/${BOTAN}.tar.gz" -o botan.tar.gz \
     && tar xf botan.tar.gz --strip-components=1 -C /usr/local/src \
     && rm botan.tar.gz
+RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN cd /usr/local/src \
     && ./configure.py \
         --cc=clang \
