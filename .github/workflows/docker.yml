@@ -1,0 +1,30 @@
+name: Publish Docker image
+on:
+  push:
+    branches:
+      - master
+jobs:
+
+  build:
+    name: build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v3
+        with:
+          buildx-version: latest
+          qemu-version: latest
+
+      - name: Login DockerHub
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Build and Publish
+        run: |
+          docker buildx build \
+            --push \
+            --platform linux/arm/v7,linux/arm64,linux/amd64 \
+            -t ${{ github.repository }}:latest .
