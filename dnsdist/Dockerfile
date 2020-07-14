@@ -22,7 +22,8 @@ RUN mkdir -p /usr/src /tmp/root/etc/dnsdist
 RUN --mount=type=cache,target=/var/cache/apk \
   apk add --update  ${BUILD_PKGS}
 ## build
-RUN curl -fsSL "https://downloads.powerdns.com/autobuilt/dnsdist/${VERSION}/dnsdist-${VERSION}.tar.bz2" -o dnsdist.tar.bz2 \
+#RUN curl -fsSL "https://downloads.powerdns.com/autobuilt/dnsdist/${VERSION}/dnsdist-${VERSION}.tar.bz2" -o dnsdist.tar.bz2 \
+RUN curl -fsSL "https://downloads.powerdns.com/releases/dnsdist-${VERSION}.tar.bz2" -o dnsdist.tar.bz2 \
     && tar xf dnsdist.tar.bz2 --strip-components=1 -C /usr/src \
     && rm dnsdist.tar.bz2
 RUN cd /usr/src \
