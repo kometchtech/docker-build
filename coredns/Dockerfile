@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 # 1st build
-FROM arm64v8/golang:1.14 as build-env
+FROM arm64v8/golang:latest as build-env
 
 ARG VERSION="1.5.0"
 ARG BUILD_PKGS="git automake libtool autoconf pkg-config curl libunbound-dev libhiredis-dev "

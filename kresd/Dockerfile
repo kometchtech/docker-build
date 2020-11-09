@@ -86,7 +86,7 @@ ARG VERSION="4.0.0"
 
 # Knot Resolver build
 RUN mkdir -p /tmp/root/etc/knot-resolver
-RUN git clone -b v${VERSION} --depth=1 --recursive https://github.com/CZ-NIC/knot-resolver.git /tmp/knot-resolver
+RUN git clone -b v${VERSION} --depth=1 --recursive https://gitlab.nic.cz/knot/knot-resolver.git /tmp/knot-resolver
 RUN cd /tmp/knot-resolver \
     && meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
     && DESTDIR=/tmp/root ninja -C build_docker install \
