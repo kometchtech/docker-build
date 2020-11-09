@@ -7,7 +7,7 @@ ARG VERSION="2.8.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev git bsd-compat-headers gnutls-dev \
                          lmdb-dev libmaxminddb-dev musl-utils protobuf-c-dev protobuf-dev libedit-dev \
-                         zlib-dev libidn2-dev "
+                         zlib-dev libidn2-dev linux-headers "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
