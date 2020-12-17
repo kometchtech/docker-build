@@ -14,7 +14,7 @@ RUN luarocks-5.1 install cqueues \
 # Intermediate container for Knot DNS build (not persistent)
 FROM arm64v8/alpine:latest AS knot-dns-build
 # Environment
-ARG KNOT_DNS_VERSION="2.9.2"
+ARG KNOT_DNS_VERSION="3.0.3"
 # Build dependencies
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls git bsd-compat-headers musl-utils \
@@ -116,5 +116,5 @@ RUN chmod +x /usr/local/sbin/entrypoint.sh \
     && ldconfig /
 
 # set entrypoint
-ENTRYPOINT ["/sbin/tini", "-s", "--", "/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "-g", "--", "/usr/local/sbin/entrypoint.sh"]
 CMD ["kresd", "-n", "-c", "/etc/knot-resolver/kresd.conf"]

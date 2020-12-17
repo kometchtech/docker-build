@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # -*- coding: utf-8 -*-
 set -ex
-
-VAR="--network=host --pull=true --progress=auto "
+ 
+#VAR="--network=host --pull=true --progress=auto "
+VAR="--pull=true --platform linux/arm64 "
 
 usage() {
     cat << EOF
     $0 [-n] [-p] [-l] [-g] -d <dir>
         -n  : no-cache
-        -p  : progress plane (default: auto)
         -l  : add latest tag
         -g  : git push
         -d  : directory
@@ -21,9 +21,6 @@ do
         n)
 		    VAR+="${VAR} --no-cache "
 		    ;;
-        p)
-            VAR+="${VAR} --progress=plane "
-            ;;
         d)
             echo $OPTARG
             TARGET+=("$OPTARG")
@@ -61,8 +58,10 @@ do
 	if [ -n ${IMAGE} ]; then
 	    if [ -d ./${IMAGE} ]; then
 	        version=`cat ${IMAGE}/VERSION`
-	        docker buildx build ${VAR} --build-arg BUILDKIT_INLINE_CACHE=true \
-	            --build-arg VERSION=$version --rm -t ${USERNAME}/${IMAGE}:${version} ${IMAGE}/
+	        docker buildx build ${VAR} \
+                --build-arg VERSION=$version \
+                --rm -t ${USERNAME}/${IMAGE}:${version} \
+                ${IMAGE}/
 	    fi
 	else
 	    exit 1

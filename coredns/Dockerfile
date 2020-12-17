@@ -5,7 +5,6 @@ FROM arm64v8/golang:latest as build-env
 ARG VERSION="1.5.0"
 ARG BUILD_PKGS="git automake libtool autoconf pkg-config curl libunbound-dev libhiredis-dev "
 
-ENV CGO_ENABLED 0
 ENV GOOS linux
 ENV GOARCH arm64
 WORKDIR /go/src
@@ -20,7 +19,7 @@ RUN cd /go/src/github.com/coredns/coredns/ \
 
 
 # 2nd build
-FROM scratch
+FROM alpine:latest
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       arch="Aarch64" \
       description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
@@ -40,5 +39,7 @@ WORKDIR /etc/coredns
 ENTRYPOINT ["/coredns"]
 
 # copy file 
-COPY --from=build-env /etc/ssl/certs /etc/ssl/certs
+#COPY --from=build-env /etc/ssl/certs /etc/ssl/certs
 COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /coredns
+
+RUN apk add --update --no-cache ca-certificates tzdata

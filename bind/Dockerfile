@@ -62,7 +62,7 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cac
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="protobuf-c tzdata zlib openssl libcap json-c libxml2 libuv tini "
+ARG RUN_PKGS="protobuf-c tzdata zlib openssl libcap json-c libxml2 libuv "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
@@ -105,6 +105,6 @@ RUN chmod +x /usr/local/sbin/entrypoint.sh
 
 # select entrypoint
 WORKDIR /etc/named
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
 

@@ -77,7 +77,7 @@ WORKDIR /etc/knot-dns
 # select entrypoint
 ADD entrypoint.sh /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/entrypoint.sh
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["tini", "-g", "--", "/usr/local/sbin/entrypoint.sh"]
 
 # Fetch Knot DNS from build image
 COPY --from=build /tmp/root/ /
