@@ -1,13 +1,13 @@
-#!/usr/bin/env bash                                                                                                   [40/4517]
+#!/usr/bin/env bash
 # -*- coding: utf-8 -*-
-set -ex       
-            
+set -ex
+
 #VAR="--network=host --pull=true --progress=auto "
-VAR="--pull=true --platform linux/arm64 "                                                                                     
-              
+VAR="--pull=true --platform linux/arm64 "
+
 usage() { 
-    cat << EOF   
-    $0 [-n] [-p] [-l] [-g] -d <dir>             
+    cat << EOF
+    $0 [-n] [-p] [-l] [-g] -d <dir>
         -n  : no-cache
         -l  : add latest tag
         -g  : git push
@@ -32,7 +32,7 @@ do
         l)
             # add latest tag
             LATEST=1
-            ;;                                                                                                         [6/4517]
+            ;;
         ?|h)
             usage
             exit 2
