@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-FROM arm64v8/debian:10-slim AS build
+FROM arm64v8/debian:stable-slim AS build
 
 # Env
 ENV DEBIAN_FRONTEND=noninteractive
@@ -48,7 +48,7 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/debian:10-slim AS runtime
+FROM arm64v8/debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="liblua5.3-0 libsodium23 libprotobuf17 libre2-5 libedit2 libsnmp-base  openssl "
@@ -79,6 +79,7 @@ STOPSIGNAL SIGTERM
 
 # Volume
 WORKDIR /etc/dnsdist
+
 
 # Select entrypoint
 COPY ["entrypoint.sh", "/usr/bin/"]
