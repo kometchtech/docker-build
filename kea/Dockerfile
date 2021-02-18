@@ -15,6 +15,7 @@ ENV CC="clang" \
     LD="ld.lld" \
     STRIP="llvm-strip"
 
+# make base image
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 
@@ -30,14 +31,14 @@ ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 RUN mkdir -p /usr/local/src \
-    && curl -fSsL "${LOG4CPLUS_SOURCE}" -o log4cplus.tar.bz2 \
+    && curl -fSsL ${LOG4CPLUS_SOURCE} -o log4cplus.tar.bz2 \
     && tar xf log4cplus.tar.bz2 --strip-components=1 -C /usr/local/src \
     && rm log4cplus.tar.bz2
 RUN cd /usr/local/src \
     && ./configure \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j$(nproc) \
-    && make install DESTDIR=/tmp/root
+    && make install-strip DESTDIR=/tmp/root
 RUN ldconfig /
 
 
@@ -45,8 +46,8 @@ RUN ldconfig /
 FROM base-image AS botan
 
 # Environment
-ENV BOTAN="2.12.1"
-ARG BUILD_PKGS="boost-dev bzip2-dev openssl-dev zlib-dev sqlite-dev "
+ENV BOTAN="2.14.0"
+ARG BUILD_PKGS="boost-dev bzip2-dev openssl-dev zlib-dev sqlite-dev python3"
 ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="${CFLAGS} "
@@ -58,8 +59,10 @@ RUN mkdir -p /usr/local/src \
     && curl -fsSL "https://github.com/randombit/botan/archive/${BOTAN}.tar.gz" -o botan.tar.gz \
     && tar xf botan.tar.gz --strip-components=1 -C /usr/local/src \
     && rm botan.tar.gz
+RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN cd /usr/local/src \
     && ./configure.py \
+        --cc=clang \
         --with-boost \
         --with-bzip2 \
         --with-openssl \
@@ -67,11 +70,13 @@ RUN cd /usr/local/src \
         --with-zlib \
         --disable-static-library \
         --optimize-for-size \
-        --amalgamation \
-#        --minimized-build \
-        --without-documentation \
+        --minimized-build \
+        --enable-modules=aes,aes_armv8,aes_ni,asn1,auto_rng,base,base32,base58,base64,blowfish,bzip2,cbc,cbc_mac,chacha,chacha20poly1305,chacha_rng,chacha_simd32,checksum,cmac,compression,cpuid,crc24,crc32,ctr,curve25519,des,dev_random,dh,dsa,ec_group,ecdh,ecdsa,ecgdsa,ecies,eckcdsa,ed25519,entropy,fd_unix,getentropy,hash,hash_id,hex,hmac,hmac_drbg,locking_allocator,md5,mem_pool,numbertheory,openssl,pk_pad,pkcs11,prf_tls,prf_x942,proc_walk,psk_db,pubkey,rc4,rdrand,rdrand_rng,rdseed,rfc3394,rfc6979,rmd160,rng,rsa,scrypt,sha1,sha1_armv8,sha2_32,sha2_32_armv8,sha2_32_bmi2,sha2_64,sha2_64_bmi2,simd,socket,sodium,sqlite3,stateful_rng,stream,system_rng,thread_utils,tls,tls_10,tls_cbc,uuid,x509,zlib \
+        --without-documentation
+RUN cd /usr/local/src \
     && make -j"$(nproc)" install DESTDIR=/tmp/root \
-    && llvm-strip /tmp/root/usr/local/bin/botan
+    && rm -f /tmp/root/usr/local/bin/botan \
+    && strip -p /tmp/root/usr/local/lib/libbotan*
 RUN ldconfig /
 
 
@@ -82,8 +87,7 @@ FROM base-image AS build
 ARG VERSION="1.6.0-beta"
 ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl openssl-dev cassandra-cpp-driver-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
-#ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++ "
-ARG CXXFLAGS="${CFLAGS} -std=c++11 "
+ARG CXXFLAGS="${CFLAGS} "
 
 # dev package install
 COPY --from=log4cplus /tmp/root /
@@ -92,38 +96,37 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 ## build
 RUN mkdir -p /tmp/build \
-  && curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" -o kea.tar.gz \
+  && curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" \
+          -o kea.tar.gz \
   && tar xf kea.tar.gz --strip-components=1 -C /tmp/build \
-  && rm kea.tar.gz
+  && rm -f kea.tar.gz
 RUN cd /tmp/build \
   && autoreconf -if \
   && ./configure \
-    --prefix=/usr/local \
-    --sysconfdir=/etc \
-    --disable-rpath \
-    --disable-static \
-    --with-boost-include \
-    --with-botan-config \
-    --with-openssl \
-    --with-mysql \
-    --with-pgsql \
-    --with-cql \
-    --with-log4cplus \
-#    --disable-dependency-tracking \
-    CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
+        --prefix=/usr/local \
+        --sysconfdir=/etc \
+        --disable-rpath \
+        --disable-static \
+        --with-boost-include \
+        --with-botan-config \
+        --with-openssl \
+        --with-mysql \
+        --with-pgsql \
+        --with-cql \
+        --with-log4cplus \
+#        --disable-dependency-tracking \
+        CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /tmp/build \
     && make -j"$(nproc)" \
     && make install DESTDIR=/tmp/root
-RUN llvm-strip /tmp/root/usr/local/sbin/kea-dhcp4 \
-        /tmp/root/usr/local/sbin/kea-dhcp6 \
-        /tmp/root/usr/local/sbin/kea-dhcp-ddns \
-        /tmp/root/usr/local/sbin/kea-ctrl-agent \
-        /tmp/root/usr/local/sbin/kea-lfc
+RUN strip -p /tmp/root/usr/local/sbin/kea-dhcp* \
+             /tmp/root/usr/local/sbin/kea-lfc* \
+             /tmp/root/usr/local/lib/libkea-*.so.*
 RUN ldconfig /
 # Delete unnecessary directory
 RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local/include /tmp/root/usr/include \
            /tmp/root/usr/share/kea /tmp/root/usr/share/doc/kea /tmp/root/usr/local/lib/kea/hooks/*.la \
-           /tmp/root/usr/local/lib/*.la
+           /tmp/root/usr/local/lib/*.la /tmp/root/usr/local/include/*
 
 
 # Intermediate container with runtime dependencies

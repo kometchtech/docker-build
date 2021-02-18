@@ -1,24 +1,29 @@
 #!/usr/bin/env sh
 
-set +e
+set -ex
 
 ROOTKEY=${ROOTKEY:-"/var/cache/knot-resolver/root.keys"}
 CACHE=${CACHE:-"/var/cache/knot-resolver"}
+GC_OPT=${GC_OPT:-"-d 1000"}
 
 # Deleting the trust anchor key file
 if [ -e ${ROOTKEY} ]; then
     rm -f ${ROOTKEY}
 fi
 
-# Knot Resolver Garbage Collector daemon
-kres-cache-gc -c ${CACHE} -d 10000 &
-
 # Knot Resolver daemon
 if [ "${1#-}" != "$1" ]; then
-    set -- /usr/local/sbin/kresd "$@"
+    #set -- /usr/local/sbin/kresd "$@"
+    exec kresd "$@" &
+else
+    exec "$@" &
 fi
+#exec "$@" &
 
-exec "$@"
+
+# Knot Resolver Garbage Collector daemon
+sleep 10 &
+kres-cache-gc -c ${CACHE} ${GC_OPT}
 
 # process foreground
 fg %1

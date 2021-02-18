@@ -1,0 +1,109 @@
+# syntax = docker/dockerfile:experimental
+FROM arm64v8/alpine:latest AS getdns-build
+
+ARG GETDNS_VERSION="1.6.0-beta.1"
+ARG BUILD_BASE="build-base binutils make gawk autoconf automake libtool curl cmake "
+ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libressl-dev libuv-dev libev-dev check-dev \
+                unbound-dev libcrypto1.1 libidn2-dev libevent-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG CXXFLAGS="${CFLAGS}"
+#ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+
+# build dependencies install
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
+RUN mkdir -p /usr/src /tmp/root/var/stubby/ /tmp/root/etc/stubby/ /tmp/root/usr/local/lib/ /tmp/root/usr/local/include
+# app build
+RUN git clone -b v${GETDNS_VERSION} --depth 1 https://github.com/getdnsapi/getdns.git /usr/src
+RUN cd /usr/src \
+    && git submodule update --init \
+#    && libtoolize -ci \
+#    && autoreconf -if \
+    && mkdir build \
+    && cd build \
+    && cmake \
+        -DCMAKE_INSTALL_PREFIX=/tmp/root/usr/local \
+        -DENABLE_STUB_ONLY=ON \
+        -DUSE_LIBUV=ON \
+        -DUSE_LIBEV=ON \
+        -DUSE_LIBEVENT2=ON \
+        -DUSE_LIBIDN2=ON \
+        -DBUILD_STUBBY=ON \
+        -DCMAKE_C_FLAGS:STRING="${CFLAGS}" \
+        ..
+#    && cmake ..
+RUN cd /usr/src/build \
+    && sed -i -e "288 s/ssize_t/size_t/g" /usr/src/stubby/src/sldns/sbuffer.h \
+    && make -j"$(nproc)" install
+RUN ldconfig /
+# Copy libgetdns, libgetdns_ext_ev, libgetdns_ext_uv
+#RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
+#    && cp -r /usr/local/include/* /tmp/root/usr/local/include/ \
+RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/*
+
+
+# Intermediate container with runtime dependencies
+FROM arm64v8/alpine:latest AS runtime
+
+# Install runtime dependencies
+ENV RUN_PKGS="tzdata yaml libuv libev libevent unbound-libs libressl3.0-libssl libressl3.0-libcrypto gnutls libidn2 "
+RUN apk add --update ${RUN_PKGS} \
+    && rm -rf /var/cache/apk/* /usr/local/share/man/*
+
+
+# build stubby
+FROM getdns-build AS build
+
+ARG VERSION="0.2.6"
+ARG BUILD_BASE="build-base binutils make gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} git yaml libressl unbound gnutls-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+
+RUN --mount=type=cache,target=/var/cache/apk \
+    apk add --update ${BUILD_PKGS}
+RUN mkdir -p /usr/src/stubby /tmp/root/etc/unbound
+#RUN git clone -b v${VERSION} --depth=1 https://github.com/getdnsapi/stubby.git /usr/src/stuby
+RUN cd /usr/src/stubby \
+#    && autoreconf -fi \
+#    && ./configure \
+#        --disable-static \
+#        --with-ssl \
+#        --with-gnutls \
+#        CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib " \
+    && cmake \
+        -DCMAKE_INSTALL_FULL_RUNSTATEDIR=/tmp/root \
+        -DGETDNS_LIBRARIES=/tmp/root/usr/local/lib \
+        -DGETDNS_INCLUDE_DIR=/tmp/root/usr/local/include \
+        .
+RUN make -j "$(nproc)"
+#    && make install DESTDIR=/tmp/root
+RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
+# copy example conf
+RUN cp /usr/src/stubby/stubby.yml.example /tmp/root/etc/stubby/stubby.yml
+
+
+# Final container
+FROM runtime
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="Aarch64" \
+      url="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Daemon+-+Stubby" \
+      description="Stubby is the name given to a mode of using getdns which enables \
+                   it to act as a local DNS Privacy stub resolver (using DNS-over-TLS)."
+
+# Environment
+ENV TZ Asia/Tokyo
+
+# Publish port DNS over UDP
+EXPOSE 53/UDP 53/TCP
+
+# service running
+STOPSIGNAL SIGTERM
+
+# select ENTRYPOINT
+WORKDIR /etc/stubby
+CMD ["/usr/local/bin/stubby", "-C", "/etc/stubby/stubby.yml"]
+
+COPY --from=build /tmp/root/ /
+RUN ldconfig /

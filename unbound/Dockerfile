@@ -4,9 +4,9 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ARG VERSION="1.9.2"
 ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev flex-dev hiredis-dev libsodium-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
-ARG CXXFLAGS="${CFLAGS} -march=armv8-a -mtune=cortex-a53 -mfloat-abi=softfp "
+ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev flex-dev hiredis-dev libsodium-dev nghttp2-dev "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS}  "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ENV CC="clang" \
     CXX="clang++" \
@@ -30,7 +30,6 @@ RUN cd /usr/src \
       --with-libevent \
       --with-pthreads \
       --with-ssl \
-#      --disable-rpath \
       --sysconfdir=/etc/unbound \
       --with-conf-file=/etc/unbound/unbound.conf \
       --with-pidfile=/var/run/unbound.pid \
@@ -45,6 +44,7 @@ RUN cd /usr/src \
       --enable-cachedb \
       --with-libhiredis \
       --enable-dnscrypt \
+      --with-libnghttp2 \
       PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}"
 RUN cd /usr/src \
@@ -58,7 +58,8 @@ RUN cd /usr/src \
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="openssl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium tini "
+ARG RUN_PKGS="openssl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium  \
+              nghttp2 ca-certificates-bundle "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
@@ -93,5 +94,5 @@ RUN chmod +x /usr/local/sbin/entrypoint.sh
 
 # entrypoint
 WORKDIR /etc/unbound
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 CMD ["unbound", "-d", "-c", "/etc/unbound/unbound.conf"]
