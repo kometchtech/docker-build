@@ -13,7 +13,7 @@ RUN apt-get update \
        ${BUILD_PKGS} \
     && rm -rf /var/lib/apt/lists/*
 RUN git config --global http.postBuffer 524288000
-RUN git clone -b v${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
+RUN git clone -b v${VERSION} --depth=1 https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
 RUN cd /go/src/github.com/coredns/coredns/ \
    && make
 
