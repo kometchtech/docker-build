@@ -1,27 +1,28 @@
 # syntax = docker/dockerfile:experimental
 # lua dependencies
 FROM arm64v8/alpine:latest AS lua-build
-ARG BUILD_LUAS="build-base lua-dev openssl-dev bsd-compat-headers luarocks m4 "
+ARG BUILD_LUAS="build-base lua-dev openssl-dev bsd-compat-headers luarocks m4 libpsl-dev "
 
 RUN apk add --update ${BUILD_LUAS}
 # lua build
 RUN luarocks-5.1 install cqueues \
     && luarocks-5.1 install luaossl \
     && luarocks-5.1 install http \
-    && luarocks-5.1 install mmdblua
+    && luarocks-5.1 install mmdblua \
+    && luarocks-5.1 install psl
 
 
 # Intermediate container for Knot DNS build (not persistent)
 FROM arm64v8/alpine:latest AS knot-dns-build
 # Environment
-ARG KNOT_DNS_VERSION="3.0.3"
+ARG KNOT_DNS_VERSION="3.0.5"
 # Build dependencies
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
-ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls git bsd-compat-headers musl-utils \
+ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool "
+ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev gnutls bsd-compat-headers musl-utils \
                         fstrm-dev protobuf-c-dev protobuf-dev "
 ENV KNOT_RESOLVER_BUILD_DEPS="${BUILD_BASE} luajit-dev libuv-dev lua5.1-compat53 gnutls-dev fstrm-dev jansson-dev \
                               userspace-rcu-dev nettle-dev cmocka-dev protobuf-c-dev protobuf-dev libedit-dev meson \
-                              lmdb-dev "
+                              lmdb-dev libpsl-dev "
 ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -D_FORTIFY_SOURCE=2 "
 ARG CXXFLAGS="${CFLAGS}"
@@ -64,7 +65,7 @@ FROM arm64v8/alpine:latest AS runtime
 ARG KNOT_DNS_RUNTIME_DEPS="gnutls "
 ARG KNOT_RESOLVER_RUNTIME_DEPS="lmdb luajit libuv lua5.1-compat53 \
                                ca-certificates musl-utils tzdata libstdc++ jansson nettle protobuf-c libedit \
-                               tini "
+                               tini libpsl "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="fstrm "
 ARG KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates openssl "
 ARG RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} \
