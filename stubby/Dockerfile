@@ -3,8 +3,8 @@
 FROM arm64v8/alpine:latest AS gnutls-build
 
 ARG MAJOR_VERSION="3.6"
-ARG GNUTLS_VERSION="${MAJOR_VERSION}.12"
-ARG BUILD_BASE="build-base binutils lld make gawk autoconf automake libtool curl "
+ARG GNUTLS_VERSION="${MAJOR_VERSION}.16"
+ARG BUILD_BASE="alpine-sdk lld gawk autoconf automake libtool xz"
 ARG BUILD_PKGS="${BUILD_BASE} openssl-dev gmp-dev libgmpxx libtasn1-dev p11-kit-dev libidn2-dev \
 				zlib-dev unbound-dev unbound-libs libunistring-dev libc6-compat libgcc nettle-dev "
 ENV LD="ld.lld"
@@ -25,7 +25,6 @@ RUN cd /usr/src \
        --disable-tests \
        --enable-shared \
        --disable-tools \
- #      --disable-cxx \
        --disable-guile \
        --disable-srp-authentication \
        --disable-psk-authentication \
@@ -40,14 +39,13 @@ RUN cd /usr/src \
 	&& make -j"$(nproc)" \
     && make check install \
 	&& make install DESTDIR=/tmp/root
-RUN cd /tmp/root/usr/local/lib \
-    && strip -s \
-            libgnutls-dane.so.0.4.1 \
-            libgnutls-openssl.so.27.0.2 \
-            libgnutls.so.30.26.2
+RUN cd /tmp/root/usr/local/lib
+
+
+
 
 FROM arm64v8/alpine:latest AS getdns-build
-ARG GETDNS_VERSION="1.6.0"
+ARG GETDNS_VERSION="1.7.0"
 ARG BUILD_BASE="build-base binutils clang lld llvm make gawk autoconf automake libtool curl cmake "
 ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libuv-dev libev-dev check-dev unbound-dev \
                 libevent-dev libidn2-dev libtasn1-dev libc6-compat libgcc nettle-dev openssl-dev "
@@ -79,8 +77,7 @@ RUN cd /usr/src \
     && mkdir build
 RUN cd /usr/src/build \
     && cmake \
-       -DCMAKE_BUILD_TYPE=release \
-        -DENABLE_SYSTEMD=OFF \
+       -DENABLE_SYSTEMD=OFF \
        -DENABLE_STATIC=OFF \
        -DBUILD_STUBBY=ON \
        -DSTUB_NATIVE_DNSSEC=ON \
@@ -90,18 +87,11 @@ RUN cd /usr/src/build \
        -DBUILD_LIBUV=ON \
        -DUSE_LIBIDN2=ON \
        -DUSE_GNUTLS=ON \
-       -DGNUTLS_INCLUDE_DIR=/usr/local/include \
-       -DCMAKE_C_FLAGS=${CFLAGS} \
-#       -DCMAKE_MODULE_LINKER_FLAGS=${LDFLAGS} \
-#       -DCMAKE_SHARED_LINKER_FLAGS=${LDFLAGS} \
-       -DCMAKE_INSTALL_PREFIX=/usr/local \
        ..
 RUN cd /usr/src/build \
     && make -j"$(nproc)" \
     && make install
 RUN ldconfig /
-RUN cd /usr/local/lib \
-    && strip -s libgetdns.so.10.1.3
 # Copy libgetdns, libgetdns_ext_ev, libgetdns_ext_uv
 RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
     && cp -r /usr/local/include/* /tmp/root/usr/local/include/ \
@@ -110,13 +100,15 @@ RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
 
 # Intermediate container with runtime dependencies
 FROM arm64v8/alpine:latest AS runtime
-
 # Install runtime dependencies
 COPY --from=gnutls-build /tmp/root/usr/local/lib /usr/local/lib
+COPY --from=getdns-build /usr/local/lib64 /usr/local/lib64
 ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs tini libidn2 libtasn1 nettle openssl "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/* \
     && mkdir -p /var/cache/stubby
+RUN ln -s /usr/local/lib64/libgetdns.so.10 /usr/local/lib/libgetdns.so.10 \
+    && ldconfig /
 
 
 # build stubby
@@ -125,16 +117,6 @@ FROM getdns-build AS build
 ARG VERSION="0.2.6"
 ARG BUILD_BASE="build-base binutils clang llvm make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} yaml unbound git "
-#ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=lld "
-#ARG CXXFLAGS="${CFLAGS}"
-#ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-#ENV CC="clang" \
-#    CXX="clang++" \
-#    AR="llvm-ar" \
-#    NM="llvm-nm" \
-#    RANLIB="llvm-ranlib" \
-#    LD="ld.lld" \
-#    STRIP="llvm-strip"
 
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --no-cache --update ${BUILD_PKGS}
@@ -144,19 +126,13 @@ RUN mkdir -p \
         /tmp/root/root/.getdns
 RUN cd /usr/src/stubby \
     && cmake \
-       -DCMAKE_BUILD_TYPE=release \
        -DENABLE_SYSTEMD=OFF \
-       -DGETDNS_LIBRARIES=/tmp/root/usr/local/lib/ \
-       -DGETDNS_INCLUDE_DIR=/tmp/root/usr/local/include \
        .
 RUN cd /usr/src/stubby \
     && make -j"$(nproc)" \
     && make install DESTDIR=/tmp/root
-# reduse size
-RUN strip -ps /tmp/root/usr/local/bin/stubby \
-              /tmp/root/usr/local/lib/libgetdns.so.10.1.3 \
-              /tmp/root/usr/local/lib/libgnutls.so.30.26.2 \
-    && unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true
+RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true \
+    ldconfig /
 # copy example conf
 RUN cp /usr/src/stubby/stubby.yml.example /tmp/root/etc/stubby/stubby.yml \
     && rm -rf /tmp/root/usr/local/share /tmp/root/usr/local/include
@@ -184,9 +160,7 @@ STOPSIGNAL SIGTERM
 
 # select ENTRYPOINT
 WORKDIR /etc/stubby
-COPY ["entrypoint.sh", "/usr/bin/"]
-ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/entrypoint.sh"]
-CMD ["/usr/local/bin/stubby", "-C", "/etc/stubby/stubby.yml"]
+CMD ["/usr/local/bin/stubby"]
 
 COPY --from=build /tmp/root/ /
 RUN ldconfig /
