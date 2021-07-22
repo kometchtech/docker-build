@@ -10,6 +10,9 @@ fi
 if [ -e "${RUNPATH}/kea-dhcp6.kea-dhcp6.pid" ]; then
     rm -f "${RUNPATH}/kea-dhcp6.kea-dhcp6.pid"
 fi
+if [ -e "${RUNPATH}/kea-ctrl-agent.kea-ctrl-agent.pid" ]; then
+        rm -f "${RUNPATH}/kea-ctrl-agent.kea-ctrl-agent.pid"
+fi
 
 keactrl start -c /etc/kea/keactrl.conf
 

@@ -150,7 +150,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ Asia/Tokyo
 
 # publish port TCP and UDP
-EXPOSE 67/UDP 547/TCP 547/UDP
+EXPOSE 67/UDP 547/TCP 547/UDP 8080
 
 # service running
 STOPSIGNAL SIGTERM
@@ -158,7 +158,7 @@ STOPSIGNAL SIGTERM
 # select entrypoint
 WORKDIR /etc/kea
 COPY ./entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
+#ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 
 # Fetch isc Kea libraries from build image
 COPY --from=build /tmp/root/ /
