@@ -4,7 +4,7 @@ FROM arm64v8/alpine:latest AS build
 # Environment
 ARG VERSION="2.8.2"
 # Build dependencies
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev git bsd-compat-headers gnutls-dev \
                          lmdb-dev libmaxminddb-dev musl-utils protobuf-c-dev protobuf-dev libedit-dev \
                          zlib-dev libidn2-dev linux-headers "
