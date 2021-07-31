@@ -3,7 +3,7 @@ FROM arm64v8/alpine:latest AS build
 
 # Environmet
 ARG VERSION="4.2.0"
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool "
 ARG BUILD_PKGS="${BUILD_BASE} openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev libatomic \
                 net-snmp-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
