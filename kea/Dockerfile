@@ -158,7 +158,8 @@ STOPSIGNAL SIGTERM
 # select entrypoint
 WORKDIR /etc/kea
 COPY ./entrypoint.sh /usr/local/bin/
-#ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["/usr/local/bin/entrypoint.sh"]
 
 # Fetch isc Kea libraries from build image
 COPY --from=build /tmp/root/ /
