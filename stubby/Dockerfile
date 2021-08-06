@@ -42,8 +42,6 @@ RUN cd /usr/src \
 RUN cd /tmp/root/usr/local/lib
 
 
-
-
 FROM arm64v8/alpine:latest AS getdns-build
 ARG GETDNS_VERSION="1.7.0"
 ARG BUILD_BASE="build-base binutils clang lld llvm make gawk autoconf automake libtool curl cmake "
@@ -102,13 +100,11 @@ RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
 FROM arm64v8/alpine:latest AS runtime
 # Install runtime dependencies
 COPY --from=gnutls-build /tmp/root/usr/local/lib /usr/local/lib
-COPY --from=getdns-build /usr/local/lib64 /usr/local/lib64
 ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs tini libidn2 libtasn1 nettle openssl "
 RUN apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/* \
     && mkdir -p /var/cache/stubby
-RUN ln -s /usr/local/lib64/libgetdns.so.10 /usr/local/lib/libgetdns.so.10 \
-    && ldconfig /
+RUN ldconfig /
 
 
 # build stubby
