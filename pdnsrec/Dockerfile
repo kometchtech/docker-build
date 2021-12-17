@@ -3,9 +3,9 @@ FROM arm64v8/alpine:latest AS build
 
 # Environmet
 ARG VERSION="4.2.0"
-ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool "
-ARG BUILD_PKGS="${BUILD_BASE} openssl-dev boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev libatomic \
-                net-snmp-dev "
+ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool curl "
+ARG BUILD_PKGS="${BUILD_BASE} boost-dev lua5.3-dev libedit-dev libsodium-dev protobuf-dev gnutls-dev libatomic_ops-dev \
+                net-snmp-dev fstrm-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -33,15 +33,13 @@ RUN cd /tmp/build \
       --libdir=${prefix}/lib/aarch64-linux-gnu \
       --libexecdir=${prefix}/lib/aarch64-linux-gnu \
       --disable-static \
-      --enable-libsodium \
-      --enable-nod \
       --with-net-snmp \
-      --with-protobuf \
       --with-service-group=pdns-recursor \
       --with-service-user=pdns-recursor \
       --with-lua \
+      --enable-dns-over-tls \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j4 install-strip DESTDIR=/tmp/root
+    && make -j3 install-strip DESTDIR=/tmp/root
 RUN rm -rf /tmp/root/usr/local/share/man/*
 RUN ldconfig /
 
@@ -50,8 +48,8 @@ RUN ldconfig /
 FROM arm64v8/alpine:latest AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata openssl \
-              ca-certificates tini net-snmp "
+ARG RUN_PKGS="boost-context boost-filesystem lua5.3-libs libedit protobuf libsodium tzdata gnutls libatomic \
+              ca-certificates tini net-snmp fstrm "
 RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update --no-cache ${RUN_PKGS} \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* /var/tmp \
@@ -75,7 +73,8 @@ ENV TZ Asia/Tokyo
 STOPSIGNAL SIGTERM
 
 # export DNS over UDP
-EXPOSE 53/UDP 53/TCP
+EXPOSE 53/UDP 
+EXPOSE 53/TCP
 
 # Application execution related information
 COPY ./entrypoint.sh /usr/local/sbin/entrypoint.sh
