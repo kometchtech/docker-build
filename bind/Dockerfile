@@ -3,7 +3,7 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ARG VERSION="9.15.0"
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool xz "
 ARG BUILD_PKGS="${BUILD_BASE} openssl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
                 readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev libstdc++ clang-dev \
                 libc6-compat libgcc nghttp2-dev "
@@ -23,7 +23,8 @@ RUN --mount=type=cache,target=/var/cache/apk \
     apk add --update ${BUILD_PKGS}
 ## build
 RUN mkdir -p /tmp/build
-RUN curl -fsSL "https://ftp.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" -o bind9.tar.xz
+RUN curl -fsSL "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" \
+         -o bind9.tar.xz
 RUN tar xf bind9.tar.xz --strip-components=1 -C /tmp/build \
     && rm -f bind9.tar.xz
 RUN cd /tmp/build \
