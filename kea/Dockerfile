@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
 FROM base-image AS log4cplus
 
 # Environment
-ENV LOG4CPLUS="2.0.6"
+ENV LOG4CPLUS="2.0.7"
 ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
 
 # build library
@@ -46,7 +46,7 @@ RUN ldconfig /
 FROM base-image AS botan
 
 # Environment
-ENV BOTAN="2.18.1"
+ENV BOTAN="2.19.1"
 ARG BUILD_PKGS="boost-dev bzip2-dev openssl-dev zlib-dev sqlite-dev python3"
 ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
@@ -75,8 +75,7 @@ RUN cd /usr/local/src \
         --without-documentation
 RUN cd /usr/local/src \
     && make -j"$(nproc)" install DESTDIR=/tmp/root \
-    && rm -f /tmp/root/usr/local/bin/botan \
-    && strip -p /tmp/root/usr/local/lib/libbotan*
+    && rm -f /tmp/root/usr/local/bin/botan
 RUN ldconfig /
 
 
