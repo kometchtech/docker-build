@@ -3,7 +3,7 @@ FROM arm64v8/alpine:latest AS build
 
 # Environment
 ARG VERSION="1.9.2"
-ARG BUILD_BASE="build-base binutils clang llvm lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool "
 ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev flex-dev hiredis-dev libsodium-dev nghttp2-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}  "
@@ -28,7 +28,7 @@ RUN cd /usr/src \
   && ./configure \
       --prefix=/usr/local \
       --with-libevent \
-      --with-pthreads \
+#      --with-pthreads \
       --with-ssl \
       --sysconfdir=/etc/unbound \
       --with-conf-file=/etc/unbound/unbound.conf \
@@ -45,6 +45,8 @@ RUN cd /usr/src \
       --with-libhiredis \
       --enable-dnscrypt \
       --with-libnghttp2 \
+      --without-pthreads \
+      --without-solaris-threads \
       PKG_CONFIG=/usr/bin/pkg-config \
       CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}"
 RUN cd /usr/src \
