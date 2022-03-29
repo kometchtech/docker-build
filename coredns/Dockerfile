@@ -14,32 +14,35 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 RUN git config --global http.postBuffer 524288000
 RUN git clone -b v${VERSION} --depth=1 https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
+#RUN cd /go/src/github.com/coredns/coredns/ \
+## enable external plugsins
+#   && echo "redisc:github.com/miekg/redis" | tee -a plugin.cfg \
+#   && echo "fanout:github.com/networkservicemesh/fanout" | tee -a plugin.cfg
 RUN cd /go/src/github.com/coredns/coredns/ \
+   && go generate \
+   && go mod tidy \
+   && go build \
    && make
 
 
 # 2nd build
-FROM alpine:latest
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="Aarch64" \
-      description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
-      url="https://github.com/coredns/coredns"
+FROM scratch
+LABEL maintainer="kometchtech <kometch@gmail.com>"
+LABEL arch="Aarch64"
+LABEL description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function."
+LABEL url="https://github.com/coredns/coredns"
 
 # Environment
+ENV PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV TZ Asia/Tokyo
 
 # publish port DNS over UDP & TCP
-EXPOSE 53/TCP 53/UDP
+EXPOSE 53/TCP
+EXPOSE 53/UDP
 
-# service running
-STOPSIGNAL SIGTERM
+# copy file
+COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /coredns
 
 # Select entrypoint
 WORKDIR /etc/coredns
 ENTRYPOINT ["/coredns"]
-
-# copy file 
-#COPY --from=build-env /etc/ssl/certs /etc/ssl/certs
-COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /coredns
-
-RUN apk add --update --no-cache ca-certificates tzdata
