@@ -111,7 +111,7 @@ RUN cd /tmp/build \
         --with-openssl \
         --with-mysql \
         --with-pgsql \
-        --with-cql \
+#        --with-cql \
         --with-log4cplus \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /tmp/build \
