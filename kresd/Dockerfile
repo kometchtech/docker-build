@@ -3,7 +3,7 @@ FROM arm64v8/debian:stable AS knot-dns-build
 
 # Environment
 ENV DEBIAN_FRONTEND noninteractive
-ARG KNOT_DNS_VERSION="3.1.5"
+ARG KNOT_DNS_VERSION="3.1.8"
 # Build dependencies
 ENV KNOT_DNS_BUILD_DEPS="git-core build-essential libtool autoconf pkg-config \
 						libgnutls28-dev	libprotobuf-dev libprotobuf-c-dev libfstrm-dev"
