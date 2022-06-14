@@ -39,8 +39,9 @@ RUN cd /usr/src \
       --with-protobuf \
       --with-ebpf \
       --disable-dependency-tracking \
-      CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j"$(nproc)"  \
+      CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
+RUN cd /usr/src \
+    && make -j3  \
     && make install-strip DESTDIR=/tmp/root
 RUN ldconfig /
 RUN rm -rf /tmp/root/usr/local/share/man/*
