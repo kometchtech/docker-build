@@ -1,4 +1,3 @@
-# syntax = docker/dockerfile:experimental
 FROM arm64v8/alpine:latest AS build
 
 # Environment
