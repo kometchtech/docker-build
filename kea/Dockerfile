@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
 FROM base-image AS log4cplus
 
 # Environment
-ENV LOG4CPLUS="2.0.7"
+ENV LOG4CPLUS="2.0.8"
 ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
 
 # build library
