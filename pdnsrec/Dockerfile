@@ -72,7 +72,9 @@ ENV TZ Asia/Tokyo
 # service running
 STOPSIGNAL SIGTERM
 
-# export DNS over UDP
+# expose webserver port
+EXPOSE 8082
+# expose DNS over UDP/TCP
 EXPOSE 53/UDP 
 EXPOSE 53/TCP
 
