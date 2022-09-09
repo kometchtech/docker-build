@@ -20,7 +20,7 @@ RUN git clone -b v${VERSION} --depth=1 https://github.com/coredns/coredns.git /g
 #   && echo "fanout:github.com/networkservicemesh/fanout" | tee -a plugin.cfg
 RUN cd /go/src/github.com/coredns/coredns/ \
    && go generate \
-   && go mod tidy \
+#   && go mod tidy \
    && go build \
    && make
 
