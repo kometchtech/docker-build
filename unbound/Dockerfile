@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:latest AS build
+FROM --platform=$TARGETPLATFORM alpine:latest AS build
 
 # Environment
 ARG VERSION="1.9.2"
@@ -17,7 +17,7 @@ ENV CC="clang" \
 
 # source build and install
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+    apk add --update ${BUILD_PKGS} --allow-untrusted
 # build
 RUN mkdir -p /usr/src /tmp/root/etc/unbound \
   && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" -o unbound.tar.gz \
@@ -56,13 +56,13 @@ RUN cd /usr/src \
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/alpine:latest AS runtime
+FROM --platform=$TARGETPLATFORM alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="openssl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium  \
               nghttp2 ca-certificates-bundle "
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update --no-cache ${RUN_PKGS} \
+    apk add --update --no-cache ${RUN_PKGS} --allow-untrusted \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && adduser -DH unbound
 
@@ -70,7 +70,7 @@ RUN --mount=type=cache,target=/var/cache/apk \
 # Final container
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="Aarch64" \
+      arch="$TARGETPLATFORM" \
       description="Unbound is a validating, recursive, caching DNS resolver. \
                   It is designed to be fast and lean and incorporates modern features \
                   based on open standards." \
