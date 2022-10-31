@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-FROM arm64v8/alpine:latest AS build
+FROM --platform=$TARGETPLATFORM alpine:latest AS build
 
 # Environment
 ARG VERSION="9.15.0"
@@ -20,7 +20,7 @@ ENV CC="clang" \
 
 # dev package install
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+    apk add --update ${BUILD_PKGS} --allow-untrusted
 ## build
 RUN mkdir -p /tmp/build
 RUN curl -fsSL "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" \
@@ -60,12 +60,12 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cac
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/alpine:latest AS runtime
+FROM alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="protobuf-c tzdata zlib openssl libcap json-c libxml2 libuv nghttp2-libs "
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update --no-cache ${RUN_PKGS} \
+    apk add --update --no-cache ${RUN_PKGS} --allow-untrusted \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
 # add user and make dir
     && adduser -DH named \
