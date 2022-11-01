@@ -1,9 +1,9 @@
-#!/usr/bin/env ash
+#!/usr/bin/env sh
 
 set -e
 
 if [ -z $@ ]; then
-    named -c /etc/named/named.conf -g -u named
+    named -c /etc/named/named.conf -g -u _named
 else
     `$@`
 fi

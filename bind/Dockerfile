@@ -1,26 +1,19 @@
 # syntax = docker/dockerfile:experimental
-FROM --platform=$TARGETPLATFORM alpine:latest AS build
+FROM --platform=$TARGETPLATFORM debian:stable AS build
 
 # Environment
 ARG VERSION="9.15.0"
-ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool xz "
-ARG BUILD_PKGS="${BUILD_BASE} openssl-dev libcap-dev perl-dev linux-headers bsd-compat-headers libedit-dev \
-                readline-dev ncurses-dev zlib-dev libxml2-dev json-c-dev libbsd-dev libuv-dev libstdc++ clang-dev \
-                libc6-compat libgcc nghttp2-dev "
+ARG BUILD_BASE="build-essential gawk autoconf automake libtool xz-utils curl "
+ARG BUILD_PKGS="${BUILD_BASE} libssl-dev libcap-dev libperl-dev  libedit-dev libreadline-dev libncurses-dev zlib1g-dev \
+                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-10-pic libc6 libnghttp2-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++ "
 ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed "
-ENV CC="clang" \
-    CXX="clang++" \
-    AR="llvm-ar" \
-    NM="llvm-nm" \
-    RANLIB="llvm-ranlib" \
-    LD="ld.lld" \
-    STRIP="llvm-strip"
 
 # dev package install
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS} --allow-untrusted
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${BUILD_PKGS} 
+
 ## build
 RUN mkdir -p /tmp/build
 RUN curl -fsSL "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" \
@@ -60,22 +53,23 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cac
 
 
 # Intermediate container with runtime dependencies
-FROM alpine:latest AS runtime
+FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="protobuf-c tzdata zlib openssl libcap json-c libxml2 libuv nghttp2-libs "
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update --no-cache ${RUN_PKGS} --allow-untrusted \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 "
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install  ${RUN_PKGS} \
+    && rm -rf /usr/local/share/man/* \
 # add user and make dir
-    && adduser -DH named \
+	&& groupadd _named \
+	&& useradd -g _named -s /dev/null -d /etc _named \
     && mkdir -p /etc/named /var/cache/named /var/run/named /var/cache/named/dynamic
 
 
 # Final container
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="Aarch64" \
+      arch="$TARGETPLATFORM" \
       description="BIND is open source software that enables you to publish your \
                   Domain Name System (DNS) information on the Internet, and to \
                   resolve DNS queries for your users.  The name BIND stands for \
@@ -97,7 +91,7 @@ COPY --from=build /tmp/root/ /
 COPY ./named.conf /etc/named/named.conf
 COPY ./local.zone /var/cache/named/pri/local.zone
 COPY ./local.rev /var/cache/named/pri/local.rev
-RUN chown -R named:named /var/cache/named /etc/named /var/run/named /var/cache/named/dynamic \
+RUN chown -R _named:_named /var/cache/named /etc/named /var/run/named /var/cache/named/dynamic \
     && ldconfig /
 
 # Application execution related information
@@ -107,5 +101,5 @@ RUN chmod +x /usr/local/sbin/entrypoint.sh
 # select entrypoint
 WORKDIR /etc/named
 ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
-CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "named"]
+CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "_named"]
 
