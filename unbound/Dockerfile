@@ -1,9 +1,9 @@
-FROM --platform=$TARGETPLATFORM alpine:latest AS build
+FROM --platform=$TARGETPLATFORM debian:latest AS build
 
 # Environment
 ARG VERSION="1.9.2"
-ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool "
-ARG BUILD_PKGS="${BUILD_BASE} expat-dev openssl-dev libevent-dev flex-dev hiredis-dev libsodium-dev nghttp2-dev "
+ARG BUILD_BASE="build-essential clang llvm lld gawk autoconf automake libtool "
+ARG BUILD_PKGS="${BUILD_BASE} libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev curl "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}  "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -16,13 +16,16 @@ ENV CC="clang" \
     STRIP="llvm-strip"
 
 # source build and install
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS} --allow-untrusted
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+  && apt-get -y -qqq install ${BUILD_PKGS}
+
 # build
 RUN mkdir -p /usr/src /tmp/root/etc/unbound \
   && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" -o unbound.tar.gz \
   && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
-  && rm -f "unbound.tar.gz"
+  && rm -f "unbound.tar.gz" \
+  && groupadd _unbound \
+  && useradd -g _unbound -s /dev/null -d /etc _unbound
 RUN cd /usr/src \
   && ./configure \
       --prefix=/usr/local \
@@ -56,15 +59,19 @@ RUN cd /usr/src \
 
 
 # Intermediate container with runtime dependencies
-FROM --platform=$TARGETPLATFORM alpine:latest AS runtime
+FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="openssl libevent ca-certificates ldns-tools tzdata expat flex bison hiredis libsodium  \
-              nghttp2 ca-certificates-bundle "
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update --no-cache ${RUN_PKGS} --allow-untrusted \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
-    && adduser -DH unbound
+ARG RUN_PKGS="openssl libevent-2.1-7 ca-certificates ldnsutils tzdata expat flex bison libhiredis0.14 libsodium23  \
+              libnghttp2-14 libexpat1 libprotobuf-c1 bsdmainutils "
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+	&& apt-get -y --no-install-recommends -qqq install ${RUN_PKGS}  \
+    && rm -rf  \
+		/tmp/* \
+		/var/lib/apt/lists/* \
+		/usr/local/share/man/* \
+	&& groupadd _unbound \
+    && useradd -g _unbound -s /dev/null -d /etc _unbound
 
 
 # Final container
