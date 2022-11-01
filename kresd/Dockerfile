@@ -1,5 +1,5 @@
 # Intermediate container for Knot DNS build (not persistent)
-FROM arm64v8/debian:stable AS knot-dns-build
+FROM --platform=$TARGETPLATFORM debian:stable AS knot-dns-build
 
 # Environment
 ENV DEBIAN_FRONTEND noninteractive
@@ -43,7 +43,7 @@ RUN cp -r /usr/local/lib/pkgconfig/libknot.pc /usr/local/lib/pkgconfig/libdnssec
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/debian:stable-slim AS runtime
+FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ENV KNOT_DNS_RUNTIME_DEPS="libgnutls30"
@@ -81,7 +81,7 @@ RUN cd /tmp/knot-resolver \
 # Final container
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="Aarch64" \
+      arch="$TARGETPLATFORM" \
       description="Knot DNS team's things are modified and used." \
       url="https://www.knot-resolver.cz"
 
