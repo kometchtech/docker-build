@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 
-FROM arm64v8/alpine:latest AS gnutls-build
+FROM --platform=$TARGETPLATFORM alpine:latest AS gnutls-build
 
 ARG MAJOR_VERSION="3.6"
 ARG GNUTLS_VERSION="${MAJOR_VERSION}.16"
@@ -11,10 +11,10 @@ ENV LD="ld.lld"
 
 # build dependencies install
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache --update ${BUILD_PKGS}
+    apk add --no-cache --update ${BUILD_PKGS} --allow-untrusted
 RUN mkdir -p /usr/src /tmp/root
 # app build
-RUN curl -fSsL https://www.gnupg.org/ftp/gcrypt/gnutls/v${MAJOR_VERSION}/gnutls-${GNUTLS_VERSION}.tar.xz \
+RUN curl -fSsL http://www.ring.gr.jp/pub/net/gnupg/gnutls/v${MAJOR_VERSION}/gnutls-${GNUTLS_VERSION}.tar.xz \
     -o gnutls.tar.xz \
     && tar xf gnutls.tar.xz --strip-components=1 -C /usr/src \
     && rm -f gnutls.tar.xz
@@ -42,26 +42,20 @@ RUN cd /usr/src \
 RUN cd /tmp/root/usr/local/lib
 
 
-FROM arm64v8/alpine:latest AS getdns-build
+FROM --platform=$TARGETPLATFORM alpine:latest AS getdns-build
 ARG GETDNS_VERSION="1.7.0"
-ARG BUILD_BASE="build-base binutils clang lld llvm make gawk autoconf automake libtool curl cmake "
+ARG BUILD_BASE="build-base binutils lld make gawk autoconf automake libtool curl cmake "
 ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libuv-dev libev-dev check-dev unbound-dev \
                 libevent-dev libidn2-dev libtasn1-dev libc6-compat libgcc nettle-dev openssl-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang" \
-    CXX="clang++" \
-    AR="llvm-ar" \
-    NM="llvm-nm" \
-    RANLIB="llvm-ranlib" \
-    LD="ld.lld" \
-    STRIP="llvm-strip"
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
+ENV LD="ld.lld"
 
 # build dependencies install
 COPY --from=gnutls-build /tmp/root/usr/local/ /usr/local/
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache --update ${BUILD_PKGS}
+    apk add --no-cache --update ${BUILD_PKGS} --allow-untrusted
 RUN mkdir -p \
         /usr/src \
         /tmp/root/var/stubby/ \
@@ -97,11 +91,11 @@ RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/alpine:latest AS runtime
+FROM --platform=$TARGETPLATFORM alpine:latest AS runtime
 # Install runtime dependencies
 COPY --from=gnutls-build /tmp/root/usr/local/lib /usr/local/lib
 ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs tini libidn2 libtasn1 nettle openssl "
-RUN apk add --update --no-cache ${RUN_PKGS} \
+RUN apk add --update --no-cache ${RUN_PKGS} --allow-untrusted \
     && rm -rf /var/cache/apk/* /usr/local/share/* \
     && mkdir -p /var/cache/stubby
 RUN ldconfig /
@@ -111,15 +105,17 @@ RUN ldconfig /
 FROM getdns-build AS build
 
 ARG VERSION="0.2.6"
-ARG BUILD_BASE="build-base binutils clang llvm make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-base binutils make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} yaml unbound git "
 
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache --update ${BUILD_PKGS}
+    apk add --no-cache --update ${BUILD_PKGS} --allow-untrusted
 # build stubby
 RUN mkdir -p \
         /tmp/root/etc/unbound \
         /tmp/root/root/.getdns
+RUN rm -rf /usr/src/stubby \
+    && git clone -b v${VERSION} --depth 1 https://github.com/getdnsapi/stubby.git /usr/src/stubby
 RUN cd /usr/src/stubby \
     && cmake \
        -DENABLE_SYSTEMD=OFF \
@@ -140,7 +136,7 @@ RUN curl -fSsL https://data.iana.org/root-anchors/root-anchors.xml \
 # Final container
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="Aarch64" \
+      arch="$TARGETPLATFORM" \
       url="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Daemon+-+Stubby" \
       description="Stubby is the name given to a mode of using getdns which enables \
                    it to act as a local DNS Privacy stub resolver (using DNS-over-TLS)."
