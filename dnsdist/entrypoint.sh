@@ -1,5 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
-set +e
+set -e
 
 exec "$@"
