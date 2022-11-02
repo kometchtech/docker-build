@@ -66,6 +66,7 @@ ARG RUN_PKGS="openssl libevent-2.1-7 ca-certificates ldnsutils tzdata expat flex
               libnghttp2-14 libexpat1 libprotobuf-c1 bsdmainutils "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
 	&& apt-get -y --no-install-recommends -qqq install ${RUN_PKGS}  \
+    && apt-get clean \
     && rm -rf  \
 		/tmp/* \
 		/var/lib/apt/lists/* \
@@ -92,6 +93,11 @@ EXPOSE 53/tcp 53/udp 853/TCP
 # service running
 STOPSIGNAL SIGTERM
 
+# entrypoint
+WORKDIR /etc/unbound
+ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
+CMD ["unbound", "-d", "-c", "/etc/unbound/unbound.conf"]
+
 # Fetch unbound and libraries from build image
 COPY --from=build /tmp/root/ /
 RUN ldconfig /
@@ -99,8 +105,3 @@ RUN ldconfig /
 # Application execution related information
 COPY ./entrypoint.sh /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/entrypoint.sh
-
-# entrypoint
-WORKDIR /etc/unbound
-ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
-CMD ["unbound", "-d", "-c", "/etc/unbound/unbound.conf"]
