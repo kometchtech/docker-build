@@ -8,7 +8,7 @@ if [ -d /run/knot ]; then
   fi 
 fi
 
-if [ ! -f /var/lib/knot/confdb/data.mdb ]; then
+if [ ! -d /var/lib/knot/confdb ]; then
   knotc conf-init
 fi
 

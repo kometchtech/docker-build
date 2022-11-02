@@ -1,28 +1,21 @@
 # syntax = docker/dockerfile:experimental
-FROM arm64v8/alpine:latest AS build
+FROM --platform=$TARGETPLATFORM debian:stable AS build
 
 # Environment
 ARG VERSION="2.8.2"
 # Build dependencies
-ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake libtool "
-ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkgconfig userspace-rcu-dev git bsd-compat-headers gnutls-dev \
-                         lmdb-dev libmaxminddb-dev musl-utils protobuf-c-dev protobuf-dev libedit-dev \
-                         zlib-dev libidn2-dev linux-headers "
-ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} "
+ARG BUILD_BASE="build-essential lld gawk autoconf automake libtool curl git "
+ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkg-config gnutls-dev liblmdb-dev libmaxminddb-dev liburcu-dev \
+                         libprotobuf-c-dev libprotobuf-dev libedit-dev zlib1g-dev libidn2-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang" \
-    CXX="clang++" \
-    AR="llvm-ar" \
-    NM="llvm-nm" \
-    RANLIB="llvm-ranlib" \
-    LD="ld.lld" \
-    STRIP="llvm-strip"
+ENV LD="ld.lld"
 
 # Install dependencies and sources
-RUN --mount=type=cache,target=/var/cache/apk \
-  apk add --update ${BUILDENV_DEPS}
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${KNOT_DNS_BUILD_DEPS}
+
 # Install Knot DNS from sources
 RUN mkdir -p /tmp/knot-dns/ /tmp/root/etc/knot-dns
 RUN git clone -b v${VERSION} --depth=1 https://github.com/CZ-NIC/knot.git /tmp/knot-dns
@@ -45,20 +38,22 @@ RUN cp /tmp/knot-dns/samples/knot.sample.conf.in /tmp/root/etc/knot-dns/knot.sam
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/alpine:latest AS runtime
+FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG KNOT_DNS_RUNTIME_DEPS="protobuf protobuf-c userspace-rcu lmdb gnutls libedit libidn2 tzdata \
-                           libmaxminddb tini "
-RUN --mount=type=cache,target=/var/cache/apk \
-  apk add --update --no-cache ${KNOT_DNS_RUNTIME_DEPS} \
-  && rm -rf /var/cache/apk/* /usr/local/share/man/*
+ARG KNOT_DNS_RUNTIME_DEPS="libprotobuf23 libprotobuf-c1 liblmdb0 libgnutls30 libedit2 liburcu6 \
+                           libidn2-0 tzdata libmaxminddb0 tini "
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install --no-install-recommends ${KNOT_DNS_RUNTIME_DEPS} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /usr/local/share/man/*
 
 
 # Final container
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="Aarch64" \
+      arch="$TARGETPLATFORM" \
       description="Knot DNS team's things are modified and used." \
       url="https://www.knot-dns.cz/"
 
@@ -77,7 +72,7 @@ WORKDIR /etc/knot-dns
 # select entrypoint
 ADD entrypoint.sh /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/entrypoint.sh
-ENTRYPOINT ["tini", "-g", "--", "/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 
 # Fetch Knot DNS from build image
 COPY --from=build /tmp/root/ /
