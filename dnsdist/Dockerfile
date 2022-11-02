@@ -50,7 +50,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 # Install runtime dependencies
 ARG RUN_PKGS="tzdata liblua5.1-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl libnghttp2-14"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${RUN_PKGS} \
+    && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
     && groupadd _dnsdist \
