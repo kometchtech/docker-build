@@ -3,7 +3,7 @@
 set -ex
  
 #VAR="--network=host --pull=true --progress=auto "
-VAR="--pull=true --platform linux/arm64 "
+VAR="--pull=true --platform linux/amd64 "
 
 usage() {
     cat << EOF
@@ -19,7 +19,7 @@ while getopts "d:gfnl" OPTS
 do
 	case ${OPTS} in
         n)
-		    VAR+="${VAR} --no-cache "
+		    VAR+="--no-cache "
 		    ;;
         d)
             echo $OPTARG
@@ -58,16 +58,13 @@ do
 	if [ -n ${IMAGE} ]; then
 	    if [ -d ./${IMAGE} ]; then
 	        version=`cat ${IMAGE}/VERSION`
-	        docker buildx build ${VAR} \
-                --build-arg VERSION=$version \
-                --rm -t ${USERNAME}/${IMAGE}:${version} \
-                ${IMAGE}/
+	        docker buildx build ${VAR} --build-arg VERSION=$version -t "${USERNAME}/${IMAGE}:${version}" ${IMAGE}/ --load
 	    fi
 	else
 	    exit 1
 	fi
 	if [ ! -z ${LATEST} ]; then
-	    docker tag ${USERNAME}/${IMAGE}:${version} ${USERNAME}/${IMAGE}:latest
-        docker rmi ${USERNAME}/${IMAGE}:${version}
+		docker tag ${USERNAME}/${IMAGE}:${version} ${USERNAME}/${IMAGE}:latest
+        	docker rmi ${USERNAME}/${IMAGE}:${version}
 	fi
 done
