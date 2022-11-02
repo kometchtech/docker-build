@@ -12,7 +12,7 @@ ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed "
 
 # dev package install
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${BUILD_PKGS} 
+    && apt-get -y -qqq install ${BUILD_PKGS}
 
 ## build
 RUN mkdir -p /tmp/build
@@ -58,8 +58,9 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 # Install runtime dependencies
 ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install  ${RUN_PKGS} \
-    && rm -rf /usr/local/share/man/* \
+    && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
+    && apt-get clean \
+    && rm -rf /usr/local/share/man/* /var/lib/apt/lists/* \
 # add user and make dir
 	&& groupadd _named \
 	&& useradd -g _named -s /dev/null -d /etc _named \
