@@ -1,7 +1,8 @@
 # syntax = docker/dockerfile:experimental
-
 ## base image
-FROM arm64v8/alpine:latest AS base-image
+FROM --platform=$TARGETPLATFORM alpine:latest AS base-image
+
+ARG TARGETPLATFORM
 ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake clang-dev libtool "
 ARG BUILD_PKGS="${BUILD_BASE}"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
@@ -17,7 +18,7 @@ ENV CC="clang" \
 
 # make base image
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+    apk add --update ${BUILD_PKGS} --allow-untrusted
 
 
 ## log4cplus
@@ -29,7 +30,7 @@ ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus
 
 # build library
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+    apk add --update ${BUILD_PKGS} --allow-untrusted
 RUN mkdir -p /usr/local/src \
     && curl -fSsL ${LOG4CPLUS_SOURCE} -o log4cplus.tar.bz2 \
     && tar xf log4cplus.tar.bz2 --strip-components=1 -C /usr/local/src \
@@ -54,7 +55,7 @@ ARG CPPFLAGS="${CFLAGS} "
 
 # build library
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+    apk add --update ${BUILD_PKGS} --allow-untrusted
 RUN mkdir -p /usr/local/src \
     && curl -fsSL "https://github.com/randombit/botan/archive/${BOTAN}.tar.gz" -o botan.tar.gz \
     && tar xf botan.tar.gz --strip-components=1 -C /usr/local/src \
@@ -92,7 +93,7 @@ ARG CXXFLAGS="${CFLAGS} "
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS}
+    apk add --update ${BUILD_PKGS} --allow-untrusted
 ## build
 RUN mkdir -p /tmp/build \
   && curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" \
@@ -125,7 +126,7 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 
 
 # Intermediate container with runtime dependencies
-FROM arm64v8/alpine:latest AS runtime
+FROM --platform=$TARGETPLATFORM alpine:latest AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps libatomic tini sqlite-libs \
@@ -133,14 +134,14 @@ ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata pro
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
 RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update --no-cache ${RUN_PKGS} \
+    apk add --update --no-cache ${RUN_PKGS} --allow-untrusted \
     && rm -rf /var/cache/apk/* /usr/local/share/man/* \
     && mkdir -p /var/lib/kea
 
 # Final container
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="Aarch64" \
+      arch="$TARGETPLATFORM" \
       description="Kea is an open source implementation of the Dynamic Host Configuration \
                    Protocol (DHCP) servers, developed and maintained by Internet Systems Consortium (ISC)." \
       url="https://www.isc.org/kea/"
