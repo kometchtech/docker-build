@@ -94,12 +94,12 @@ EXPOSE 53/UDP 53/TCP 853/TCP
 # service running
 STOPSIGNAL SIGTERM
 
+# set entrypoint
+ENTRYPOINT ["tini", "--", "/usr/local/sbin/entrypoint.sh"]
+CMD ["kresd", "-n", "-c", "/etc/knot-resolver/kresd.conf"]
+
 # Fetch Knot Resolver + Knot DNS libraries from build image
 COPY --from=build /tmp/root/ /
 COPY ./entrypoint.sh /usr/local/sbin/entrypoint.sh
 RUN chmod +x /usr/local/sbin/entrypoint.sh \
     && ldconfig /
-
-# set entrypoint
-ENTRYPOINT ["tini", "-g", "--", "/usr/local/sbin/entrypoint.sh"]
-CMD ["kresd", "-n", "-c", "/etc/knot-resolver/kresd.conf"]
