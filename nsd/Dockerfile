@@ -47,7 +47,7 @@ RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "openssl libevent-2.1-7 ca-certificates ldnsutils tzdata "
+ENV RUN_PKGS "openssl libevent-2.1-7 ca-certificates ldnsutils tzdata tini "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
@@ -77,7 +77,7 @@ STOPSIGNAL SIGTERM
 
 # Execute app
 WORKDIR /etc/nsd
-ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
 
 # Application execution related information
