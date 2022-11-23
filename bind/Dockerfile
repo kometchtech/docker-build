@@ -59,7 +59,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
-    && apt-get clean \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /usr/local/share/man/* /var/lib/apt/lists/* \
 # add user and make dir
 	&& groupadd _named \
