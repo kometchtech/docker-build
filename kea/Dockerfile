@@ -1,25 +1,18 @@
 # syntax = docker/dockerfile:experimental
 ## base image
-FROM --platform=$TARGETPLATFORM alpine:latest AS base-image
+FROM --platform=$TARGETPLATFORM debian:latest AS base-image
 
 ARG TARGETPLATFORM
-ARG BUILD_BASE="alpine-sdk clang llvm lld gawk autoconf automake clang-dev libtool "
+ARG BUILD_BASE="build-essential binutils lld gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE}"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang" \
-    CXX="clang++" \
-    AR="llvm-ar" \
-    NM="llvm-nm" \
-    RANLIB="llvm-ranlib" \
-    LD="ld.lld" \
-    STRIP="llvm-strip"
+ENV LD="ld.lld"
 
 # make base image
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS} --allow-untrusted
-
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${BUILD_PKGS}
 
 ## log4cplus
 FROM base-image AS log4cplus
@@ -29,8 +22,8 @@ ENV LOG4CPLUS="2.0.8"
 ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
 
 # build library
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS} --allow-untrusted
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${BUILD_PKGS}
 RUN mkdir -p /usr/local/src \
     && curl -fSsL ${LOG4CPLUS_SOURCE} -o log4cplus.tar.bz2 \
     && tar xf log4cplus.tar.bz2 --strip-components=1 -C /usr/local/src \
@@ -48,14 +41,14 @@ FROM base-image AS botan
 
 # Environment
 ENV BOTAN="2.19.1"
-ARG BUILD_PKGS="boost-dev bzip2-dev openssl-dev zlib-dev sqlite-dev python3"
+ARG BUILD_PKGS="libboost-dev libboost-system-dev libbz2-dev libssl-dev zlib1g-dev libsqlite3-dev python3 "
 ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="${CFLAGS} "
 
 # build library
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS} --allow-untrusted
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${BUILD_PKGS}
 RUN mkdir -p /usr/local/src \
     && curl -fsSL "https://github.com/randombit/botan/archive/${BOTAN}.tar.gz" -o botan.tar.gz \
     && tar xf botan.tar.gz --strip-components=1 -C /usr/local/src \
@@ -63,7 +56,6 @@ RUN mkdir -p /usr/local/src \
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN cd /usr/local/src \
     && ./configure.py \
-        --cc=clang \
         --with-boost \
         --with-bzip2 \
         --with-openssl \
@@ -85,15 +77,15 @@ FROM base-image AS build
 
 # Environment
 ARG VERSION="1.6.0-beta"
-ARG BUILD_PKGS="boost-dev postgresql-dev mariadb-dev bison flex perl curl openssl-dev cassandra-cpp-driver-dev "
+ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-13 default-libmysqlclient-dev bison flex perl curl libssl-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 
 # dev package install
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update ${BUILD_PKGS} --allow-untrusted
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${BUILD_PKGS}
 ## build
 RUN mkdir -p /tmp/build \
   && curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" \
@@ -126,16 +118,16 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 
 
 # Intermediate container with runtime dependencies
-FROM --platform=$TARGETPLATFORM alpine:latest AS runtime
+FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libgcc libstdc++ boost-system mariadb-connector-c libpq tzdata procps libatomic tini sqlite-libs \
-              libbz2 cassandra-cpp-driver "
+ARG RUN_PKGS="gcc-10-base libboost-system1.74.0 libpq5 tzdata procps libatomic1 libsqlite3-0 libbz2-1.0 libmariadb3 tini "
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --update --no-cache ${RUN_PKGS} --allow-untrusted \
-    && rm -rf /var/cache/apk/* /usr/local/share/man/* \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${RUN_PKGS} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
     && mkdir -p /var/lib/kea
 
 # Final container
@@ -157,9 +149,11 @@ STOPSIGNAL SIGTERM
 
 # select entrypoint
 WORKDIR /etc/kea
-COPY ./entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 CMD ["/usr/local/bin/entrypoint.sh"]
+
+COPY ./entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Fetch isc Kea libraries from build image
 COPY --from=build /tmp/root/ /
