@@ -13,7 +13,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ Asia/Tokyo
 ARG BUILD_PKGS="build-base git libtool autoconf automake gawk linux-headers libressl-dev"
 ARG RUN_PKGS="tzdata libressl"
-ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE \
+ENV CFLAGS "-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -D_FORTIFY_SOURCE=2 -fPIE \
             -ftree-vectorize -ftree-slp-vectorize "
 ENV LDFLAGS "-Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
