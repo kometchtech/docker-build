@@ -38,8 +38,7 @@ ENV PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV TZ Asia/Tokyo
 
 # publish port DNS over UDP & TCP
-EXPOSE 53/TCP
-EXPOSE 53/UDP
+EXPOSE 53/TCP 53/UDP
 
 # copy file
 COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /coredns

@@ -6,8 +6,13 @@ ARG MAJOR_VERSION=4.2
 ARG VERSION=${MAJOR_VERSION}.3
 #ENV ZBX_SOURCES="https://sourceforge.net/projects/zabbix/files/ZABBIX Latest Stable/${VERSION}/zabbix-${VERSION}.tar.gz"
 ENV ZBX_SOURCES="https://github.com/zabbix/zabbix/archive/${VERSION}.tar.gz"
+<<<<<<< Updated upstream
 ENV BUILD_PKGS="build-base clang autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl lld llvm "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -D_FORTIFY_SOURCE=2 -fPIE "
+=======
+ENV BUILD_PKGS="alpine-sdk clang autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl lld llvm "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
+>>>>>>> Stashed changes
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC="clang" \

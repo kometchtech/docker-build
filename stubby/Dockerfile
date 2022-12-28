@@ -1,40 +1,42 @@
 # syntax = docker/dockerfile:experimental
 
-FROM --platform=$TARGETPLATFORM alpine:latest AS gnutls-build
+FROM --platform=$TARGETPLATFORM debian:stable AS gnutls-build
 
-ARG MAJOR_VERSION="3.6"
-ARG GNUTLS_VERSION="${MAJOR_VERSION}.16"
-ARG BUILD_BASE="alpine-sdk lld gawk autoconf automake libtool xz"
-ARG BUILD_PKGS="${BUILD_BASE} openssl-dev gmp-dev libgmpxx libtasn1-dev p11-kit-dev libidn2-dev \
-				zlib-dev unbound-dev unbound-libs libunistring-dev libc6-compat libgcc nettle-dev "
-ENV LD="ld.lld"
+ARG MAJOR_VERSION="3.7"
+ARG GNUTLS_VERSION="${MAJOR_VERSION}.8"
+ARG BUILD_BASE="build-essential pkg-config autoconf automake libtool xz-utils curl gettext lld "
+ARG BUILD_PKGS="${BUILD_BASE} libssl-dev libgmp-dev libgmpxx4ldbl libtasn1-dev libp11-kit-dev libidn2-dev \
+		zlib1g-dev libunbound-dev libunbound8 libunistring-dev libc6 libnettle8 nettle-dev bison python3-minimal "
+ARG LDFLAGS="-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-z,now"
+ENV LD="ld.lld" 
 
 # build dependencies install
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache --update ${BUILD_PKGS} --allow-untrusted
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${BUILD_PKGS}
+
 RUN mkdir -p /usr/src /tmp/root
 # app build
 RUN curl -fSsL http://www.ring.gr.jp/pub/net/gnupg/gnutls/v${MAJOR_VERSION}/gnutls-${GNUTLS_VERSION}.tar.xz \
     -o gnutls.tar.xz \
     && tar xf gnutls.tar.xz --strip-components=1 -C /usr/src \
     && rm -f gnutls.tar.xz
-RUN ln -s /lib/libc.musl-aarch64.so.1 /lib/libc.musl-aarch64.so.2
 RUN cd /usr/src \
     && ./configure \
        --disable-doc \
        --disable-tests \
        --enable-shared \
-       --disable-tools \
-       --disable-guile \
-       --disable-srp-authentication \
-       --disable-psk-authentication \
-       --disable-anon-authentication \
+#       --disable-tools \
+#       --disable-guile \
+#       --disable-srp-authentication \
+#       --disable-psk-authentication \
+#       --disable-anon-authentication \
        --enable-openssl-compatibility \
-       --disable-dtls-srtp-support \
-       --disable-alpn-support \
-       --disable-heartbeat-support \
-       --without-p11-kit \
-       --without-tpm
+#       --disable-dtls-srtp-support \
+#       --disable-alpn-support \
+#       --disable-heartbeat-support \
+#       --without-p11-kit \
+#       --without-tpm
+       --with-default-trust-store-pkcs11="pkcs11:" 
 RUN cd /usr/src \
 	&& make -j"$(nproc)" \
     && make check install \
@@ -42,11 +44,12 @@ RUN cd /usr/src \
 RUN cd /tmp/root/usr/local/lib
 
 
-FROM --platform=$TARGETPLATFORM alpine:latest AS getdns-build
-ARG GETDNS_VERSION="1.7.0"
-ARG BUILD_BASE="build-base binutils lld make gawk autoconf automake libtool curl cmake "
-ARG BUILD_PKGS="${BUILD_BASE} git yaml-dev linux-headers libuv-dev libev-dev check-dev unbound-dev \
-                libevent-dev libidn2-dev libtasn1-dev libc6-compat libgcc nettle-dev openssl-dev "
+FROM --platform=$TARGETPLATFORM debian:stable AS getdns-build
+ARG GETDNS_VERSION="1.7.3"
+ARG CMAKE_VERSION="3.25.1"
+ARG BUILD_BASE="build-essential autoconf lld pkg-config gettext "
+ARG BUILD_PKGS="${BUILD_BASE} git wget libyaml-dev libunbound-dev libidn2.0-dev libtasn1-dev nettle-dev libssl-dev libev-dev \
+		libuv1-dev libevent-dev check "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
@@ -54,8 +57,15 @@ ENV LD="ld.lld"
 
 # build dependencies install
 COPY --from=gnutls-build /tmp/root/usr/local/ /usr/local/
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache --update ${BUILD_PKGS} --allow-untrusted
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${BUILD_PKGS}
+
+# build cmake
+RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}.tar.gz \
+	&& tar xvf cmake-${CMAKE_VERSION}.tar.gz \
+	&& cd cmake-${CMAKE_VERSION} \
+	&& ./bootstrap && make && make install
+
 RUN mkdir -p \
         /usr/src \
         /tmp/root/var/stubby/ \
@@ -83,33 +93,38 @@ RUN cd /usr/src/build \
 RUN cd /usr/src/build \
     && make -j"$(nproc)" \
     && make install
-RUN ldconfig /
+RUN ldconfig / \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /usr/local/share/man/* /var/lib/apt/lists/* \
 # Copy libgetdns, libgetdns_ext_ev, libgetdns_ext_uv
-RUN cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
+    && cp -r /usr/local/lib/* /tmp/root/usr/local/lib/ \
     && cp -r /usr/local/include/* /tmp/root/usr/local/include/ \
     && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/*
 
 
 # Intermediate container with runtime dependencies
-FROM --platform=$TARGETPLATFORM alpine:latest AS runtime
+FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 # Install runtime dependencies
 COPY --from=gnutls-build /tmp/root/usr/local/lib /usr/local/lib
-ENV RUN_PKGS "tzdata yaml libuv libev libevent unbound-libs tini libidn2 libtasn1 nettle openssl "
-RUN apk add --update --no-cache ${RUN_PKGS} --allow-untrusted \
-    && rm -rf /var/cache/apk/* /usr/local/share/* \
-    && mkdir -p /var/cache/stubby
-RUN ldconfig /
+ENV RUN_PKGS "libyaml-0-2 libuv1 libev4 libevent-2.1-7 libunbound8 tini libidn2-0 libtasn1-6 libnettle8 libssl1.1 "
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${RUN_PKGS} \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /usr/local/share/man/* /var/lib/apt/lists/* \
+    && mkdir -p /var/cache/stubby \
+    && ldconfig /
 
 
 # build stubby
 FROM getdns-build AS build
 
 ARG VERSION="0.2.6"
-ARG BUILD_BASE="build-base binutils make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} yaml unbound git "
+ARG BUILD_BASE="build-essential autoconf curl "
+ARG BUILD_PKGS="${BUILD_BASE} libyaml-dev unbound git libyaml-0-2 "
 
-RUN --mount=type=cache,target=/var/cache/apk \
-    apk add --no-cache --update ${BUILD_PKGS} --allow-untrusted
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get -y -qqq install ${BUILD_PKGS}
+
 # build stubby
 RUN mkdir -p \
         /tmp/root/etc/unbound \
@@ -124,12 +139,12 @@ RUN cd /usr/src/stubby \
     && make -j"$(nproc)" \
     && make install DESTDIR=/tmp/root
 RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true \
-    ldconfig /
+    && ldconfig / \
 # copy example conf
-RUN cp /usr/src/stubby/stubby.yml.example /tmp/root/etc/stubby/stubby.yml \
-    && rm -rf /tmp/root/usr/local/share /tmp/root/usr/local/include
+    && cp /usr/src/stubby/stubby.yml.example /tmp/root/etc/stubby/stubby.yml \
+    && rm -rf /tmp/root/usr/local/share /tmp/root/usr/local/include \
 # download trust anchors
-RUN curl -fSsL https://data.iana.org/root-anchors/root-anchors.xml \
+    && curl -fSsL https://data.iana.org/root-anchors/root-anchors.xml \
          -o /tmp/root/root/.getdns/root-anchors.xml
 
 
