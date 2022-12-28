@@ -4,7 +4,7 @@ FROM arm64v8/alpine:latest AS build
 ENV VERSION v0.3
 ARG BUILD_PKGS="build-base git libev-dev gmp-dev libmnl-dev libnftnl-dev nftables jansson-dev \
                 autoconf automake gawk libtool "
-ENV CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ENV CFLAGS="-O2 -fstack-protector -pthread -fomit-frame-pointer -pipe -fPIC -D_FORTIFY_SOURCE=2 -fPIE "
 ENV CXXFLAGS="${CFLAGS}"
 ENV LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 

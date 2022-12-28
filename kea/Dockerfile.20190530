@@ -5,7 +5,7 @@ FROM arm64v8/alpine:edge AS log4cplus
 # Environment
 ENV LOG4CPLUS="1.2.2"
 ARG BUILD_PKGS="build-base gawk clang lld "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE -fuse-ld=lld "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -D_FORTIFY_SOURCE=2 -fPIE -fuse-ld=lld "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC="clang "
@@ -32,7 +32,7 @@ FROM arm64v8/alpine:edge AS build
 # Environment
 ENV KEA_VERSION="1.6.0-beta"
 ARG BUILD_PKGS="build-base botan-dev clang boost-dev postgresql-dev mariadb-dev gawk bison flex lld perl autoconf automake libtool "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -FORTIFY_SOURCE=2 -fPIE "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -D_FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS} "
 ARG CPPFLAGS="-O2 -DOS_LINUX -DBOOST_ASIO_HEADER_ONLY "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
