@@ -1,4 +1,4 @@
-FROM golang:1.20
+FROM golang:1.20.1
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
     arch="aarch64" \
     version="master"
