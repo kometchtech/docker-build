@@ -5,7 +5,7 @@ FROM --platform=$TARGETPLATFORM debian:stable AS build
 ARG VERSION="9.15.0"
 ARG BUILD_BASE="build-essential gawk autoconf automake libtool xz-utils curl "
 ARG BUILD_PKGS="${BUILD_BASE} libssl-dev libcap-dev libperl-dev  libedit-dev libreadline-dev libncurses-dev zlib1g-dev \
-                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-10-pic libc6 libnghttp2-dev "
+                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-10-pic libc6 libnghttp2-dev liburcu-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++ "
 ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed "
@@ -56,7 +56,7 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cac
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 "
+ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu6 tini"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
@@ -101,6 +101,6 @@ RUN chmod +x /usr/local/sbin/entrypoint.sh
 
 # select entrypoint
 WORKDIR /etc/named
-ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
-CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "_named"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
+#CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "_named"]
 
