@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ARG KNOT_DNS_VERSION="3.1.8"
 # Build dependencies
 ENV KNOT_DNS_BUILD_DEPS="git-core build-essential libtool autoconf pkg-config \
-						libgnutls28-dev	libprotobuf-dev libprotobuf-c-dev libfstrm-dev"
+						libgnutls28-dev	libprotobuf-dev libprotobuf-c-dev libfstrm-dev meson"
 ENV KNOT_RESOLVER_BUILD_DEPS="build-essential pkg-config bsdmainutils liblmdb-dev \
 						libluajit-5.1-dev libuv1-dev libprotobuf-dev libprotobuf-c-dev \
 						libfstrm-dev luajit lua-http libssl-dev libnghttp2-dev protobuf-c-compiler"
@@ -17,10 +17,10 @@ ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
 
 # Install dependencies and sources
-RUN echo "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/backports.list
+#RUN echo "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/backports.list
 RUN apt-get update -qq \
-    && apt-get -y -qqq install ${BUILDENV_DEPS} \
-    && apt-get -y -qqq install -t stretch-backports meson
+    && apt-get -y -qqq install ${BUILDENV_DEPS} 
+#    && apt-get -y -qqq install -t stretch-backports meson
 
 # Install Knot DNS from sources
 RUN git clone -b v${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
