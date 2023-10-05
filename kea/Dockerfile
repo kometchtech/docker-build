@@ -18,7 +18,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
 FROM base-image AS log4cplus
 
 # Environment
-ENV LOG4CPLUS="2.0.8"
+ENV LOG4CPLUS="2.1.0"
 ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
 
 # build library
@@ -77,7 +77,7 @@ FROM base-image AS build
 
 # Environment
 ARG VERSION="1.6.0-beta"
-ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-13 default-libmysqlclient-dev bison flex perl curl libssl-dev "
+ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-15 default-libmysqlclient-dev bison flex perl curl libssl-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 
@@ -121,7 +121,7 @@ RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="gcc-10-base libboost-system1.74.0 libpq5 tzdata procps libatomic1 libsqlite3-0 libbz2-1.0 libmariadb3 tini "
+ARG RUN_PKGS="gcc-11-base libboost-system1.74.0 libpq5 tzdata procps libatomic1 libsqlite3-0 libbz2-1.0 libmariadb3 tini "
 COPY --from=log4cplus /tmp/root /
 COPY --from=botan /tmp/root /
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
