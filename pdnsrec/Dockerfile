@@ -1,11 +1,11 @@
 # syntax = docker/dockerfile:experimental
-FROM --platform=$TARGETPLATFORM debian:latest AS build
+FROM --platform=$TARGETPLATFORM rust:latest AS build
 
 # Environmet
 ARG VERSION="4.2.0"
 ARG BUILD_BASE="build-essential lld gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} libboost-dev liblua5.3-dev libedit-dev libsodium-dev libprotobuf-dev libgnutls28-dev libatomic-ops-dev \
-                libsnmp-dev libfstrm-dev "
+                libsnmp-dev libfstrm-dev libcurl4 "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -33,7 +33,7 @@ RUN cd /tmp/build \
       --with-lua \
       --enable-dns-over-tls \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j6 install-strip DESTDIR=/tmp/root
+    && make -j6 install DESTDIR=/tmp/root
 RUN rm -rf /tmp/root/usr/local/share/man/*
 RUN ldconfig /
 
@@ -42,8 +42,8 @@ RUN ldconfig /
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libboost-context1.74.0 libboost-filesystem1.74.0 liblua5.3-0 libedit2 libprotobuf23 libsodium23 tzdata libgnutls30 \
-              libatomic1 ca-certificates tini libsnmp40 libfstrm0 tini "
+ARG RUN_PKGS="libboost-context1.74.0 libboost-filesystem1.74.0 liblua5.3-0 libedit2 libprotobuf32 libsodium23 tzdata libgnutls30 \
+              libatomic1 ca-certificates tini libsnmp40 libfstrm0 tini libcurl4 "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && groupadd pdns-rec \
