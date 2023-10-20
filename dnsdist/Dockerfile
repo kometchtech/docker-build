@@ -3,14 +3,19 @@ FROM --platform=$TARGETPLATFORM debian:latest AS build
 
 # Env
 ARG VERSION="1.4.0-beta1"
-ARG BUILD_BASE="build-essential binutils lld make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-essential clang llvm binutils lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
-               libedit-dev libssl-dev libnghttp2-dev "
+               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev"
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV LD="ld.lld"
-
+ENV CC="clang" \
+    CXX="clang++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    LD="ld.lld" \
+    STRIP="llvm-strip"
 
 # dev package install
 RUN mkdir -p /usr/src /tmp/root/etc/dnsdist
@@ -27,15 +32,19 @@ RUN cd /usr/src \
       --prefix=/usr/local \
       --sysconfdir=/etc/dnsdist \
       --localstatedir=/var \
+      --enable-lto=thin \
       --with-libsodium \
       --with-libssl \
+      --with-gnutls \
       --enable-dnscrypt \
       --enable-dns-over-tls \
+      --enable-dns-over-https \
+#      --enable-dns-over-quic \
       --with-re2 \
       --with-protobuf \
       --with-ebpf \
       --disable-dependency-tracking \
-      --with-nghttp2 \
+#      --with-nghttp2 \
       --with-net-snmp \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /usr/src \
@@ -49,7 +58,7 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="tzdata liblua5.1-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl libnghttp2-14"
+ARG RUN_PKGS="tzdata liblua5.1-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl libnghttp2-14 libgnutls30"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
