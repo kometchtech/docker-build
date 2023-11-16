@@ -24,8 +24,8 @@ RUN mkdir -p /usr/src /tmp/root/etc/unbound \
   && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" -o unbound.tar.gz \
   && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
   && rm -f "unbound.tar.gz" \
-  && groupadd _unbound \
-  && useradd -g _unbound -s /dev/null -d /etc _unbound
+  && groupadd unbound \
+  && useradd -g unbound -s /dev/null -d /etc unbound
 RUN cd /usr/src \
   && ./configure \
       --prefix=/usr/local \
@@ -71,8 +71,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
 		/tmp/* \
 		/var/lib/apt/lists/* \
 		/usr/local/share/man/* \
-	&& groupadd _unbound \
-    && useradd -g _unbound -s /dev/null -d /etc _unbound
+    && groupadd unbound \
+    && useradd -g unbound -s /dev/null -d /etc unbound
 
 
 # Final container
