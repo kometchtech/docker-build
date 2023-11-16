@@ -1,8 +1,8 @@
-#!/usr/bin/env sh
+#!/bin/bash
 
 set -e
 
-if [ -z $@ ]; then
+if [ -z $# ]; then
     named -c /etc/named/named.conf -g -u _named
 else
     `$@`
