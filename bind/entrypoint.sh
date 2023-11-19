@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -e -m
 
 if [ -z $# ]; then
     named -c /etc/named/named.conf -g -u _named
