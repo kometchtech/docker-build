@@ -4,7 +4,7 @@ FROM --platform=$TARGETPLATFORM golang:latest as build-env
 
 ARG TARGETPLATFORM
 ARG VERSION="1.5.0"
-ARG BUILD_PKGS="git automake libtool autoconf pkg-config curl libunbound-dev libhiredis-dev "
+ARG BUILD_PKGS="git automake libtool autoconf pkg-config curl libunbound-dev libhiredis-dev ca-certificates libcap2-bin "
 
 ENV GOOS linux
 # ENV GOARCH arm64
@@ -13,21 +13,15 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        ${BUILD_PKGS} \
     && rm -rf /var/lib/apt/lists/*
-RUN git config --global http.postBuffer 524288000
-RUN git clone -b v${VERSION} --depth=1 https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
-#RUN cd /go/src/github.com/coredns/coredns/ \
-## enable external plugsins
-#   && echo "redisc:github.com/miekg/redis" | tee -a plugin.cfg \
-#   && echo "fanout:github.com/networkservicemesh/fanout" | tee -a plugin.cfg
+#RUN git config --global http.postBuffer 524288000
+RUN git clone -b v${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
+#RUN git clone  https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
 RUN cd /go/src/github.com/coredns/coredns/ \
-   && go generate \
-#   && go mod tidy \
-   && go build \
    && make
 
 
 # 2nd build
-FROM scratch
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/static-debian12:nonroot
 LABEL maintainer="kometchtech <kometch@gmail.com>"
 LABEL arch="$TARGETPLATFORM"
 LABEL description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function."
@@ -41,8 +35,11 @@ ENV TZ Asia/Tokyo
 EXPOSE 53/TCP 53/UDP
 
 # copy file
+COPY --from=build-env /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /coredns
 
+# User
+USER nonroot:nonroot
+
 # Select entrypoint
-WORKDIR /etc/coredns
 ENTRYPOINT ["/coredns"]
