@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-FROM alpine:latest
+FROM alpine:3.18.3
 
 LABEL org.opencontainers.image.title="Zabbix agent 2" \
       org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
