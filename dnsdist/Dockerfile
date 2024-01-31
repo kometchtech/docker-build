@@ -5,7 +5,7 @@ FROM --platform=$TARGETPLATFORM debian:latest AS build
 ARG VERSION="1.4.0-beta1"
 ARG BUILD_BASE="build-essential clang llvm binutils lld make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
-               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev"
+               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
@@ -43,8 +43,9 @@ RUN cd /usr/src \
       --with-re2 \
       --with-protobuf \
       --with-ebpf \
+      --with-xsk \
       --disable-dependency-tracking \
-#      --with-nghttp2 \
+      --with-nghttp2 \
       --with-net-snmp \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /usr/src \
@@ -58,7 +59,7 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="tzdata liblua5.1-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl libnghttp2-14 libgnutls30"
+ARG RUN_PKGS="tzdata liblua5.1-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl libnghttp2-14 libgnutls30 libxdp1 libbpf1"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
