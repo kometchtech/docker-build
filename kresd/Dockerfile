@@ -1,105 +1,68 @@
-# Intermediate container for Knot DNS build (not persistent)
-FROM --platform=$TARGETPLATFORM debian:stable AS knot-dns-build
+# SPDX-License-Identifier: GPL-3.0-or-later
 
-# Environment
-ENV DEBIAN_FRONTEND noninteractive
-ARG KNOT_DNS_VERSION="3.1.8"
-# Build dependencies
-ENV KNOT_DNS_BUILD_DEPS="git-core build-essential libtool autoconf pkg-config \
-						libgnutls28-dev	libprotobuf-dev libprotobuf-c-dev libfstrm-dev meson"
-ENV KNOT_RESOLVER_BUILD_DEPS="build-essential pkg-config bsdmainutils liblmdb-dev \
-						libluajit-5.1-dev libuv1-dev libprotobuf-dev libprotobuf-c-dev \
-						libfstrm-dev luajit lua-http libssl-dev libnghttp2-dev protobuf-c-compiler"
-ENV BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
-ARG BUILDENV_DEPS="${KNOT_DNS_BUILD_DEPS} ${KNOT_RESOLVER_BUILD_DEPS}"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -fPIE -D_GNU_SOURCE "
-ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,--export-dynamic -Wl,-z,relro -Wl,-z,now "
+# Intermediate container for build
+FROM debian:12 AS build
 
-# Install dependencies and sources
-#RUN echo "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/backports.list
-RUN apt-get update -qq \
-    && apt-get -y -qqq install ${BUILDENV_DEPS} 
-#    && apt-get -y -qqq install -t stretch-backports meson
+ARG VERSION="3.3.8"
 
-# Install Knot DNS from sources
-RUN git clone -b v${KNOT_DNS_VERSION} --depth=1 https://gitlab.labs.nic.cz/knot/knot-dns.git /tmp/knot-dns
-RUN cd /tmp/knot-dns \
-    && autoreconf -if \
-    && ./configure \
-     --disable-fastparser \
-     --disable-documentation \
-     --disable-daemon \
-     --disable-utilities \
-     --with-lmdb=no \
-    && make -j"$(nproc)" install
-RUN ldconfig /
+RUN apt-get update -qq && \
+	apt-get -qqq -y install \
+		apt-transport-https ca-certificates wget \
+		pipx devscripts && \
+	pipx install apkg
 
-# Copy libknot, libdnssec, libzscanner to runtime
-RUN mkdir -p /tmp/root/usr/local/include /tmp/root/usr/local/lib /tmp/root/usr/local/lib/pkgconfig
-RUN cp -r /usr/local/include/libknot /usr/local/include/libdnssec /usr/local/include/libzscanner /tmp/root/usr/local/include
-RUN cp -r /usr/local/lib/libknot* /usr/local/lib/libdnssec* /usr/local/lib/libzscanner* /tmp/root/usr/local/lib
-RUN cp -r /usr/local/lib/pkgconfig/libknot.pc /usr/local/lib/pkgconfig/libdnssec.pc /usr/local/lib/pkgconfig/libzscanner.pc /tmp/root/usr/local/lib/pkgconfig
-
-
-# Intermediate container with runtime dependencies
-FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
-
-# Install runtime dependencies
-ENV KNOT_DNS_RUNTIME_DEPS="libgnutls30"
-ENV KNOT_RESOLVER_RUNTIME_DEPS="liblmdb0 luajit libluajit-5.1-2 libuv1 lua-http libnghttp2-14 tini libpsl5 "
-ENV KNOT_RESOLVER_RUNTIME_DEPS_HTTP="lua-http lua-mmdb "
-ENV KNOT_RESOLVER_RUNTIME_DEPS_EXTRA="lua-cqueues "
-ENV KNOT_RESOLVER_RUNTIME_DEPS_DNSTAP="libfstrm0 libprotobuf-c1 "
-ENV KNOT_RESOLVER_RUNTIME_DEPS_SSL="ca-certificates "
-ENV RUNTIME_DEPS="${KNOT_DNS_RUNTIME_DEPS} ${KNOT_RESOLVER_RUNTIME_DEPS} \
-    ${KNOT_RESOLVER_RUNTIME_DEPS_HTTP} ${KNOT_RESOLVER_RUNTIME_DEPS_EXTRA} \
-    ${KNOT_RESOLVER_RUNTIME_DEPS_SSL} ${KNOT_RESOLVER_RUNTIME_DEPS_DNSTAP} "
-
-RUN apt-get update -qq \
-    && apt-get -y -qqq install --no-install-recommends ${RUNTIME_DEPS} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/list/* /usr/local/share/man/* \
-    && mkdir -p /var/run/knot-resolver
-
-# Intermediate container for Knot Resolver build
-FROM knot-dns-build AS build
-
-# Build Knot Resolver
-# Environmet
-ARG VERSION="4.0.0"
+RUN wget -O /usr/share/keyrings/cznic-labs-pkg.gpg https://pkg.labs.nic.cz/gpg && \
+	echo "deb [signed-by=/usr/share/keyrings/cznic-labs-pkg.gpg] https://pkg.labs.nic.cz/knot-resolver bookworm main" \
+		> /etc/apt/sources.list.d/cznic-labs-knot-resolver.list && \
+	apt-get update -qq
 
 # Knot Resolver build
-RUN mkdir -p /tmp/root/etc/knot-resolver
-RUN git clone -b v${VERSION} --depth=1 --recursive https://gitlab.nic.cz/knot/knot-resolver.git /tmp/knot-resolver
-RUN cd /tmp/knot-resolver \
-    && meson build_docker --buildtype=plain --prefix=/usr --libdir=lib -Dc_args="${CFLAGS}" \
-    && DESTDIR=/tmp/root ninja -C build_docker install \
-    && cp /tmp/root/usr/share/doc/knot-resolver/examples/config.docker /tmp/root/etc/knot-resolver/kresd.conf
+RUN mkdir -p /tmp/root/etc/knot-resolver 
+RUN git clone -b v${VERSION} --depth=1 --recursive https://gitlab.nic.cz/knot/knot-resolver.git /source
+
+RUN cd /source && \
+	export PATH="$PATH:/root/.local/bin" && \
+	git submodule update --init --recursive && \
+	/root/.local/bin/apkg build-dep -y && \
+	/root/.local/bin/apkg build
 
 
-# Final container
-FROM runtime
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="$TARGETPLATFORM" \
-      description="Knot DNS team's things are modified and used." \
-      url="https://www.knot-resolver.cz"
+# Real container
+FROM debian:12-slim AS runtime
 
-# Environment
-ENV TZ Asia/Tokyo
+RUN apt-get update -qq && \
+	apt-get -qqq -y install apt-transport-https ca-certificates
 
-# publish port DNS over UDP & TCP, DNS-over-TLS
-EXPOSE 53/UDP 53/TCP 853/TCP
+COPY --from=build \
+	/usr/share/keyrings/cznic-labs-pkg.gpg \
+	/usr/share/keyrings/cznic-labs-pkg.gpg
+COPY --from=build \
+	/etc/apt/sources.list.d/cznic-labs-knot-resolver.list \
+	/etc/apt/sources.list.d/cznic-labs-knot-resolver.list
 
-# service running
-STOPSIGNAL SIGTERM
+RUN apt-get update -qq && \
+	apt-get upgrade -qq
 
-# set entrypoint
-ENTRYPOINT ["tini", "--", "/usr/local/sbin/entrypoint.sh"]
-CMD ["kresd", "-n", "-c", "/etc/knot-resolver/kresd.conf"]
+COPY --from=build /source/pkg/pkgs/debian-12 /pkg
 
-# Fetch Knot Resolver + Knot DNS libraries from build image
-COPY --from=build /tmp/root/ /
-COPY ./entrypoint.sh /usr/local/sbin/entrypoint.sh
-RUN chmod +x /usr/local/sbin/entrypoint.sh \
-    && ldconfig /
+
+
+# install resolver, minimize image and prepare config directory
+RUN apt-get install -y /pkg/*/*.deb && \
+	rm -r /pkg && \
+	apt-get remove -y -qq curl gnupg2 && \
+	apt-get autoremove -y && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/* && \
+	mkdir /config
+
+COPY --from=build /source/manager/etc/knot-resolver/config.example.docker.yaml /config/config.yaml
+
+LABEL cz.knot-resolver.vendor="CZ.NIC"
+LABEL maintainer="knot-resolver-users@lists.nic.cz"
+
+# Export plain DNS, DoT, DoH and management interface
+EXPOSE 53/UDP 53/TCP 443/TCP 853/TCP 5000/TCP
+
+ENTRYPOINT ["/usr/bin/knot-resolver"]
+CMD ["-c", "/config/config.yaml"]
