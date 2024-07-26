@@ -4,3 +4,4 @@ build.sh
 release.sh
 key
 Dockerfile.*
+VERSION
