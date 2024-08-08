@@ -1,100 +1,95 @@
-FROM --platform=$TARGETPLATFORM debian:latest AS build
+# Build stage
+FROM --platform=$TARGETPLATFORM debian:stable AS build
 
-# Environment
-ARG VERSION="1.9.2"
-ARG BUILD_BASE="build-essential mold make gawk autoconf automake libtool "
-ARG BUILD_PKGS="${BUILD_BASE} libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev curl "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
-ARG CXXFLAGS="${CFLAGS}  "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+# Environment variables
+ARG VERSION="1.9.2" \
+    BUILD_BASE="build-essential mold make gawk autoconf automake libtool" \
+    BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev curl" \
+    CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold" \
+    CXXFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold" \
+    LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
-# source build and install
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-  && apt-get -y -qqq install ${BUILD_PKGS}
+# Install build dependencies
+RUN apt-get update && apt-get install -y  \
+    ${BUILD_BASE} ${BUILD_PKGS} \
+    && rm -rf /var/lib/apt/lists/*
 
-# build
-RUN mkdir -p /usr/src /tmp/root/etc/unbound \
-  && curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" -o unbound.tar.gz \
-  && tar xf "unbound.tar.gz" --strip-components=1 -C /usr/src \
-  && rm -f "unbound.tar.gz" \
-  && groupadd unbound \
-  && useradd -g unbound -s /dev/null -d /etc unbound
-RUN cd /usr/src \
-  && ./configure \
-      --prefix=/usr/local \
-      --with-libevent \
-#      --with-pthreads \
-      --with-ssl \
-      --sysconfdir=/etc/unbound \
-      --with-conf-file=/etc/unbound/unbound.conf \
-      --with-pidfile=/var/run/unbound.pid \
-      --enable-subnet \
-      --enable-sha2 \
-      --disable-gost \
-      --disable-ecdsa \
-      --enable-pie \
-      --enable-relro-now \
-      --enable-tfo-server \
-      --enable-tfo-client \
-      --enable-cachedb \
-      --with-libhiredis \
-      --enable-dnscrypt \
-      --with-libnghttp2 \
-      --without-pthreads \
-      --without-solaris-threads \
-      PKG_CONFIG=/usr/bin/pkg-config \
-      CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CXXFLAGS="${CFLAGS}"
-RUN cd /usr/src \
-    && make -j"$(nproc)"
-RUN cd /usr/src \
+# Download and extract Unbound source
+WORKDIR /usr/src
+RUN curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" | tar xz --strip-components=1
+
+# Configure and build Unbound
+RUN ./configure \
+    --prefix=/usr/local \
+    --with-libevent \
+    --with-ssl \
+    --sysconfdir=/etc/unbound \
+    --with-conf-file=/etc/unbound/unbound.conf \
+    --with-pidfile=/var/run/unbound.pid \
+    --enable-subnet \
+    --enable-sha2 \
+    --disable-gost \
+    --disable-ecdsa \
+    --enable-pie \
+    --enable-relro-now \
+    --enable-tfo-server \
+    --enable-tfo-client \
+    --enable-cachedb \
+    --with-libhiredis \
+    --enable-dnscrypt \
+    --with-libnghttp2 \
+    --without-pthreads \
+    --without-solaris-threads \
+    && make -j"$(nproc)" \
     && make strip \
     && make install DESTDIR=/tmp/root
 
+# Runtime stage
+FROM --platform=$TARGETPLATFORM debian:stable-slim
 
-# Intermediate container with runtime dependencies
-FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
+# Runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl libevent-2.1-7 ca-certificates ldnsutils tzdata expat flex bison \
+    libhiredis0.14 libsodium23 libnghttp2-14 libexpat1 libprotobuf-c1 bsdmainutils \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install runtime dependencies
-ARG RUN_PKGS="openssl libevent-2.1-7 ca-certificates ldnsutils tzdata expat flex bison libhiredis0.14 libsodium23  \
-              libnghttp2-14 libexpat1 libprotobuf-c1 bsdmainutils "
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-	&& apt-get -y --no-install-recommends -qqq install ${RUN_PKGS}  \
-    && apt-get clean \
-    && rm -rf  \
-		/tmp/* \
-		/var/lib/apt/lists/* \
-		/usr/local/share/man/* \
-    && groupadd unbound \
-    && useradd -g unbound -s /dev/null -d /etc unbound
+# Create unbound user and group
+RUN groupadd -r unbound && useradd -r -g unbound -s /sbin/nologin -d /etc/unbound unbound
 
+# Copy Unbound files from build stage
+COPY --from=build /tmp/root/ /
+RUN ldconfig
 
-# Final container
-FROM runtime
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="$TARGETPLATFORM" \
-      description="Unbound is a validating, recursive, caching DNS resolver. \
-                  It is designed to be fast and lean and incorporates modern features \
-                  based on open standards." \
-      url="https://nlnetlabs.nl/projects/unbound/about/"
+# Set environment variables
+ENV TZ=Asia/Tokyo
 
-# Environment
-ENV TZ Asia/Tokyo
+# Create necessary directories with correct permissions
+RUN mkdir -p /var/run/unbound /var/lib/unbound \
+    && chown -R unbound:unbound /var/run/unbound /var/lib/unbound /etc/unbound
 
-# publish port TCP and UDP
-EXPOSE 53/tcp 53/udp 853/TCP
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/sbin/
+RUN chmod +x /usr/local/sbin/entrypoint.sh
 
-# service running
-STOPSIGNAL SIGTERM
+# Expose ports
+EXPOSE 53/tcp 53/udp 853/tcp
 
-# entrypoint
+# Set working directory
 WORKDIR /etc/unbound
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD unbound-control status || exit 1
+
+# Set entrypoint and default command
 ENTRYPOINT ["/usr/local/sbin/entrypoint.sh"]
 CMD ["unbound", "-d", "-c", "/etc/unbound/unbound.conf"]
 
-# Fetch unbound and libraries from build image
-COPY --from=build /tmp/root/ /
-RUN ldconfig /
+# Labels
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="$TARGETPLATFORM" \
+      description="Unbound is a validating, recursive, caching DNS resolver." \
+      url="https://nlnetlabs.nl/projects/unbound/about/"
 
-# Application execution related information
-COPY ./entrypoint.sh /usr/local/sbin/
-RUN chmod +x /usr/local/sbin/entrypoint.sh
+# Run as non-root user
+#USER unbound
