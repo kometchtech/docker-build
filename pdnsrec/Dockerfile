@@ -1,25 +1,21 @@
 # syntax = docker/dockerfile:experimental
 FROM --platform=$TARGETPLATFORM rust:latest AS build
 
-# Environmet
+# Environment
 ARG VERSION="4.2.0"
-ARG BUILD_BASE="build-essential mold gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} libboost-dev liblua5.3-dev libedit-dev libsodium-dev libprotobuf-dev libgnutls28-dev libatomic-ops-dev \
-                libsnmp-dev libfstrm-dev libcurl4 "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
-ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+ARG BUILD_PKGS="build-essential mold gawk autoconf automake libtool curl libboost-all-dev liblua5.3-dev libedit-dev libsodium-dev libprotobuf-dev libgnutls28-dev libatomic-ops-dev libsnmp-dev libfstrm-dev libcurl4"
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 
-# dev package install
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${BUILD_PKGS}
-RUN mkdir -p /tmp/build
-## build
-RUN curl -fsSL "https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}.tar.bz2" -o pdns-recursor.tar.bz2
-RUN tar xf pdns-recursor.tar.bz2 --strip-components=1 -C /tmp/build \
-    && rm pdns-recursor.tar.bz2
-RUN cd /tmp/build \
-    && ./configure \
+# Dev package install and build
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
+    apt-get install -y --no-install-recommends ${BUILD_PKGS} && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /tmp/build && \
+    curl -fsSL "https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}.tar.bz2" | tar xj --strip-components=1 -C /tmp/build && \
+    cd /tmp/build && \
+    ./configure \
       --prefix=/usr/local \
       --sysconfdir=/etc/powerdns \
       --localstatedir=/var \
@@ -31,10 +27,12 @@ RUN cd /tmp/build \
       --with-service-user=pdns-recursor \
       --with-lua \
       --enable-dns-over-tls \
-      CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j6 install DESTDIR=/tmp/root
-RUN rm -rf /tmp/root/usr/local/share/man/*
-RUN ldconfig /
+      CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" && \
+    make -j$(( $(nproc) > 6 ? 6 : $(nproc) )) install DESTDIR=/tmp/root && \
+    make clean && \
+    strip /tmp/root/usr/local/bin/* /tmp/root/usr/local/sbin/* && \
+    rm -rf /tmp/root/usr/local/share/man/* && \
+    ldconfig /
 
 
 # Intermediate container with runtime dependencies
@@ -42,7 +40,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libboost-context1.74.0 libboost-filesystem1.74.0 liblua5.3-0 libedit2 libprotobuf32 libsodium23 tzdata libgnutls30 \
-              libatomic1 ca-certificates tini libsnmp40 libfstrm0 tini libcurl4 "
+              libatomic1 ca-certificates tini libsnmp40 libfstrm0 tini libcurl4 libboost-system1.74.0 libboost-thread1.74.0"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && groupadd pdns-rec \
@@ -86,3 +84,4 @@ RUN ldconfig /
 # Application execution related information
 COPY ./entrypoint.sh /usr/local/sbin/entrypoint.sh
 RUN chmod +x /usr/local/sbin/entrypoint.sh
+
