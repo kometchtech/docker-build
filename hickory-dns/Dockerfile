@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 
-ARG VERSION="0.25.0-alpha.2"
+ARG VERSION="0.25.0-alpha.4"
 ARG SOURCE_FILE="https://github.com/hickory-dns/hickory-dns/archive/refs/tags/v${VERSION}.tar.gz"
 # wget https://github.com/hickory-dns/hickory-dns/archive/refs/tags/v${VERSION}.tar.gz -O - | sha256sum
 #ARG SOURCE_SHA256="c5ac7115fc577aa8097e9f3efa8e119cef8adc95588b9ab1be599144858f16aa"
@@ -67,8 +67,13 @@ LABEL org.label-schema.vendor="hickory-dns" \
 
 # https://github.com/mischov/meeseeks/issues/98#issuecomment-636615680
 RUN apt-get update && apt-get install -y libssl3 \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=build-env /workspace/target/release/hickory-dns /usr/bin
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r nobody
+
+USER nobody:nobody
+COPY --from=build-env \
+     /workspace/target/release/hickory-dns /usr/bin
+
 # Quickly test the binary is "working" and has no linked libs errors
 RUN hickory-dns --version
 
