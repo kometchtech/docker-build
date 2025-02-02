@@ -4,16 +4,17 @@ FROM --platform=$TARGETPLATFORM debian:latest AS build
 # Env
 ARG VERSION="1.4.0-beta1"
 ARG BUILD_BASE="build-essential binutils mold make gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
-               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev "
+ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev libluajit-5.1-dev \
+               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libh2o-evloop-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 
 # dev package install
-RUN mkdir -p /usr/src /tmp/root/etc/dnsdist
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${BUILD_PKGS}
+RUN apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${BUILD_PKGS} \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /usr/src /tmp/root/etc/dnsdist
 ## build
 RUN curl -fsSL "https://downloads.powerdns.com/releases/dnsdist-${VERSION}.tar.bz2" -o dnsdist.tar.bz2 \
     && tar xf dnsdist.tar.bz2 --strip-components=1 -C /usr/src \
@@ -40,6 +41,9 @@ RUN cd /usr/src \
       --disable-dependency-tracking \
       --with-nghttp2 \
       --with-net-snmp \
+      --with-lua \
+      --disable-shared \
+      --enable-static \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /usr/src \
     && make -j4  \
@@ -52,13 +56,15 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="tzdata liblua5.1-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl libnghttp2-14 libgnutls30 libxdp1 libbpf1"
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
+ARG RUN_PKGS="tzdata liblua5.1-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl \
+	      libnghttp2-14 libgnutls30 libxdp1 libbpf1 libh2o-evloop0.13 libluajit-5.1-2 "
+RUN apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
+    && rm -rf /var/lib/apt/lists/* \
     && groupadd _dnsdist \
     && useradd -g _dnsdist -s /dev/null -d /etc _dnsdist
+
 
 # Final container
 FROM runtime
@@ -73,7 +79,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ Asia/Tokyo
 
 # Publish port
-EXPOSE 53/tcp 53/udp
+EXPOSE 53/tcp 53/udp 443/tcp 853/tcp 8083/tcp 8443/tcp 8443/udp
 
 # service running
 STOPSIGNAL SIGTERM
@@ -83,9 +89,11 @@ WORKDIR /etc/dnsdist
 
 # Select entrypoint
 COPY ["entrypoint.sh", "/usr/bin/"]
+HEALTHCHECK CMD ["dnsdist", "-e", "showVersion()", "||", "exit", "1"]
 ENTRYPOINT ["/usr/bin/entrypoint.sh"]
 CMD ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
-# Fetch pdns-dnsdist libraries from build image
+# Fetch pdns-dnsdist libraries from build image and update ldconfig
 COPY --from=build /tmp/root/ /
-RUN ldconfig /
+RUN ldconfig
+
