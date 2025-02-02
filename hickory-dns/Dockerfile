@@ -22,8 +22,8 @@ RUN \
     tar --strip-components=1 --directory /workspace -xzvf /tmp/hickory-dns.tar.gz; \
     rm /tmp/hickory-dns.tar.gz;
 # Install build dependencies
-RUN apt-get update && apt-get install -y  \
-    ${BUILD_BASE} ${BUILD_PKGS} \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y ${BUILD_BASE} ${BUILD_PKGS} \
     && rm -rf /var/lib/apt/lists/*
 
 RUN cargo fetch
@@ -66,7 +66,8 @@ LABEL org.label-schema.vendor="hickory-dns" \
     org.opencontainers.image.ref.name="${VERSION}"
 
 # https://github.com/mischov/meeseeks/issues/98#issuecomment-636615680
-RUN apt-get update && apt-get install -y libssl3 \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y libssl3 \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r nobody
 
