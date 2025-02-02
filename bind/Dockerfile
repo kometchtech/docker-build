@@ -1,33 +1,27 @@
 # syntax = docker/dockerfile:experimental
-FROM --platform=$TARGETPLATFORM debian:stable AS build
+FROM --platform=$TARGETPLATFORM debian:stable-slim AS build
 
 # Environment
 ARG VERSION="9.15.0"
-ARG BUILD_BASE="build-essential gawk autoconf automake libtool xz-utils curl mold "
-ARG BUILD_PKGS="${BUILD_BASE} libssl-dev libcap-dev libperl-dev  libedit-dev libreadline-dev libncurses-dev zlib1g-dev \
-                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
-ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++ "
-ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed "
+ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl mold \
+                libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev zlib1g-dev \
+                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates"
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
+ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++"
+ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed"
 
-# dev package install
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${BUILD_PKGS}
-
-## build
-RUN mkdir -p /tmp/build
-RUN curl -fsSL "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" \
-         -o bind9.tar.xz
-RUN tar xf bind9.tar.xz --strip-components=1 -C /tmp/build \
-    && rm -f bind9.tar.xz
-RUN cd /tmp/build \
-#    && ./autogen.sh \
+# Install build dependencies and build BIND
+RUN set -ex \
+    && DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get install -y --no-install-recommends ${BUILD_PKGS} \
+    && mkdir -p /tmp/build \
+    && curl -fsSL "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" | tar xJ --strip-components=1 -C /tmp/build \
+    && cd /tmp/build \
     && ./configure \
         --prefix=/usr/local \
         --sysconfdir=/etc/named \
         --localstatedir=/var \
         --with-libxml2 \
-#       --with-dlopen=yes \
         --with-libtool \
         --disable-static \
         --with-openssl \
@@ -43,13 +37,13 @@ RUN cd /tmp/build \
         --without-python \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j"$(nproc)" \
-    && make install DESTDIR=/tmp/root
-RUN ldconfig /
-# Delete unnecessary directory
-RUN mkdir -p /tmp/root/var/cache/named \
-    && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/*
-# download named.root 
-RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cache/named/named.ca
+    && make install DESTDIR=/tmp/root \
+    && ldconfig / \
+    && mkdir -p /tmp/root/var/cache/named \
+    && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* \
+    && curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cache/named/named.ca \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /var/lib/apt/lists/*
 
 
 # Intermediate container with runtime dependencies
@@ -102,5 +96,6 @@ RUN chmod +x /usr/local/sbin/entrypoint.sh
 # select entrypoint
 WORKDIR /etc/named
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
-#CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "_named"]
+CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "_named"]
+
 
