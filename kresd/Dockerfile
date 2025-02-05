@@ -1,7 +1,7 @@
 # Intermediate container for build
 FROM debian:12 AS build
 
-ARG VERSION="3.3.8"
+ARG VERSION
 RUN apt-get update -qq && \
 	apt-get -qqq -y install \
 		apt-transport-https ca-certificates wget \
