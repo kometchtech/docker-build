@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
-
 # Intermediate container for build
 FROM debian:12 AS build
 
