@@ -36,7 +36,7 @@ RUN cd /source && \
 	sed -e '32a -Ddoc=enabled \' -i distro/pkg/deb/rules && \
 	sed 's/USER.*/USER = "root"/g' -i python/knot_resolver/constants.py && \
 	sed 's/GROUP.*/GROUP = "root"/g' -i python/knot_resolver/constants.py && \
-        git add . && \
+#        git add . && \
 	git commit -a -m TMP && \
 	\
 	/root/.local/bin/apkg build-dep -y && \
