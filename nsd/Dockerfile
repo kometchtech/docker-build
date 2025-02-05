@@ -46,46 +46,40 @@ RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ENV RUN_PKGS "openssl libevent-2.1-7 ca-certificates ldnsutils tzdata tini "
+ENV RUN_PKGS="openssl libevent-2.1-7 ca-certificates ldnsutils tzdata tini"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
+    && apt-get -y --no-install-recommends install ${RUN_PKGS} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
     && mkdir -p /var/cache/nsd /var/run/nsd /etc/nsd/zones \
-    && chmod -R 0666 /var/run/nsd \
-    && groupadd nsd \
-    && useradd -g nsd -s /dev/null -d /etc nsd   
+    && chmod -R 0777 /var/run/nsd \
+    && groupadd -r nsd \
+    && useradd -r -g nsd -s /sbin/nologin -d /etc/nsd nsd
 
-# Final container
-FROM runtime
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="$TARGETPLATFORM" \
-      description="The NLnet Labs Name Server Daemon (NSD) is an authoritative DNS \
-                  name server. It has been developed for operations in environments \
-                  where speed, reliability, stability and security are of high importance." \
-      url="https://nlnetlabs.nl/projects/nsd/about/"
+# Copy NSD from build stage
+COPY --from=build /tmp/root/ /
 
-# Environment
-ENV TZ Asia/Tokyo
-
-# publish port TCP and UDP
+# Set up environment and configuration
+ENV TZ=Asia/Tokyo
 EXPOSE 53/tcp 53/udp 8952/tcp
-
-# service running
 STOPSIGNAL SIGTERM
-
-# Execute app
 WORKDIR /etc/nsd
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
-CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
 
-# Application execution related information
-ADD ./entrypoint.sh /usr/local/sbin/
+# Add entrypoint script
+COPY entrypoint.sh /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/entrypoint.sh
 
-# Fetch nsd libraries from build image
-COPY --from=build /tmp/root/ /
+# Set permissions and ownership
 RUN ldconfig / \
     && chmod -R 0777 /tmp /var/cache/nsd \
     && chown -R nsd:nsd /var/cache/nsd /var/run/nsd /etc/nsd/zones
 
+# Set entrypoint and default command
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
+CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
+
+# Add labels
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="$TARGETPLATFORM" \
+      description="NLnet Labs Name Server Daemon (NSD) - Authoritative DNS server" \
+      url="https://nlnetlabs.nl/projects/nsd/about/"
