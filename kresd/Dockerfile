@@ -33,7 +33,7 @@ RUN cd /source && \
 	# and then for the proper functioning of the resolver.
 	sed s/knot-resolver/root/g -i meson_options.txt && \
 	sed 's/unit_tests=enabled/unit_tests=disabled/g' -i distro/pkg/deb/rules && \
-	sed -e '32a -Ddoc=enabled \' -i distro/pkg/deb/rules && \
+	sed -e '/unit_tests=disabled/a -Ddoc=disabled \' -i distro/pkg/deb/rules && \
 	sed 's/USER.*/USER = "root"/g' -i python/knot_resolver/constants.py && \
 	sed 's/GROUP.*/GROUP = "root"/g' -i python/knot_resolver/constants.py && \
 #        git add . && \
