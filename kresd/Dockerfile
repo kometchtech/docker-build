@@ -14,7 +14,6 @@ RUN wget -O /usr/share/keyrings/cznic-labs-pkg.gpg https://pkg.labs.nic.cz/gpg &
 	apt-get update -qq
 
 # Knot Resolver build
-#RUN mkdir -p /tmp/root/etc/knot-resolver 
 RUN git clone -b v${VERSION} --depth=1 --recursive https://gitlab.nic.cz/knot/knot-resolver.git /source
 
 RUN cd /source && \
