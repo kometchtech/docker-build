@@ -6,7 +6,7 @@ ARG VERSION
 RUN apt-get update -qq && \
 	apt-get -qqq -y install \
 		apt-transport-https ca-certificates wget python3 python3-pip python3-venv devscripts && \
-        pip3 install --no-cache-dir pipx && \
+        pip3 install --break-system-packages --no-cache-dir pipx && \
         pipx ensurepath && \
 	pipx install apkg
 
