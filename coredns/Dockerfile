@@ -40,6 +40,7 @@ COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /coredns
 
 # User
 USER nonroot:nonroot
+WORKDIR /
 
 # Select entrypoint
 ENTRYPOINT ["/coredns"]
