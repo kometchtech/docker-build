@@ -82,13 +82,13 @@ jobs:
       - name: Build and push images
         uses: docker/build-push-action@v6
         with:
-          image: kometchtech/${dir//\//-}
+          image: "kometchtech/${dir//\//-}"
           tags: latest, ${{ env.VERSION }}
           enableBuildKit: true
           multiPlatform: linux/amd64,linux/arm64
           buildArgs: VERSION=${{ env.VERSION }}
           registry: docker.io
-          context: $dir
+          context: ${{ dir }}
           push: true
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
