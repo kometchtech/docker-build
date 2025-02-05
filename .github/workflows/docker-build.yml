@@ -12,8 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository with full history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 過去の履歴をすべて取得
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -27,11 +29,26 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Determine previous commit
+        id: previous-commit
+        run: |
+          if [ -z "${{ github.event.before }}" ] || ! git rev-parse ${{ github.event.before }} >/dev/null 2>&1; then
+            BEFORE_COMMIT=$(git rev-parse HEAD^ || echo "")
+          else
+            BEFORE_COMMIT=${{ github.event.before }}
+          fi
+          echo "before_commit=$BEFORE_COMMIT" >> $GITHUB_ENV
+
       - name: Find modified directories
         id: find-dirs
         run: |
-          CHANGED_DIRS=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u)
-          echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+          if [ -n "$before_commit" ]; then
+            CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
+            echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+          else
+            echo "No previous commit found, skipping build."
+            echo "changed_dirs=" >> $GITHUB_ENV
+          fi
 
       - name: Build and Push Multi-Arch Docker Images
         if: env.changed_dirs != ''
