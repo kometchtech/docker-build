@@ -61,10 +61,11 @@ jobs:
               TAG=$(cat $dir/VERSION)
               IMAGE_NAME="kometchtech/${dir//\//-}"
               echo "Building and pushing $IMAGE_NAME:$TAG for amd64 and arm64"
-
+      
               docker buildx build --platform linux/amd64,linux/arm64 \
                 --push \
                 --no-cache \
+                --build-arg VERSION=$TAG \  # ← ここで Dockerfile に `VERSION` を渡す
                 -t $IMAGE_NAME:$TAG $dir
             fi
           done
