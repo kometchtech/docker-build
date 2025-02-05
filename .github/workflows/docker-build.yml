@@ -83,7 +83,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           image: "kometchtech/${{ env.changed_dirs }}"
-          tags: latest, "${{ env.REiLEASE_VERSION }}"
+          tags: latest, "${{ env.RELEASE_VERSION }}"
           enableBuildKit: true
           multiPlatform: true
           platform: linux/amd64,linux/arm64
