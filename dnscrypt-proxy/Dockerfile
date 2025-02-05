@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 # 1st build
-FROM --platform=$TARGETPLATFORM golang:latest as build
+FROM golang:latest as build
 
 # https://golang.org/doc/install/source#environment
 ENV CGO_ENABLED 0
@@ -21,7 +21,6 @@ RUN cd /go/src/github.com/jedisct1/dnscrypt-proxy \
 # 2nd build
 FROM scratch
 LABEL maintainer="kometchtech <kometch@gmail.com>"
-LABEL arch="$TARGETPLATFORM"
 LABEL description="A flexible DNS proxy, with support for modern encrypted DNS protocols such as DNSCrypt v2 and DNS-over-HTTP/2."
 LABEL url="https://github.com/jedisct1/dnscrypt-proxy"
 
