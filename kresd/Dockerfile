@@ -69,8 +69,8 @@ RUN apt-get install -y /pkg/*/*.deb && \
 
 COPY --from=build /source/etc/config/config.example.docker.yaml /etc/knot-resolver/config.yaml
 
-LABEL cz.knot-resolver.vendor="CZ.NIC"
-LABEL maintainer="knot-resolver-users@lists.nic.cz"
+LABEL cz.knot-resolver.vendor=""
+LABEL maintainer="kometch@gmail.com"
 
 # Export plain DNS, DoT, DoH and management interface
 EXPOSE 53/UDP 53/TCP 443/TCP 853/TCP 5000/TCP
