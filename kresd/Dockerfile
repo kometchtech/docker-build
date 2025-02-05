@@ -4,8 +4,7 @@ FROM debian:12 AS build
 ARG VERSION
 RUN apt-get update -qq && \
 	apt-get -qqq -y install \
-		apt-transport-https ca-certificates wget \
-		pipx devscripts ensurepath && \
+		apt-transport-https ca-certificates wget pipx devscripts ensurepath && \
 #		apt-transport-https ca-certificates wget python3 python3-pip python3-venv devscripts && \
 #        pip3 install --break-system-packages --no-cache-dir pipx && \
 #        pipx ensurepath 
