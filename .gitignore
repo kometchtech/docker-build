@@ -4,4 +4,4 @@ build.sh
 release.sh
 key
 Dockerfile.*
-VERSION
+slim.report.json
