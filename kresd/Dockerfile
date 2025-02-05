@@ -1,7 +1,6 @@
 # Intermediate container for build
 FROM debian:12 AS build
 
-# build-arg の宣言
 ARG VERSION
 RUN apt-get update -qq && \
 	apt-get -qqq -y install \
