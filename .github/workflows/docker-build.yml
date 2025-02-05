@@ -72,8 +72,8 @@ jobs:
           for dir in ${{ env.changed_dirs }}; do
             if [ -f "$dir/VERSION" ]; then
               RELEASE_VERSION=$(cat $dir/VERSION | tr -d ' ')  # VERSIONファイルからバージョンを取得
-              echo "VERSION=$RELEASE_VERSION" >> $GITHUB_ENV  # 環境変数にセット
-              echo "Version set to: $RELEASE_VERSION"
+              echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV  # 環境変数にセット
+              echo "Version set to: $VERSION"
             else
               echo "No VERSION file found in $dir, skipping..."
             fi
@@ -83,11 +83,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           image: "kometchtech/${{ env.changed_dirs }}"
-          tags: latest, "${{ env.RELEASE_VERSION }}"
+          tags: latest, ${{ env.VERSION }}
           enableBuildKit: true
           multiPlatform: true
           platform: linux/amd64,linux/arm64
-          buildArgs: VERSION="${{ env.RELEASE_VERSION }}"
+          buildArgs: VERSION="${{ env.VERSION }}"
           registry: docker.io
           context: ${{ env.changed_dirs }}
           push: true
