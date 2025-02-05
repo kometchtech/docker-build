@@ -6,7 +6,7 @@ FROM --platform=$TARGETPLATFORM golang:latest as build
 ENV CGO_ENABLED 0
 ENV GOOS linux
 #ENV GOARCH arm64
-ARG VERSION=2.0.25
+ARG VERSION
 WORKDIR /go/src/github.com/jedisct1/
 RUN --mount=type=cache,target=/root/.cache/go-build \
     apt-get update \
