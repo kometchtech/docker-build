@@ -8,8 +8,10 @@ RUN apt-get update -qq && \
 #		pipx devscripts && \
 		apt-transport-https ca-certificates wget python3 python3-pip python3-venv devscripts && \
         pip3 install --break-system-packages --no-cache-dir pipx && \
-        pipx ensurepath && \
-	pipx install apkg
+        pip3 install --break-system-packages --no-cache-dir apkg && \
+        pipx ensurepath 
+#        pipx ensurepath && \
+#	pipx install apkg
 
 RUN wget -O /usr/share/keyrings/cznic-labs-pkg.gpg https://pkg.labs.nic.cz/gpg && \
 	echo "deb [signed-by=/usr/share/keyrings/cznic-labs-pkg.gpg] https://pkg.labs.nic.cz/knot-resolver bookworm main" \
