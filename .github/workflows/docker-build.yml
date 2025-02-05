@@ -85,7 +85,8 @@ jobs:
           image: "kometchtech/${dir//\//-}"
           tags: latest, ${{ env.VERSION }}
           enableBuildKit: true
-          multiPlatform: linux/amd64,linux/arm64
+          multiPlatform: true
+          platform: linux/amd64,linux/arm64
           buildArgs: VERSION=${{ env.VERSION }}
           registry: docker.io
           context: ${{ dir }}
