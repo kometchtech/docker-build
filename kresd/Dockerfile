@@ -5,6 +5,8 @@ FROM debian:12 AS build
 ARG VERSION
 RUN apt-get update -qq && \
 	apt-get -qqq -y install \
+#		apt-transport-https ca-certificates wget \
+#		pipx devscripts && \
 		apt-transport-https ca-certificates wget python3 python3-pip python3-venv devscripts && \
         pip3 install --break-system-packages --no-cache-dir pipx && \
         pipx ensurepath && \
@@ -33,6 +35,7 @@ RUN cd /source && \
 	sed -e '3 s/unit_tests=enabled/unit_tests=disabled/g' -i meson_options.txt && \
 	sed 's/USER.*/USER = "root"/g' -i python/knot_resolver/constants.py && \
 	sed 's/GROUP.*/GROUP = "root"/g' -i python/knot_resolver/constants.py && \
+        git add . && \
 	git commit -a -m TMP && \
 	\
 	/root/.local/bin/apkg build-dep -y && \
