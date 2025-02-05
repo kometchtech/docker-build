@@ -2,7 +2,7 @@
 FROM debian:12 AS build
 
 ARG VERSION
-ARG BUILD_PKGS="apt-transport-https ca-certificates wget pipx devscripts ensurepath"
+ARG BUILD_PKGS="apt-transport-https ca-certificates wget pipx devscripts "
 
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
