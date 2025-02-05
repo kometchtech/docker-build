@@ -35,7 +35,6 @@ RUN cd /source && \
 	sed -e '3 s/unit_tests=enabled/unit_tests=disabled/g' -i meson_options.txt && \
 	sed 's/USER.*/USER = "root"/g' -i python/knot_resolver/constants.py && \
 	sed 's/GROUP.*/GROUP = "root"/g' -i python/knot_resolver/constants.py && \
-        git add . && \
 	git commit -a -m TMP && \
 	\
 	/root/.local/bin/apkg build-dep -y && \
