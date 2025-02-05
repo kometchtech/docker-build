@@ -5,8 +5,7 @@ FROM debian:12 AS build
 ARG VERSION
 RUN apt-get update -qq && \
 	apt-get -qqq -y install \
-		apt-transport-https ca-certificates wget \
-		pipx devscripts && \
+		apt-transport-https ca-certificates wget pipx devscripts && \
 	pipx install apkg
 
 RUN wget -O /usr/share/keyrings/cznic-labs-pkg.gpg https://pkg.labs.nic.cz/gpg && \
