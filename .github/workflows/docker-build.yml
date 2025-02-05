@@ -6,6 +6,12 @@ on:
       - '**/Dockerfile'
       - '**/VERSION'
   workflow_dispatch:
+    inputs:
+      no-cache:
+        description: "Build docker images with no cache"
+        default: false
+        required: false
+        type: boolean
 
 jobs:
   build-and-push:
@@ -60,29 +66,28 @@ jobs:
             echo "changed_dirs=" >> $GITHUB_ENV
           fi
 
-      - name: Build and Push Multi-Arch Docker Images
-        if: env.changed_dirs != ''
+      - name: Set VERSION environment variable
+        id: set-version
         run: |
           for dir in ${{ env.changed_dirs }}; do
             if [ -f "$dir/VERSION" ]; then
-              TAG=$(cat $dir/VERSION | tr -d ' ')  # 余計なスペースや改行を削除
-              if [ -z "$TAG" ]; then
-                echo "Error: VERSION file is empty in $dir, skipping..."
-                continue
-              fi
-      
-              IMAGE_NAME="kometchtech/${dir//\//-}"  # "/" を "-" に置換
-              FULL_TAG="$IMAGE_NAME:$TAG"
-      
-              echo "Building and pushing $FULL_TAG for amd64 and arm64"
-      
-              docker buildx build --platform linux/amd64,linux/arm64 \
-                --push \
-                --no-cache \
-                --build-arg VERSION=$TAG \
-                -t $FULL_TAG $dir
+              VERSION=$(cat $dir/VERSION | tr -d ' ')  # VERSIONファイルからバージョンを取得
+              echo "VERSION=$VERSION" >> $GITHUB_ENV  # 環境変数にセット
+              echo "Version set to: $VERSION"
             else
-              echo "Error: VERSION file not found in $dir, skipping..."
+              echo "No VERSION file found in $dir, skipping..."
             fi
           done
 
+       - name: Build and push images
+         uses: docker/build-push-action@v6
+         with:
+           image: kometchtech/${dir//\//-}
+           tags: latest, ${{ env.VERSION }}
+           enableBuildKit: true
+           multiPlatform: linux/amd64,linux/arm64
+           buildArgs: VERSION=${{ env.VERSION }}
+           registry: docker.io
+           username: ${{ secrets.DOCKER_USERNAME }}
+           password: ${{ secrets.DOCKER_PASSWORD }}
+           
