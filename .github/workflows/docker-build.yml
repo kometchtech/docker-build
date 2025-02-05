@@ -97,7 +97,6 @@ jobs:
           context: ${{ env.changed_dirs }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
-          outputs: type=image,name=${{ env.changed_dirs }},push-by-digest=true,name-canonical=true,push=true
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           
