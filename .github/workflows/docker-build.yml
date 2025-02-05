@@ -15,7 +15,10 @@ jobs:
       - name: Checkout repository with full history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 過去の履歴をすべて取得
+          fetch-depth: 0  # 全コミットを取得
+
+      - name: Ensure latest commit is checked out
+        run: git checkout ${{ github.sha }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -61,6 +64,7 @@ jobs:
 
               docker buildx build --platform linux/amd64,linux/arm64 \
                 --push \
+                --no-cache \
                 -t $IMAGE_NAME:$TAG $dir
             fi
           done
