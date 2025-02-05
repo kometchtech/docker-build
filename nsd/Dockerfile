@@ -45,6 +45,12 @@ RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 # Intermediate container with runtime dependencies
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
+# Add labels
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      arch="$TARGETPLATFORM" \
+      description="NLnet Labs Name Server Daemon (NSD) - Authoritative DNS server" \
+      url="https://nlnetlabs.nl/projects/nsd/about/"
+
 # Install runtime dependencies
 ENV RUN_PKGS="openssl libevent-2.1-7 ca-certificates ldnsutils tzdata tini"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -61,7 +67,9 @@ COPY --from=build /tmp/root/ /
 
 # Set up environment and configuration
 ENV TZ=Asia/Tokyo
-EXPOSE 53/tcp 53/udp 8952/tcp
+EXPOSE 53/tcp 
+EXPOSE 53/udp 
+EXPOSE 8952/tcp
 STOPSIGNAL SIGTERM
 WORKDIR /etc/nsd
 
@@ -78,8 +86,3 @@ RUN ldconfig / \
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
 
-# Add labels
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="$TARGETPLATFORM" \
-      description="NLnet Labs Name Server Daemon (NSD) - Authoritative DNS server" \
-      url="https://nlnetlabs.nl/projects/nsd/about/"
