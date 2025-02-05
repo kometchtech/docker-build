@@ -37,7 +37,8 @@ RUN cd /tmp/build \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j"$(nproc)" \
+    #&& make -j"$(nproc)" \
+    && make -j4 \
     && make install DESTDIR=/tmp/root
 RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 
