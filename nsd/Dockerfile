@@ -3,9 +3,9 @@ FROM --platform=$TARGETPLATFORM debian:latest AS build
 
 # Environment
 ARG VERSION=4.2.0
-ARG BUILD_BASE="build-essential make gawk autoconf automake mold libtool curl "
+ARG BUILD_BASE="build-essential make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} libexpat1-dev libssl-dev libevent-dev zlib1g-dev bison libfl-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer  "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 
@@ -37,7 +37,7 @@ RUN cd /tmp/build \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j4 \
+    && make -j1 \
     && make install DESTDIR=/tmp/root
 RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 
