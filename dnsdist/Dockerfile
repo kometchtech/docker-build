@@ -6,10 +6,10 @@ ENV USE_CCACHE=1
 ENV CCACHE_DIR=/root/.ccache
 ENV set CC='ccache gcc'
 ARG VERSION
-ARG BUILD_BASE="build-essential binutils mold make gawk autoconf automake libtool curl ccache"
+ARG BUILD_BASE="build-essential binutils make gawk autoconf automake libtool curl ccache"
 ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev libluajit-5.1-dev \
                libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libh2o-evloop-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O3 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 
@@ -49,7 +49,7 @@ RUN cd /usr/src \
       --enable-static \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /usr/src \
-    && make -j1 \
+    && make -j2 \
     && make install-strip DESTDIR=/tmp/root
 RUN ldconfig /
 RUN rm -rf /tmp/root/usr/local/share/man/*
