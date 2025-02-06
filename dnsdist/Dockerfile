@@ -2,8 +2,11 @@
 FROM --platform=$TARGETPLATFORM debian:latest AS build
 
 # Env
+ENV USE_CCACHE=1
+ENV CCACHE_DIR=/root/.ccache
+ENV set CC='ccache gcc'
 ARG VERSION
-ARG BUILD_BASE="build-essential binutils mold make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-essential binutils mold make gawk autoconf automake libtool curl ccache"
 ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev libluajit-5.1-dev \
                libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libh2o-evloop-dev "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
