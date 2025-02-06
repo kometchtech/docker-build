@@ -2,7 +2,7 @@
 FROM --platform=$TARGETPLATFORM debian:latest AS build
 
 # Env
-ARG VERSION="1.4.0-beta1"
+ARG VERSION
 ARG BUILD_BASE="build-essential binutils mold make gawk autoconf automake libtool curl "
 ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev libluajit-5.1-dev \
                libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libh2o-evloop-dev "
