@@ -46,7 +46,7 @@ RUN cd /usr/src \
       --enable-static \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /usr/src \
-    && make -j"$(nproc)" \
+    && make -j1 \
     && make install-strip DESTDIR=/tmp/root
 RUN ldconfig /
 RUN rm -rf /tmp/root/usr/local/share/man/*
