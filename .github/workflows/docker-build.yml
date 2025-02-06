@@ -87,7 +87,7 @@ jobs:
       - name: Build and push images
         uses: docker/build-push-action@v6
         with:
-          image: "kometchtech/${{ env.changed_dirs }}"
+          #image: "kometchtech/${{ env.changed_dirs }}"
           tags: |
             kometchtech/${{ env.changed_dirs }}:latest
             kometchtech/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
