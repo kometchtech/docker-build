@@ -9,10 +9,17 @@ FROM --platform=$TARGETPLATFORM rust:latest AS build-env
 
 ARG VERSION
 ARG SOURCE_FILE
-ARG SOURCE_SHA256
+#ARG SOURCE_SHA256
 
-ARG FEATURES="dnssec-openssl,dns-over-https-rustls,dnssec-ring,dnssec,resolver,sqlite,backtrace,dns-over-native-tls,dns-over-openssl"
-ARG BUILD_PKGS="libssl-dev"
+# https://docs.rs/crate/hickory-dns/0.24.2/features
+## version 0.24.2
+#ARG DEFAULT_FEATURES="ascii-art,resolver,sqlite"
+#ARG FEATURES="dns-over-h3,dns-over-quic,dns-over-rustls,dns-over-https-rustls,dnssec,dnssec-openssl,recursor,$DEFAULT_FEATURES"
+## version 0.25.0-alpha.5
+# https://docs.rs/crate/hickory-dns/0.25.0-alpha.5/features
+ARG DEFAULT_FEATURES="ascii-art,resolver,rustls-platform-verifier,sqlite"
+ARG FEATURES="dns-over-h3,dns-over-https-rustls,dns-over-quic,dns-over-rustls,dns-over-tls,dnssec-ring,recursor,$DEFAULT_FEATURES"
+ARG BUILD_PKGS="libssl-dev "
 
 WORKDIR /workspace
 RUN \
@@ -21,6 +28,7 @@ RUN \
 #    sha256sum -s -c -w /tmp/hickory-dns.tar.gz.sha256sum; \
     tar --strip-components=1 --directory /workspace -xzvf /tmp/hickory-dns.tar.gz; \
     rm /tmp/hickory-dns.tar.gz;
+
 # Install build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y ${BUILD_BASE} ${BUILD_PKGS} \
