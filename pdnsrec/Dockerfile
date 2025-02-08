@@ -4,9 +4,11 @@ FROM --platform=$TARGETPLATFORM rust:latest AS build
 # Environment
 ARG VERSION="4.2.0"
 ARG BUILD_PKGS="build-essential mold gawk autoconf automake libtool curl libboost-all-dev liblua5.3-dev libedit-dev libsodium-dev libprotobuf-dev libgnutls28-dev libatomic-ops-dev libsnmp-dev libfstrm-dev libcurl4"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
-ARG CXXFLAGS="${CFLAGS}"
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+#ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer  "
+ARG CFLAGS="-Os -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS} "
+#ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+ARG LDFLAGS="-Wl,--as-needed -rdynamic "
 
 # Dev package install and build
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
