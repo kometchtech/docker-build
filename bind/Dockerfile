@@ -41,7 +41,7 @@ RUN set -ex \
         --with-readline \
 #        --without-python \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j"$(nproc)" \
+    && make -j2 \
     && make install DESTDIR=/tmp/root \
     && ldconfig / \
     && mkdir -p /tmp/root/var/cache/named \
