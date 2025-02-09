@@ -52,7 +52,7 @@ FROM debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libprotobuf-c1 tzdata openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu8 tini libjemalloc2 libidn2-0 \
-              libfstrm0 liblmdb0 bmaxminddb0 "
+              libfstrm0 liblmdb0 libmaxminddb0 "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
