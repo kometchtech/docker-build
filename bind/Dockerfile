@@ -3,7 +3,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS build
 
 # Environment
 ARG VERSION
-ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl \
+ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl clang \
                 libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev zlib1g-dev libjemalloc-dev \
                 libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates"
 #ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
@@ -12,6 +12,8 @@ ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl \
 ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--as-needed -rdynamic "
+ARG CC=clang
+ARG CXX=clang++
 
 # Install build dependencies and build BIND
 RUN set -ex \
@@ -53,7 +55,7 @@ RUN set -ex \
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu8 tini"
+ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu8 tini libjemalloc2 "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
