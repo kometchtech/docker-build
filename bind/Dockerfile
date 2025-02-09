@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-FROM debian:stable-slim AS build
+FROM debian:stable AS build
 
 # Environment
 ARG VERSION
@@ -34,7 +34,7 @@ RUN cd /tmp/build \
         --with-maxminddb \
         --enable-fixed-rrset \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j1 \
+    && make -j$(nproc) \
     && make install DESTDIR=/tmp/root \
     && ldconfig / \
     && mkdir -p /tmp/root/var/cache/named \
