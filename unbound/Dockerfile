@@ -3,11 +3,14 @@ FROM --platform=$TARGETPLATFORM debian:stable AS build
 
 # Environment variables
 ARG VERSION="1.9.2" \
-    BUILD_BASE="build-essential mold make gawk autoconf automake libtool" \
-    BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev curl" \
-    CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold" \
-    CXXFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold" \
-    LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+    BUILD_BASE="build-essential make gawk autoconf automake libtool" \
+    BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev curl" 
+#ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
+#ARG CXXFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
+#ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
+ARG CFLAGS="-Os -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS} "
+ARG LDFLAGS="-Wl,--as-needed -rdynamic "
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y  \
@@ -40,8 +43,10 @@ RUN ./configure \
     --with-libnghttp2 \
     --without-pthreads \
     --without-solaris-threads \
+    --enable-static \ 
+    --enable-fully-static \
     && make -j"$(nproc)" \
-    && make strip \
+    && make strip  \
     && make install DESTDIR=/tmp/root
 
 # Runtime stage
@@ -49,7 +54,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim
 
 # Runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl libevent-2.1-7 ca-certificates ldnsutils tzdata expat flex bison \
+    curl openssl libevent-2.1-7 ca-certificates ldnsutils tzdata expat flex bison \
     libhiredis0.14 libsodium23 libnghttp2-14 libexpat1 libprotobuf-c1 bsdmainutils \
     && rm -rf /var/lib/apt/lists/*
 
