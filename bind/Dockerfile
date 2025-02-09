@@ -27,21 +27,13 @@ RUN set -ex \
         --sysconfdir=/etc/named \
         --localstatedir=/var \
         --with-libxml2 \
-#        --with-libtool \
         --disable-static \
-#        --with-openssl \
-#        --with-tuning=large \
         --enable-largefile \
-#        --enable-backtrace \
-#        --enable-symtable \
-#        --with-dlz-filesystem \
-#        --with-dlz-stub \
         --enable-fixed-rrset \
         --with-zlib \
         --with-readline \
-#        --without-python \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j2 \
+    && make -j1 \
     && make install DESTDIR=/tmp/root \
     && ldconfig / \
     && mkdir -p /tmp/root/var/cache/named \
