@@ -83,12 +83,12 @@ jobs:
             fi
           done
 
-      - name: Build and push images for ${{ matrix.arch }}
+      - name: Build and push images for ${{ matrix.platform }}
         uses: docker/build-push-action@v6
         with:
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.changed_dirs }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
           platforms: ${{ matrix.platform }}
           build-args: |
             VERSION=${{ env.RELEASE_VERSION }}
@@ -103,8 +103,8 @@ jobs:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Read version from VERSION file
         id: set-version
@@ -113,7 +113,7 @@ jobs:
       - name: Create Docker Manifest List
         run: |
           ARCHS="${{ matrix.platform }}"  # 必要なアーキテクチャを列挙（将来追加可）
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.changed_dirs }}"
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
           
           # `--amend` を動的に構築
           AMEND_ARGS=""
@@ -129,7 +129,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           ARCHS="${{ matrix.platform }}"
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.changed_dirs }}"
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
 
           AMEND_ARGS=""
           for ARCH in $ARCHS; do
