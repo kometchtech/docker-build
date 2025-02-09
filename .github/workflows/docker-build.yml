@@ -116,10 +116,8 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-
-
   merge:
-    needs:
+    needs: 
       - build-and-push
     runs-on: ubuntu-latest
     steps:
@@ -136,11 +134,13 @@ jobs:
       - name: Find modified directories
         id: find-dirs
         run: |
-          DIRS=$(find . -type f \( -name "Dockerfile" -o -name "VERSION" \) -exec dirname {} \; | sort -u)
-          # 先頭のドットスラッシュを削除
-          CLEANED_DIRS=$(echo "$DIRS" | sed 's|^\./||')
-          echo "changed_dirs=$CLEANED_DIRS" >> $GITHUB_ENV
-          echo "Found directories: $CLEANED_DIRS"
+          if [ -n "$before_commit" ]; then
+            CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
+            echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+          else
+            echo "No previous commit found, skipping build."
+            echo "changed_dirs=" >> $GITHUB_ENV
+          fi
 
       - name: Set VERSION environment variable
         id: set-version
@@ -152,7 +152,7 @@ jobs:
               echo "Version found: $RELEASE_VERSION in $dir"
               break
             fi
-          done      
+          done
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
