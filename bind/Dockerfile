@@ -3,7 +3,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS build
 
 # Environment
 ARG VERSION
-ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl clang \
+ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl ldnsutils clang \
                 libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev zlib1g-dev libjemalloc-dev \
                 libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates"
 #ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
