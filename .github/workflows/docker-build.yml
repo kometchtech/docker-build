@@ -223,4 +223,4 @@ jobs:
         with:
           inputs: ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest
           images: ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest-amd64,${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest-arm64           
-        push: true
+          push: true
