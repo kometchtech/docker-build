@@ -2,16 +2,12 @@
 FROM debian:12 AS build
 
 ARG VERSION
-ARG BUILD_PKGS="apt-transport-https ca-certificates wget pipx devscripts "
-
+ARG BUILD_PKGS="apt-transport-https ca-certificates wget pipx devscripts mkdocs "
+#ARG PY_PKGS="python3-psutil python3-six python3-pluggy python3-unidiff python3-joblib python3-lunr  "	
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
-    apt-get -qqq -y install ${BUILD_PKGS} 
-#		apt-transport-https ca-certificates wget python3 python3-pip python3-venv devscripts && \
-#        pip3 install --break-system-packages --no-cache-dir pipx && \
-#        pipx ensurepath 
-#        pipx ensurepath && \
-RUN	pipx install apkg
+    apt-get -qqq -y install ${BUILD_PKGS} ${PY_PKGS}
+RUN pipx install apkg
 
 RUN wget -O /usr/share/keyrings/cznic-labs-pkg.gpg https://pkg.labs.nic.cz/gpg && \
 	echo "deb [signed-by=/usr/share/keyrings/cznic-labs-pkg.gpg] https://pkg.labs.nic.cz/knot-resolver bookworm main" \
@@ -36,7 +32,6 @@ RUN cd /source && \
 	sed -e '/unit_tests=disabled/a -Ddoc=disabled \' -i distro/pkg/deb/rules && \
 	sed 's/USER.*/USER = "root"/g' -i python/knot_resolver/constants.py && \
 	sed 's/GROUP.*/GROUP = "root"/g' -i python/knot_resolver/constants.py && \
-#        git add . && \
 	git commit -a -m TMP && \
 	\
 	/root/.local/bin/apkg build-dep -y && \
