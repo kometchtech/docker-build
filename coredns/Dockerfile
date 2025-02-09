@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-# 1st build
+# build stage
 FROM golang:latest as build-env
 
 ARG VERSION
@@ -17,7 +17,7 @@ RUN cd /go/src/github.com/coredns/coredns/ && \
     make
 
 
-# 2nd build
+# runtime image
 FROM gcr.io/distroless/static-debian12:nonroot
 LABEL maintainer="kometchtech <kometch@gmail.com>"
 LABEL description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function."
