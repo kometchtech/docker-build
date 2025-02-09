@@ -5,7 +5,7 @@ FROM --platform=$TARGETPLATFORM debian:latest AS build
 ARG VERSION
 ARG BUILD_BASE="build-essential binutils make gawk autoconf automake libtool curl clang "
 ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev libluajit-5.1-dev \
-               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libh2o-evloop-dev "
+               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libh2o-evloop-dev libfstrm-dev "
 #ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
@@ -39,7 +39,6 @@ RUN cd /usr/src \
       --enable-dns-over-https \
 #      --enable-dns-over-quic \
       --with-re2 \
-      --with-protobuf \
       --with-ebpf \
       --with-xsk \
       --disable-dependency-tracking \
@@ -50,7 +49,7 @@ RUN cd /usr/src \
       --enable-static \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
 RUN cd /usr/src \
-    && make -j1 \
+    && make -j$(nproc) \
     && make install-strip DESTDIR=/tmp/root
 RUN ldconfig /
 RUN rm -rf /tmp/root/usr/local/share/man/*
@@ -61,7 +60,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="tzdata liblua5.1-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl \
-	      libnghttp2-14 libgnutls30 libxdp1 libbpf1 libh2o-evloop0.13 libluajit-5.1-2 "
+	      libnghttp2-14 libgnutls30 libxdp1 libbpf1 libh2o-evloop0.13 libluajit-5.1-2 libfstrm0 "
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
