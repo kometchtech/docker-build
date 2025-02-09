@@ -2,13 +2,16 @@
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS build
 
 # Environment
-ARG VERSION="9.15.0"
-ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl mold \
+ARG VERSION
+ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl \
                 libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev zlib1g-dev \
                 libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
-ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++"
-ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed"
+#ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
+#ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++"
+#ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed"
+ARG CFLAGS="-Os -fomit-frame-pointer "
+ARG CXXFLAGS="${CFLAGS} "
+ARG LDFLAGS="-Wl,--as-needed -rdynamic "
 
 # Install build dependencies and build BIND
 RUN set -ex \
