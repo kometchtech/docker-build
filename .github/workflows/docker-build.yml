@@ -16,6 +16,12 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+          - linux/arm/v7
 
     steps:
       - name: Checkout repository with full history
@@ -77,15 +83,59 @@ jobs:
             fi
           done
 
-      - name: Build and push images
+      - name: Build and push images for ${{ matrix.arch }}
         uses: docker/build-push-action@v6
         with:
           tags: |
-            kometchtech/${{ env.changed_dirs }}:latest
-            kometchtech/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.changed_dirs }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
+          platforms: ${{ matrix.platform }}
           build-args: |
             VERSION=${{ env.RELEASE_VERSION }}
           context: ${{ env.changed_dirs }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Read version from VERSION file
+        id: set-version
+        run: echo "VERSION=$(cat ./VERSION | tr -d ' ')" >> $GITHUB_ENV
+
+      - name: Create Docker Manifest List
+        run: |
+          ARCHS="${{ matrix.platform }}"  # 必要なアーキテクチャを列挙（将来追加可）
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.changed_dirs }}"
+          
+          # `--amend` を動的に構築
+          AMEND_ARGS=""
+          for ARCH in $ARCHS; do
+            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}"
+          done
+
+          # マルチアーキテクチャの Docker イメージを作成・プッシュ
+          docker manifest create $IMAGE_NAME:${VERSION} $AMEND_ARGS
+          docker manifest push $IMAGE_NAME:${VERSION}
+
+      - name: Create and Push Docker Manifest (Latest)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          ARCHS="${{ matrix.platform }}"
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.changed_dirs }}"
+
+          AMEND_ARGS=""
+          for ARCH in $ARCHS; do
+            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}"
+          done
+
+          docker manifest create $IMAGE_NAME:latest $AMEND_ARGS
+          docker manifest push $IMAGE_NAME:latest
+
