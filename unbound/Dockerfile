@@ -96,5 +96,3 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="Unbound is a validating, recursive, caching DNS resolver." \
       url="https://nlnetlabs.nl/projects/unbound/about/"
 
-# Run as non-root user
-#USER unbound
