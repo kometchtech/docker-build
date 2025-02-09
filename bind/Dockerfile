@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-FROM --platform=$TARGETPLATFORM debian:stable-slim AS build
+FROM debian:stable-slim AS build
 
 # Environment
 ARG VERSION
@@ -44,7 +44,7 @@ RUN set -ex \
 
 
 # Intermediate container with runtime dependencies
-FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
+FROM debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu8 tini libjemalloc2 "
@@ -79,8 +79,7 @@ STOPSIGNAL SIGTERM
 # Fetch isc BIND libraries from build image
 COPY --from=build /tmp/root/ /
 COPY ./named.conf /etc/named/named.conf
-COPY ./local.zone /var/cache/named/pri/local.zone
-COPY ./local.rev /var/cache/named/pri/local.rev
+COPY ./local.rev ./local.zone /var/cache/named/pri/
 RUN chown -R _named:_named /var/cache/named /etc/named /var/run/named /var/cache/named/dynamic \
     && ldconfig /
 
