@@ -36,8 +36,8 @@ RUN cd /tmp/build \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j$(nproc) \
     && make install DESTDIR=/tmp/root \
-    && ldconfig / \
-    && mkdir -p /tmp/root/var/cache/named \
+    && ldconfig /
+RUN mkdir -p /tmp/root/var/cache/named \
     && rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* \
     && curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cache/named/named.ca \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
