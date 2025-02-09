@@ -3,11 +3,13 @@ FROM --platform=$TARGETPLATFORM debian:stable AS build
 
 # Environment variables
 ARG VERSION="1.9.2" \
-    BUILD_BASE="build-essential make gawk autoconf automake libtool curl ldnsutils " \
+    BUILD_BASE="build-essential make gawk autoconf automake libtool curl ldnsutils clang " \
     BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev libprotobuf-c-dev protobuf-c-compiler" 
 ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,--as-needed -rdynamic "
+ARG LDFLAGS="-Wl,--as-needed "
+ARG CC=clang
+ARG CXX=Clang++
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y ${BUILD_BASE} ${BUILD_PKGS} \
@@ -21,7 +23,7 @@ RUN curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.ta
 RUN ./configure \
     --prefix=/usr/local \
     --with-libevent \
-    --disable-dependency-tracking \
+#    --disable-dependency-tracking \
     --sysconfdir=/etc/unbound \
     --with-conf-file=/etc/unbound/unbound.conf \
     --with-pidfile=/var/run/unbound.pid \
