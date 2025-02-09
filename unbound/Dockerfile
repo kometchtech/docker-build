@@ -5,9 +5,6 @@ FROM --platform=$TARGETPLATFORM debian:stable AS build
 ARG VERSION="1.9.2" \
     BUILD_BASE="build-essential make gawk autoconf automake libtool" \
     BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev curl" 
-#ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
-#ARG CXXFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
-#ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now"
 ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--as-needed -rdynamic "
