@@ -14,7 +14,7 @@ RUN apt-get update && \
 RUN git clone -b v${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
 #RUN git clone  https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
 RUN cd /go/src/github.com/coredns/coredns/ && \
-    make
+    make -j$(nproc)
 
 
 # runtime image
