@@ -81,7 +81,7 @@ jobs:
       - name: Upload changed directories
         uses: actions/upload-artifact@v4
         with:
-          name: changed-directories
+          name: changed-directories-${{ env.PLATFORM_PAIR }}
           path: changed_dirs.txt
           retention-days: 1
 
@@ -138,13 +138,15 @@ jobs:
       - name: Download changed directories
         uses: actions/download-artifact@v4
         with:
-          name: changed-directories
-          path: .
+          pattern: changed-directories-*
+          merge-multiple: true
+          path: ./changed-dirs
 
       - name: Set changed directories
         id: set-dirs
         run: |
-          CHANGED_DIRS=$(cat changed_dirs.txt)
+          # 最初のファイル内容を使用
+          CHANGED_DIRS=$(cat ./changed-dirs/changed_dirs.txt)
           echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
           echo "Using directories: $CHANGED_DIRS"
 
