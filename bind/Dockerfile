@@ -4,8 +4,8 @@ FROM debian:stable-slim AS build
 # Environment
 ARG VERSION
 ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl ldnsutils clang \
-                libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev zlib1g-dev libjemalloc-dev \
-                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates"
+                libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev libjemalloc-dev libidn2-dev libfstrm-dev \
+                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates liblmdb-dev "
 #ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
 #ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++"
 #ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed"
@@ -26,12 +26,15 @@ RUN set -ex \
         --prefix=/usr/local \
         --sysconfdir=/etc/named \
         --localstatedir=/var \
-        --with-libxml2 \
+        --enable-shared \
         --disable-static \
-        --enable-largefile \
+        --with-gssapi \
+        --with-libidn2 \
+        --with-json-c \
+        --with-lmdb=/usr/local \
+        --with-gnu-ld \
+        --with-maxminddb \
         --enable-fixed-rrset \
-        --with-zlib \
-        --with-readline \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j1 \
     && make install DESTDIR=/tmp/root \
@@ -47,7 +50,8 @@ RUN set -ex \
 FROM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="libprotobuf-c1 tzdata zlib1g openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu8 tini libjemalloc2 "
+ARG RUN_PKGS="libprotobuf-c1 tzdata openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu8 tini libjemalloc2 libidn2-0 \
+              libfstrm0 liblmdb0 "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
