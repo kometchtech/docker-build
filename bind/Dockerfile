@@ -4,7 +4,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS build
 # Environment
 ARG VERSION
 ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl \
-                libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev zlib1g-dev \
+                libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev zlib1g-dev libjemalloc-dev \
                 libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates"
 #ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
 #ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++"
@@ -25,19 +25,19 @@ RUN set -ex \
         --sysconfdir=/etc/named \
         --localstatedir=/var \
         --with-libxml2 \
-        --with-libtool \
+#        --with-libtool \
         --disable-static \
-        --with-openssl \
-        --with-tuning=large \
+#        --with-openssl \
+#        --with-tuning=large \
         --enable-largefile \
-        --enable-backtrace \
-        --enable-symtable \
-        --with-dlz-filesystem \
-        --with-dlz-stub \
+#        --enable-backtrace \
+#        --enable-symtable \
+#        --with-dlz-filesystem \
+#        --with-dlz-stub \
         --enable-fixed-rrset \
         --with-zlib \
         --with-readline \
-        --without-python \
+#        --without-python \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j"$(nproc)" \
     && make install DESTDIR=/tmp/root \
