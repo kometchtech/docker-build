@@ -67,7 +67,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
 # Final container
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="$TARGETPLATFORM" \
       description="BIND is open source software that enables you to publish your \
                   Domain Name System (DNS) information on the Internet, and to \
                   resolve DNS queries for your users.  The name BIND stands for \
