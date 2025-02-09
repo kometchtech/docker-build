@@ -70,10 +70,20 @@ jobs:
           if [ -n "$before_commit" ]; then
             CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
             echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+            # 変更されたディレクトリをファイルに保存
+            echo "$CHANGED_DIRS" > changed_dirs.txt
           else
             echo "No previous commit found, skipping build."
             echo "changed_dirs=" >> $GITHUB_ENV
           fi
+
+      # 変更されたディレクトリ情報をアーティファクトとして保存
+      - name: Upload changed directories
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-directories
+          path: changed_dirs.txt
+          retention-days: 1
 
       - name: Set VERSION environment variable
         id: set-version
@@ -124,23 +134,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 変更されたディレクトリ情報を取得
+      - name: Download changed directories
+        uses: actions/download-artifact@v4
+        with:
+          name: changed-directories
+          path: .
+
+      - name: Set changed directories
+        id: set-dirs
+        run: |
+          CHANGED_DIRS=$(cat changed_dirs.txt)
+          echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+          echo "Using directories: $CHANGED_DIRS"
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           path: ${{ runner.temp }}/digests
           pattern: digests-*
           merge-multiple: true
-
-      - name: Find modified directories
-        id: find-dirs
-        run: |
-          if [ -n "$before_commit" ]; then
-            CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
-            echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
-          else
-            echo "No previous commit found, skipping build."
-            echo "changed_dirs=" >> $GITHUB_ENV
-          fi
 
       - name: Set VERSION environment variable
         id: set-version
