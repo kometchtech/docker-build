@@ -43,6 +43,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # メモリ制限の設定を追加
+      - name: Configure build memory limits
+        run: |
+          echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
+          echo "BUILDKIT_STEP_LOG_MAX_SIZE=10485760" >> $GITHUB_ENV
+          echo "BUILDKIT_STEP_LOG_MAX_SPEED=10485760" >> $GITHUB_ENV
+
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
@@ -111,6 +118,8 @@ jobs:
           provenance: false
           outputs: |
             type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }},push-by-digest=true
+          cache-from: type=gha
+          cache-to: gha,mode=max
 
       - name: Export digest
         run: |
