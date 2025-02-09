@@ -92,16 +92,15 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
+          context: ${{ env.changed_dirs }}
           platforms: ${{ matrix.platform }}
           build-args: |
             VERSION=${{ env.RELEASE_VERSION }}
-          context: ${{ env.changed_dirs }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
-          outputs: type=image,"name=docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}",push-by-digest=true,name-canonical=true,push=true
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}-${{ env.PLATFORM_PAIR }}
+          outputs: type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }},push-by-digest=true
+
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
@@ -121,6 +120,9 @@ jobs:
       - build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
@@ -128,44 +130,45 @@ jobs:
           pattern: digests-*
           merge-multiple: true
 
+      - name: Find modified directories
+        id: find-dirs
+        run: |
+          CHANGED_DIRS=$(find . -type f -name "Dockerfile" -o -name "VERSION" | xargs -I {} dirname {} | sort -u)
+          echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+
+      - name: Set VERSION environment variable
+        id: set-version
+        run: |
+          for dir in ${{ env.changed_dirs }}; do
+            if [ -f "$dir/VERSION" ]; then
+              RELEASE_VERSION=$(cat $dir/VERSION | tr -d ' ')
+              echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+              break
+            fi
+          done
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Read version from VERSION file
-        id: set-version
-        run: echo "VERSION=$(cat ./VERSION | tr -d ' ')" >> $GITHUB_ENV
-
-      - name: Create Docker Manifest List
-        working-directory: ${{ runner.temp }}/digests
+      - name: Create and push manifest
         run: |
-          ARCHS="${{ matrix.platform }}"  # 必要なアーキテクチャを列挙（将来追加可）
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
-          
-          # `--amend` を動的に構築
-          AMEND_ARGS=""
-          for ARCH in $ARCHS; do
-            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}"
+          for dir in ${{ env.changed_dirs }}; do
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${dir#./}"
+            
+            # Create and push versioned manifest
+            docker manifest create $IMAGE_NAME:${{ env.RELEASE_VERSION }} \
+              $IMAGE_NAME:${{ env.RELEASE_VERSION }}-linux-amd64 \
+              $IMAGE_NAME:${{ env.RELEASE_VERSION }}-linux-arm64
+            docker manifest push $IMAGE_NAME:${{ env.RELEASE_VERSION }}
+
+            # Create and push latest manifest
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              docker manifest create $IMAGE_NAME:latest \
+                $IMAGE_NAME:${{ env.RELEASE_VERSION }}-linux-amd64 \
+                $IMAGE_NAME:${{ env.RELEASE_VERSION }}-linux-arm64
+              docker manifest push $IMAGE_NAME:latest
+            fi
           done
-
-          # マルチアーキテクチャの Docker イメージを作成・プッシュ
-          docker manifest create $IMAGE_NAME:${VERSION} $AMEND_ARGS
-          docker manifest push $IMAGE_NAME:${VERSION}
-
-      - name: Create and Push Docker Manifest (Latest)
-        working-directory: ${{ runner.temp }}/digests
-        if: github.ref == 'refs/heads/main'
-        run: |
-          ARCHS="${{ matrix.platform }}"
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
-
-          AMEND_ARGS=""
-          for ARCH in $ARCHS; do
-            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}"
-          done
-
-          docker manifest create $IMAGE_NAME:latest $AMEND_ARGS
-          docker manifest push $IMAGE_NAME:latest
-
