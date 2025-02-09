@@ -10,9 +10,9 @@ ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl ldn
 #ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold"
 #ARG CXXFLAGS="${CFLAGS} -std=c++11 -stdlib=libc++ -nostdinc++"
 #ARG LDFLAGS="-Wl,-O2 -Wl,-z,relro -Wl,-z,now -Wl,--as-needed"
-ARG CFLAGS="-Os -fomit-frame-pointer "
+ARG CFLAGS="-O2 -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,--as-needed -rdynamic "
+ARG LDFLAGS="-Wl,--as-needed "
 ARG CC=clang
 ARG CXX=clang++
 
