@@ -1,0 +1,11 @@
+$TTL 86400
+@               IN      SOA     localhost.      root.localhost. (
+  2018031100 ; serial
+  28800  ; refresh 8hr
+  14400  ; retry 4hr
+  604800 ; expire 1w
+  86400  ; default_ttl 24hr
+ )
+
+              IN      NS      localhost.
+              IN      A       127.0.0.1
