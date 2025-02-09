@@ -39,7 +39,7 @@ RUN cd /usr/src \
       --enable-dns-over-https \
 #      --enable-dns-over-quic \
       --with-re2 \
-      --with-protobuf \
+#      --with-protobuf \
       --with-ebpf \
       --with-xsk \
       --disable-dependency-tracking \
