@@ -34,7 +34,7 @@ RUN cd /tmp/build \
         --with-maxminddb \
         --enable-fixed-rrset \
         CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j$(nproc) \
+    && make -j1 \
     && make install DESTDIR=/tmp/root \
     && ldconfig /
 RUN mkdir -p /tmp/root/var/cache/named \
