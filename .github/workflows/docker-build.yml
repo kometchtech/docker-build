@@ -17,13 +17,18 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - linux/amd64
           - linux/arm64
-            #          - linux/arm/v7
 
     steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
       - name: Checkout repository with full history
         uses: actions/checkout@v4
         with:
@@ -95,11 +100,33 @@ jobs:
           context: ${{ env.changed_dirs }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
+          outputs: type=image, "name=docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}", push-by-digest=true,name-canonical=true,push=true
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
-  manifest:
-    needs: build-and-push
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    needs: 
+      - build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -111,6 +138,7 @@ jobs:
         run: echo "VERSION=$(cat ./VERSION | tr -d ' ')" >> $GITHUB_ENV
 
       - name: Create Docker Manifest List
+        working-directory: ${{ runner.temp }}/digests
         run: |
           ARCHS="${{ matrix.platform }}"  # 必要なアーキテクチャを列挙（将来追加可）
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
@@ -126,6 +154,7 @@ jobs:
           docker manifest push $IMAGE_NAME:${VERSION}
 
       - name: Create and Push Docker Manifest (Latest)
+        working-directory: ${{ runner.temp }}/digests
         if: github.ref == 'refs/heads/main'
         run: |
           ARCHS="${{ matrix.platform }}"
