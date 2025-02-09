@@ -45,7 +45,7 @@ RUN ./configure \
     --without-solaris-threads \
     --enable-static \ 
     --enable-fully-static \
-    && make -j"$(nproc)" \
+    && make -j1 \
     && make strip  \
     && make install DESTDIR=/tmp/root
 
