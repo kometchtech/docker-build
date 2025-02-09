@@ -3,15 +3,14 @@ FROM --platform=$TARGETPLATFORM debian:stable AS build
 
 # Environment variables
 ARG VERSION="1.9.2" \
-    BUILD_BASE="build-essential make gawk autoconf automake libtool" \
-    BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev curl" 
+    BUILD_BASE="build-essential make gawk autoconf automake libtool curl ldnsutils " \
+    BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev libprotobuf-c-dev protobuf-c-compiler" 
 ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--as-needed -rdynamic "
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y  \
-    ${BUILD_BASE} ${BUILD_PKGS} \
+RUN apt-get update && apt-get install -y ${BUILD_BASE} ${BUILD_PKGS} \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and extract Unbound source
@@ -22,7 +21,7 @@ RUN curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.ta
 RUN ./configure \
     --prefix=/usr/local \
     --with-libevent \
-    --with-ssl \
+    --disable-dependency-tracking \
     --sysconfdir=/etc/unbound \
     --with-conf-file=/etc/unbound/unbound.conf \
     --with-pidfile=/var/run/unbound.pid \
@@ -30,18 +29,13 @@ RUN ./configure \
     --enable-sha2 \
     --disable-gost \
     --disable-ecdsa \
-    --enable-pie \
-    --enable-relro-now \
     --enable-tfo-server \
     --enable-tfo-client \
     --enable-cachedb \
     --with-libhiredis \
     --enable-dnscrypt \
     --with-libnghttp2 \
-    --without-pthreads \
-    --without-solaris-threads \
-    --enable-static \ 
-    --enable-fully-static \
+    --with-pthreads \
     && make -j1 \
     && make strip  \
     && make install DESTDIR=/tmp/root
