@@ -93,3 +93,4 @@ RUN chmod +x /usr/local/sbin/entrypoint.sh
 WORKDIR /etc/named
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 CMD ["/usr/local/sbin/named", "-c", "/etc/named/named.conf", "-g", "-u", "_named"]
+
