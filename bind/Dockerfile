@@ -19,10 +19,10 @@ ARG CXX=clang++
 # Install build dependencies and build BIND
 RUN set -ex \
     && DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get install -y --no-install-recommends ${BUILD_PKGS} \
-    && mkdir -p /tmp/build \
-    && curl -fsSL "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" | tar xJ --strip-components=1 -C /tmp/build \
-    && cd /tmp/build \
+    && apt-get install -y --no-install-recommends ${BUILD_PKGS}
+RUN mkdir -p /tmp/build \
+    && curl -fsSL "https://downloads.isc.org/isc/bind9/${VERSION}/bind-${VERSION}.tar.xz" | tar xJ --strip-components=1 -C /tmp/build
+RUN cd /tmp/build \
     && ./configure \
         --prefix=/usr/local \
         --sysconfdir=/etc/named \
