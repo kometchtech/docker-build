@@ -63,7 +63,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
 	&& useradd -g _named -s /dev/null -d /etc _named \
     && mkdir -p /etc/named /var/cache/named /var/run/named /var/cache/named/dynamic
 
-
 # Final container
 FROM runtime
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
