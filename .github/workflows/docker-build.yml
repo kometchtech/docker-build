@@ -89,6 +89,7 @@ jobs:
           done
 
       - name: Build and push images for ${{ matrix.platform }}
+        id: build
         uses: docker/build-push-action@v6
         with:
           tags: |
