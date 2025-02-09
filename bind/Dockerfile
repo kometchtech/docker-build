@@ -7,7 +7,7 @@ ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl ldn
                 libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev libjemalloc-dev libidn2-dev libfstrm-dev \
                 libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates \
                 libmaxminddb-dev liblmdb-dev libkrb5-dev "
-ARG CFLAGS="-O2 -fomit-frame-pointer "
+ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--as-needed "
 ARG CC=clang
