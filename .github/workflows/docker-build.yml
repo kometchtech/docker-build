@@ -100,7 +100,7 @@ jobs:
           context: ${{ env.changed_dirs }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
-          outputs: type=image, "name=docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}", push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,"name=docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}",push-by-digest=true,name-canonical=true,push=true
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
