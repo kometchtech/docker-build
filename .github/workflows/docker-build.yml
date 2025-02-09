@@ -97,7 +97,7 @@ jobs:
           no-cache: ${{ inputs.no-cache == true }}
 
   manifest:
-    needs: build
+    needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Docker Hub
