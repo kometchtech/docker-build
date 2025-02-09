@@ -118,8 +118,8 @@ jobs:
           provenance: false
           outputs: |
             type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }},push-by-digest=true
-          cache-from: type=gha
-          cache-to: gha,mode=max
+          cache-from: type=gha 
+          cache-to: type=gha,mode=max
 
       - name: Export digest
         run: |
