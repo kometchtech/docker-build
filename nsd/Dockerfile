@@ -61,6 +61,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && groupadd -r nsd \
     && useradd -r -g nsd -s /sbin/nologin -d /etc/nsd nsd
 
+WORKDIR /etc/nsd
 # Copy NSD from build stage
 COPY --from=build /tmp/root/ /
 
@@ -68,7 +69,6 @@ COPY --from=build /tmp/root/ /
 ENV TZ=Asia/Tokyo
 EXPOSE 53/tcp 53/udp 8952/tcp
 STOPSIGNAL SIGTERM
-WORKDIR /etc/nsd
 
 # Add entrypoint script
 COPY entrypoint.sh /usr/local/sbin/
