@@ -85,3 +85,4 @@ RUN ldconfig / \
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
 
+
