@@ -22,6 +22,7 @@ LABEL maintainer="kometchtech <kometch@gmail.com>"
 LABEL description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function."
 LABEL url="https://github.com/coredns/coredns"
 
+WORKDIR /
 # Environment
 ENV PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV TZ Asia/Tokyo
@@ -35,7 +36,6 @@ COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /coredns
 
 # User
 USER nonroot:nonroot
-WORKDIR /
 
 # Select entrypoint
 ENTRYPOINT ["/coredns"]
