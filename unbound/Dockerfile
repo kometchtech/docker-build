@@ -1,15 +1,13 @@
 # Build stage
-FROM --platform=$TARGETPLATFORM debian:stable AS build
+FROM debian:stable AS build
 
 # Environment variables
-ARG VERSION="1.9.2" \
-    BUILD_BASE="build-essential make gawk autoconf automake libtool curl ldnsutils clang " \
+ARG VERSION \
+    BUILD_BASE="build-essential make gawk autoconf automake libtool curl ldnsutils " \
     BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev libprotobuf-c-dev protobuf-c-compiler" 
 ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--as-needed "
-ARG CC=clang
-ARG CXX=Clang++
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y ${BUILD_BASE} ${BUILD_PKGS} \
@@ -38,12 +36,12 @@ RUN ./configure \
     --enable-dnscrypt \
     --with-libnghttp2 \
     --with-pthreads \
-    && make -j1 \
+    && make -j$(nproc) \
     && make strip  \
     && make install DESTDIR=/tmp/root
 
 # Runtime stage
-FROM --platform=$TARGETPLATFORM debian:stable-slim
+FROM debian:stable-slim
 
 # Runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
