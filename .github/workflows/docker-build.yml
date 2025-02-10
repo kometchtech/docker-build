@@ -87,7 +87,7 @@ jobs:
             VERSION=${{ env.VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ matrix.arch }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ matrix.arch | sed 's/\//-/g' }}
 
     outputs:
       version: ${{ env.VERSION }}
