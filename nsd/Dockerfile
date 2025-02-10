@@ -3,11 +3,13 @@ FROM debian:latest AS build
 
 # Environment
 ARG VERSION
-ARG BUILD_BASE="build-essential make gawk autoconf automake libtool curl binutils "
+ARG BUILD_BASE="build-essential make gawk autoconf automake libtool curl binutils clang "
 ARG BUILD_PKGS="${BUILD_BASE} libexpat1-dev libssl-dev libevent-dev zlib1g-dev bison libfl-dev "
 ARG CFLAGS="-O2 -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--as-needed -rdynamic "
+ARG CC=clang
+ARG CXX=clang++
 
 # source build and install
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
