@@ -40,7 +40,9 @@ jobs:
       fail-fast: false
       matrix:
         dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
-        arch: [linux/amd64, linux/arm64]
+        arch: 
+          - amd64 
+          - arm64
 
     steps:
       - name: Checkout repository
@@ -55,7 +57,7 @@ jobs:
         uses: docker/setup-qemu-action@v3.3.0
         with:
           image: tonistiigi/binfmt:qemu-v8.1.5
-          platforms: ${{ matrix.platform }}
+          platforms: ${{ matrix.arch }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -100,7 +102,7 @@ jobs:
       - name: Create and Push Docker Manifest
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
-          ARCHS="linux/amd64 linux/arm64"
+          ARCHS="${{ join(matrix.arch, ' ') }}"  # matrixからARCHSを取得
 
           AMEND_ARGS=""
           for ARCH in $ARCHS; do
