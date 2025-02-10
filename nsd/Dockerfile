@@ -1,8 +1,8 @@
 # syntax = docker/dockerfile:experimental
-FROM --platform=$TARGETPLATFORM debian:latest AS build
+FROM debian:latest AS build
 
 # Environment
-ARG VERSION=4.2.0
+ARG VERSION
 ARG BUILD_BASE="build-essential make gawk autoconf automake libtool curl binutils "
 ARG BUILD_PKGS="${BUILD_BASE} libexpat1-dev libssl-dev libevent-dev zlib1g-dev bison libfl-dev "
 ARG CFLAGS="-Os -fomit-frame-pointer "
@@ -43,11 +43,10 @@ RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 
 
 # Intermediate container with runtime dependencies
-FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
+FROM debian:stable-slim AS runtime
 
 # Add labels
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="$TARGETPLATFORM" \
       description="NLnet Labs Name Server Daemon (NSD) - Authoritative DNS server" \
       url="https://nlnetlabs.nl/projects/nsd/about/"
 
