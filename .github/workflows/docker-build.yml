@@ -32,8 +32,8 @@ jobs:
             CHANGED_DIRS="[]"
           fi
           echo "Changed directories: $CHANGED_DIRS"
-          echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(" ")')" >> $GITHUB_ENV
-          echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
+          echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(\" \")')" >> $GITHUB_ENV
+          echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(\" \")')" >> $GITHUB_OUTPUT
 
   build:
     needs: detect-changes
@@ -85,7 +85,7 @@ jobs:
             VERSION=${{ env.VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ matrix.arch/-//}}
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ matrix.arch }}
 
     outputs:
       version: ${{ env.VERSION }}
@@ -115,7 +115,7 @@ jobs:
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
           AMEND_ARGS=""
           for ARCH in $(echo $ARCHS | jq -r '.[]'); do
-            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-${ARCH/-//}"
+            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$(echo $ARCH | sed 's/\//-/g')"
           done
 
           docker manifest create $IMAGE_NAME:${VERSION} $AMEND_ARGS
@@ -127,7 +127,7 @@ jobs:
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
           AMEND_ARGS=""
           for ARCH in $(echo $ARCHS | jq -r '.[]'); do
-            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-${ARCH/-//}"
+            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$(echo $ARCH | sed 's/\//-/g')"
           done
 
           docker manifest create $IMAGE_NAME:latest $AMEND_ARGS
