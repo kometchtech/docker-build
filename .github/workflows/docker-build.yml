@@ -30,12 +30,11 @@ jobs:
           CHANGED_DIRS=$(git diff --name-only HEAD~1 HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
           if [[ -z "$CHANGED_DIRS" ]]; then
             CHANGED_DIRS="[]"
-          else
-            CHANGED_DIRS=$(echo $CHANGED_DIRS | jq -R -c 'split(" ")')
           fi
           echo "Changed directories: $CHANGED_DIRS"
-          echo "changed_dirs=$(echo $CHANGED_DIRS)" >> $GITHUB_ENV
-          echo "changed_dirs=$(echo $CHANGED_DIRS)" >> $GITHUB_OUTPUT
+          echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(\" \")')" >> $GITHUB_ENV
+          echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(\" \")')" >> $GITHUB_OUTPUT
+
 
   build:
     needs: detect-changes
@@ -50,6 +49,13 @@ jobs:
           - linux/arm64
 
     steps:
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -77,25 +83,34 @@ jobs:
         id: set-version
         run: echo "VERSION=$(cat ${{ matrix.dir }}/VERSION | tr -d ' ')" >> $GITHUB_ENV
 
-      - name: Prepare Arch Tag for Docker
-        id: prepare-arch-tag
-        run: |
-          ARCH_TAG=$(echo ${{ matrix.arch }} | sed 's/\//-/g')
-          echo "ARCH_TAG=$ARCH_TAG" >> $GITHUB_ENV
+#      - name: Prepare Arch Tag for Docker
+#        id: prepare-arch-tag
+#        run: |
+#          ARCH_TAG=$(echo ${{ matrix.arch }} | sed 's/\//-/g')
+#          echo "ARCH_TAG=$ARCH_TAG" >> $GITHUB_ENV
 
-      - name: Build and Push Image
+      - name: Build and Push by Image
         uses: docker/build-push-action@v6
         with:
           context: ./${{ matrix.dir }}
           push: true
           platforms: ${{ matrix.arch }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args:
             VERSION=${{ env.VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ env.ARCH_TAG }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ matrix.arch }}
+
+      - name: Save image digest
+        id: image_digest
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
+          DIGEST=$(docker inspect --format '{{index .RepoDigests 0}}' $IMAGE_NAME:${{ env.VERSION }}-${{ matrix.arch }})
+          echo "DIGEST_${{ matrix.arch }}=$DIGEST" >> $GITHUB_ENV
+          echo "DIGEST_${{ matrix.arch }}=$DIGEST" >> $GITHUB_OUTPUT
 
     outputs:
       version: ${{ env.VERSION }}
@@ -103,9 +118,9 @@ jobs:
       changed_dirs: ${{ matrix.dir }}
 
   manifest:
-    needs: build
+    needs: 
+      - build
     runs-on: ubuntu-latest
-
     steps:
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -121,43 +136,20 @@ jobs:
       - name: Debug ARCHS
         run: echo "ARCHS=${{ needs.build.outputs.archs }}"
 
-      - name: Create and Push Docker Manifest
+      - name: Load digests from build job
         run: |
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ needs.build.outputs.changed_dirs }}"
-          AMEND_ARGS=""
-          echo "Building manifest for ARCHS: $ARCHS"
-          for ARCH in $(echo $ARCHS | jq -r '.[]'); do
-            ARCH_TAG=$(echo $ARCH | sed 's/\//-/g')
-            echo "Adding --amend argument for $ARCH_TAG"
-            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$ARCH_TAG"
-          done
-  
-          # Check if AMEND_ARGS is empty
-          if [ -z "$AMEND_ARGS" ]; then
-            echo "Error: No architectures found for manifest."
-            exit 1
-          fi
-  
-          echo "Final AMEND_ARGS: $AMEND_ARGS"
-  
-          docker manifest create $IMAGE_NAME:${VERSION} $AMEND_ARGS
+          echo "DIGEST_AMD64=${{ needs.build.outputs.DIGEST_linux-amd64 }}" >> $GITHUB_ENV
+          echo "DIGEST_ARM64=${{ needs.build.outputs.DIGEST_linux-arm64 }}" >> $GITHUB_ENV
+
+      - name: Create and Push Docker Manifest (Version)
+        run: |
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
+          docker manifest create $IMAGE_NAME:${VERSION} $DIGEST_AMD64 $DIGEST_ARM64
           docker manifest push $IMAGE_NAME:${VERSION}
-  
+
       - name: Create and Push Docker Manifest (Latest)
         if: github.ref == 'refs/heads/master'
         run: |
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ needs.build.outputs.changed_dirs }}"
-          AMEND_ARGS=""
-          for ARCH in $(echo $ARCHS | jq -r '.[]'); do
-            ARCH_TAG=$(echo $ARCH | sed 's/\//-/g')
-            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$ARCH_TAG"
-          done
-  
-          # Check if AMEND_ARGS is empty
-          if [ -z "$AMEND_ARGS" ]; then
-            echo "Error: No architectures found for manifest."
-            exit 1
-          fi
-  
-          docker manifest create $IMAGE_NAME:latest $AMEND_ARGS
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
+          docker manifest create $IMAGE_NAME:latest $DIGEST_AMD64 $DIGEST_ARM64
           docker manifest push $IMAGE_NAME:latest
