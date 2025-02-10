@@ -69,10 +69,21 @@ jobs:
           if [ -n "$before_commit" ]; then
             CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
             echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+            # 変更されたディレクトリをファイルに保存
+            echo "$CHANGED_DIRS" > changed_dirs.txt
           else
             echo "No previous commit found, skipping build."
-            echo "changed_dirs=" >> $GITHUB_ENV
+            echo "changed_dirs=." >> $GITHUB_ENV
+            echo "." > changed_dirs.txt
           fi
+
+      # 変更されたディレクトリ情報をアーティファクトとして保存
+      - name: Upload changed directories
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-directories
+          path: changed_dirs.txt
+          retention-days: 1
 
       - name: Set VERSION environment variable
         id: set-version
@@ -130,16 +141,50 @@ jobs:
           pattern: digests-*
           merge-multiple: true
 
-      - name: Find modified directories
-        id: find-dirs
+      # 変更されたディレクトリ情報を取得
+      - name: Download changed directories
+        uses: actions/download-artifact@v4
+        with:
+          name: changed-directories
+          path: ./
+
+      - name: Set changed directories
+        id: set-dirs
         run: |
-          if [ -n "$before_commit" ]; then
-            CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
-            echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
-          else
-            echo "No previous commit found, skipping build."
-            echo "changed_dirs=" >> $GITHUB_ENV
+          CHANGED_DIRS=$(cat changed_dirs.txt)
+          echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+          echo "Using directories: $CHANGED_DIRS"
+
+      # プラットフォーム情報を取得
+      - name: Download platform info
+        uses: actions/download-artifact@v4
+        with:
+          name: platform-info
+          path: ./platform-info
+
+      - name: Prepare manifest images
+        id: prepare-manifest
+        run: |
+          # プラットフォーム情報からイメージリストを構築
+          IMAGES=""
+          for platform_file in ./platform-info/platforms-*.txt; do
+            if [ -f "$platform_file" ]; then
+              if [ -n "$IMAGES" ]; then
+                IMAGES="${IMAGES},"
+              fi
+              platform_tag=$(cat "$platform_file")
+              IMAGES="${IMAGES}${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${platform_tag}"
+              echo "Processing file $platform_file with tag: ${platform_tag}"
+            fi
+          done
+          
+          if [ -z "$IMAGES" ]; then
+            echo "Error: No platform files found"
+            exit 1
           fi
+          
+          echo "manifest_images=${IMAGES}" >> $GITHUB_OUTPUT
+          echo "Images to be included in manifest: $IMAGES"
 
       - name: Set VERSION environment variable
         id: set-version
