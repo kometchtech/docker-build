@@ -82,4 +82,3 @@ RUN ldconfig / \
 # Set entrypoint and default command
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
-
