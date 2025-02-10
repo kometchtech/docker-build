@@ -14,47 +14,49 @@ on:
         type: boolean
 
 jobs:
-  detect-changes:
+  build:
+    needs: detect-changes
     runs-on: ubuntu-latest
-    outputs:
-      changed_dirs: ${{ steps.get-dirs.outputs.changed_dirs }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: 
+          - linux/amd64 
+          - linux/arm64
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # すべての履歴を取得
 
-      - name: Get changed directories
-        id: get-dirs
+      - name: Determine previous commit
+        id: previous-commit
         run: |
-          CHANGED_DIRS=$(git diff --name-only HEAD~1 HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
-          if [[ -z "$CHANGED_DIRS" ]]; then
-            CHANGED_DIRS="[]"
+          if [ -z "${{ github.event.before }}" ] || ! git rev-parse ${{ github.event.before }} >/dev/null 2>&1; then
+            BEFORE_COMMIT=$(git rev-parse HEAD^ || echo "")
+          else
+            BEFORE_COMMIT=${{ github.event.before }}
           fi
-          echo "Changed directories: $CHANGED_DIRS"
-          echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(\" \")')" >> $GITHUB_ENV
-          echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(\" \")')" >> $GITHUB_OUTPUT
+          echo "before_commit=$BEFORE_COMMIT" >> $GITHUB_ENV
 
+      - name: Find modified directories
+        id: find-dirs
+        run: |
+          if [ -n "$before_commit" ]; then
+            CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
+            echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+          else
+            echo "No previous commit found, skipping build."
+            echo "changed_dirs=" >> $GITHUB_ENV
+          fi
 
-  build:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.changed_dirs != '[]' }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
-        arch: 
-          - linux/amd64 
-          - linux/arm64
-
-    steps:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -83,16 +85,10 @@ jobs:
         id: set-version
         run: echo "VERSION=$(cat ${{ matrix.dir }}/VERSION | tr -d ' ')" >> $GITHUB_ENV
 
-#      - name: Prepare Arch Tag for Docker
-#        id: prepare-arch-tag
-#        run: |
-#          ARCH_TAG=$(echo ${{ matrix.arch }} | sed 's/\//-/g')
-#          echo "ARCH_TAG=$ARCH_TAG" >> $GITHUB_ENV
-
       - name: Build and Push by Image
         uses: docker/build-push-action@v6
         with:
-          context: ./${{ matrix.dir }}
+          context: ./${{ env.changed_dirs }}
           push: true
           platforms: ${{ matrix.arch }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -102,12 +98,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ matrix.arch }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.VERSION }}-${{ matrix.arch }}
 
       - name: Save image digest
         id: image_digest
         run: |
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
+          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
           DIGEST=$(docker inspect --format '{{index .RepoDigests 0}}' $IMAGE_NAME:${{ env.VERSION }}-${{ matrix.arch }})
           echo "DIGEST_${{ matrix.arch }}=$DIGEST" >> $GITHUB_ENV
           echo "DIGEST_${{ matrix.arch }}=$DIGEST" >> $GITHUB_OUTPUT
@@ -115,7 +111,7 @@ jobs:
     outputs:
       version: ${{ env.VERSION }}
       archs: ${{ toJson(matrix.arch) }}  # <-- ARCHS を outputs に追加
-      changed_dirs: ${{ matrix.dir }}
+      changed_dirs: ${{ env.changed_dirs }}
 
   manifest:
     needs: 
