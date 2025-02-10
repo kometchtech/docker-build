@@ -28,7 +28,7 @@ ENV PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV TZ Asia/Tokyo
 
 # publish port DNS over UDP & TCP
-EXPOSE 53/TCP 53/UDP
+EXPOSE 53/TCP 53/UDP 443/TCP
 
 # copy file
 COPY --from=build-env /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
