@@ -14,7 +14,7 @@ RUN git config --global http.postBuffer 524288000
 RUN git clone -b v${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
 #RUN git clone  https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
 RUN cd /go/src/github.com/coredns/coredns/ && \
-    make -j$(nproc)
+    make -j"$(nproc)"
 
 # runtime image
 FROM gcr.io/distroless/static-debian12:nonroot
