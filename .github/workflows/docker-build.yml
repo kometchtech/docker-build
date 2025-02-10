@@ -74,7 +74,7 @@ jobs:
           else
             echo "No previous commit found, skipping build."
             echo "changed_dirs=." >> $GITHUB_ENV
-            echo "." > changed_dirs_${{ env.PLATFORM_PAIR }}..txt
+            echo "." > changed_dirs_${{ env.PLATFORM_PAIR }}.txt
           fi
 
       # 変更されたディレクトリ情報をアーティファクトとして保存
