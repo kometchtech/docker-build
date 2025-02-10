@@ -42,7 +42,7 @@ RUN cd /tmp/build \
 RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 
 
-# Intermediate container with runtime dependencies
+# runtime build
 FROM debian:stable-slim AS runtime
 
 # Add labels
