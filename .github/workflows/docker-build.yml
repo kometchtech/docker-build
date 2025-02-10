@@ -118,25 +118,46 @@ jobs:
           echo "VERSION=${{ needs.build.outputs.version }}" >> $GITHUB_ENV
           echo "ARCHS=${{ needs.build.outputs.archs }}" >> $GITHUB_ENV
 
+      - name: Debug ARCHS
+        run: echo "ARCHS=${{ needs.build.outputs.archs }}"
+
       - name: Create and Push Docker Manifest
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ needs.build.outputs.changed_dirs }}"
           AMEND_ARGS=""
+          echo "Building manifest for ARCHS: $ARCHS"
           for ARCH in $(echo $ARCHS | jq -r '.[]'); do
-            ARCH_TAG=$(echo $ARCH | sed 's/\//-/g')  # <-- ここで変換
+            ARCH_TAG=$(echo $ARCH | sed 's/\//-/g')
+            echo "Adding --amend argument for $ARCH_TAG"
             AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$ARCH_TAG"
           done
+  
+          # Check if AMEND_ARGS is empty
+          if [ -z "$AMEND_ARGS" ]; then
+            echo "Error: No architectures found for manifest."
+            exit 1
+          fi
+  
+          echo "Final AMEND_ARGS: $AMEND_ARGS"
+  
           docker manifest create $IMAGE_NAME:${VERSION} $AMEND_ARGS
           docker manifest push $IMAGE_NAME:${VERSION}
-
+  
       - name: Create and Push Docker Manifest (Latest)
         if: github.ref == 'refs/heads/master'
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ needs.build.outputs.changed_dirs }}"
           AMEND_ARGS=""
           for ARCH in $(echo $ARCHS | jq -r '.[]'); do
-            ARCH_TAG=$(echo $ARCH | sed 's/\//-/g')  # <-- ここで変換
+            ARCH_TAG=$(echo $ARCH | sed 's/\//-/g')
             AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$ARCH_TAG"
           done
+  
+          # Check if AMEND_ARGS is empty
+          if [ -z "$AMEND_ARGS" ]; then
+            echo "Error: No architectures found for manifest."
+            exit 1
+          fi
+  
           docker manifest create $IMAGE_NAME:latest $AMEND_ARGS
           docker manifest push $IMAGE_NAME:latest
