@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        plarform: 
+        platform: 
           - linux/amd64 
           - linux/arm64
 
