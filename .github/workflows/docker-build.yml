@@ -92,6 +92,8 @@ jobs:
           build-args:
             VERSION=${{ env.VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ env.ARCH_TAG }}
 
