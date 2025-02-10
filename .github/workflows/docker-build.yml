@@ -97,7 +97,7 @@ jobs:
 
     outputs:
       version: ${{ env.VERSION }}
-      archs: ${{ toJson(strategy.matrix.arch) }}  # <-- ARCHS を outputs に追加
+      archs: ${{ toJson(matrix.arch) }}  # <-- ARCHS を outputs に追加
 
   manifest:
     needs: build
