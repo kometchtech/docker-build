@@ -66,9 +66,7 @@ COPY --from=build /tmp/root/ /
 
 # Set up environment and configuration
 ENV TZ=Asia/Tokyo
-EXPOSE 53/tcp 
-EXPOSE 53/udp 
-EXPOSE 8952/tcp
+EXPOSE 53/tcp 53/udp 8952/tcp
 STOPSIGNAL SIGTERM
 WORKDIR /etc/nsd
 
