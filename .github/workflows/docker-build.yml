@@ -105,6 +105,7 @@ jobs:
     strategy:
       matrix:
         dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
+        arch: ${{ fromJson(needs.build.outputs.archs) }}
 
     steps:
       - name: Log in to Docker Hub
