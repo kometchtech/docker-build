@@ -39,3 +39,4 @@ USER nonroot:nonroot
 
 # Select entrypoint
 ENTRYPOINT ["/coredns"]
+
