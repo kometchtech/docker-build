@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: 
+        plarform: 
           - linux/amd64 
           - linux/arm64
 
@@ -74,7 +74,7 @@ jobs:
         uses: docker/setup-qemu-action@v3.3.0
         with:
           image: tonistiigi/binfmt:qemu-v8.1.5
-          platforms: ${{ matrix.arch }}
+          platforms: ${{ matrix.platform }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -104,7 +104,7 @@ jobs:
         with:
           context: ./${{ env.changed_dirs }}
           push: true
-          platforms: ${{ matrix.arch }}
+          platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args:
             VERSION=${{ env.RELEASE_VERSION }}
@@ -130,7 +130,7 @@ jobs:
 
     outputs:
       version: ${{ env.VERSION }}
-      archs: ${{ toJson(matrix.arch) }}  # <-- ARCHS を outputs に追加
+      platforms: ${{ toJson(matrix.platform) }}  # <-- ARCHS を outputs に追加
       changed_dirs: ${{ env.changed_dirs }}
 
   manifest:
@@ -144,13 +144,13 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Load version and archs from previous step
+      - name: Load version and platforms from previous step
         run: |
           echo "VERSION=${{ needs.build-and-push.outputs.version }}" >> $GITHUB_ENV
-          echo "ARCHS=${{ needs.build-and-push.outputs.archs }}" >> $GITHUB_ENV
+          echo "ARCHS=${{ needs.build-and-push.outputs.platforms }}" >> $GITHUB_ENV
 
       - name: Debug ARCHS
-        run: echo "ARCHS=${{ needs.build-and-push.outputs.archs }}"
+        run: echo "ARCHS=${{ needs.build-and-push.outputs.platforms }}"
 
       - name: Download digests
         uses: actions/download-artifact@v4
