@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: changed-directories-${{ env.PLATFORM_PAIR }}
-          path: changed_dirs_env.${{ PLATFORM_PAIR }}.txt
+          path: changed_dirs_env.${{ env.PLATFORM_PAIR }}.txt
           retention-days: 1
 
       - name: Set VERSION environment variable
