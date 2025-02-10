@@ -3,11 +3,11 @@ FROM --platform=$TARGETPLATFORM debian:latest AS build
 
 # Environment
 ARG VERSION=4.2.0
-ARG BUILD_BASE="build-essential make gawk autoconf automake libtool curl "
+ARG BUILD_BASE="build-essential make gawk autoconf automake libtool curl binutils "
 ARG BUILD_PKGS="${BUILD_BASE} libexpat1-dev libssl-dev libevent-dev zlib1g-dev bison libfl-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer  "
+ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
+ARG LDFLAGS="-Wl,--as-needed -rdynamic "
 
 # source build and install
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -37,7 +37,7 @@ RUN cd /tmp/build \
       --enable-ratelimit \
       --enable-packed \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j1 \
+    && make -j$(nproc) \
     && make install DESTDIR=/tmp/root
 RUN cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
 
