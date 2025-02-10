@@ -15,7 +15,6 @@ on:
 
 jobs:
   build:
-    needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
