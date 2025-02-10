@@ -90,9 +90,6 @@ jobs:
   manifest:
     needs: build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
 
     steps:
       - name: Log in to Docker Hub
