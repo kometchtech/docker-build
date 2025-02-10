@@ -28,6 +28,9 @@ jobs:
         id: get-dirs
         run: |
           CHANGED_DIRS=$(git diff --name-only HEAD~1 HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
+          if [[ -z "$CHANGED_DIRS" ]]; then
+            CHANGED_DIRS="[]"
+          fi
           echo "Changed directories: $CHANGED_DIRS"
           echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(" ")')" >> $GITHUB_ENV
           echo "changed_dirs=$(echo $CHANGED_DIRS | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
@@ -41,8 +44,8 @@ jobs:
       matrix:
         dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
         arch: 
-          - amd64 
-          - arm64
+          - linux/amd64 
+          - linux/arm64
 
     steps:
       - name: Checkout repository
@@ -68,9 +71,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Save ARCHS for Manifest
-        run: echo "ARCHS=${{ join(matrix.arch, ' ') }}" >> $GITHUB_ENV
-
       - name: Read version from VERSION file
         id: set-version
         run: echo "VERSION=$(cat ${{ matrix.dir }}/VERSION | tr -d ' ')" >> $GITHUB_ENV
@@ -85,11 +85,18 @@ jobs:
             VERSION=${{ env.VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ matrix.arch }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}:${{ env.VERSION }}-${{ matrix.arch/-//}}
+
+    outputs:
+      version: ${{ env.VERSION }}
+      archs: ${{ toJson(strategy.matrix.arch) }}  # <-- ARCHS を outputs に追加
 
   manifest:
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: ${{ fromJson(needs.detect-changes.outputs.changed_dirs) }}
 
     steps:
       - name: Log in to Docker Hub
@@ -98,36 +105,30 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Read version from VERSION file
-        id: set-version
-        run: echo "VERSION=$(cat ${{ matrix.dir }}/VERSION | tr -d ' ')" >> $GITHUB_ENV
-
-      - name: Load ARCHS from Environment
-        run: echo "ARCHS=${{ needs.build.outputs.archs }}" >> $GITHUB_ENV
+      - name: Load version and archs from previous step
+        run: |
+          echo "VERSION=${{ needs.build.outputs.version }}" >> $GITHUB_ENV
+          echo "ARCHS=${{ needs.build.outputs.archs }}" >> $GITHUB_ENV
 
       - name: Create and Push Docker Manifest
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
-
           AMEND_ARGS=""
-          for ARCH in $ARCHS; do
-            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$ARCH"
+          for ARCH in $(echo $ARCHS | jq -r '.[]'); do
+            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-${ARCH/-//}"
           done
 
           docker manifest create $IMAGE_NAME:${VERSION} $AMEND_ARGS
           docker manifest push $IMAGE_NAME:${VERSION}
 
       - name: Create and Push Docker Manifest (Latest)
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
         run: |
           IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
-          ARCHS="linux/amd64 linux/arm64"
-
           AMEND_ARGS=""
-          for ARCH in $ARCHS; do
-            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$ARCH"
+          for ARCH in $(echo $ARCHS | jq -r '.[]'); do
+            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-${ARCH/-//}"
           done
 
           docker manifest create $IMAGE_NAME:latest $AMEND_ARGS
           docker manifest push $IMAGE_NAME:latest
-
