@@ -100,6 +100,7 @@ jobs:
     outputs:
       version: ${{ env.VERSION }}
       archs: ${{ toJson(matrix.arch) }}  # <-- ARCHS を outputs に追加
+      changed_dirs: ${{ matrix.dir }}
 
   manifest:
     needs: build
