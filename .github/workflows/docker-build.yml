@@ -14,7 +14,7 @@ on:
         type: boolean
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -24,10 +24,15 @@ jobs:
           - linux/arm64
 
     steps:
-      - name: Checkout repository
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+      - name: Checkout repository with full history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # すべての履歴を取得
+          fetch-depth: 0  # 全コミットを取得
 
       - name: Determine previous commit
         id: previous-commit
@@ -96,16 +101,24 @@ jobs:
           no-cache: ${{ inputs.no-cache == true }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.VERSION }}-${{ matrix.arch }}
+          outputs: |
+            type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }},push-by-digest=true
+#          tags: |
+#            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.VERSION }}-${{ matrix.arch }}
 
-      - name: Save image digest
-        id: image_digest
+      - name: Export digest
         run: |
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
-          DIGEST=$(docker inspect --format '{{index .RepoDigests 0}}' $IMAGE_NAME:${{ env.VERSION }}-${{ matrix.arch }})
-          echo "DIGEST_${{ matrix.arch }}=$DIGEST" >> $GITHUB_ENV
-          echo "DIGEST_${{ matrix.arch }}=$DIGEST" >> $GITHUB_OUTPUT
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
 
     outputs:
       version: ${{ env.VERSION }}
@@ -114,7 +127,7 @@ jobs:
 
   manifest:
     needs: 
-      - build
+      - build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Docker Hub
@@ -131,20 +144,51 @@ jobs:
       - name: Debug ARCHS
         run: echo "ARCHS=${{ needs.build.outputs.archs }}"
 
-      - name: Load digests from build job
-        run: |
-          echo "DIGEST_AMD64=${{ needs.build.outputs.DIGEST_linux-amd64 }}" >> $GITHUB_ENV
-          echo "DIGEST_ARM64=${{ needs.build.outputs.DIGEST_linux-arm64 }}" >> $GITHUB_ENV
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
 
-      - name: Create and Push Docker Manifest (Version)
+      - name: Find modified directories
+        id: find-dirs
         run: |
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
-          docker manifest create $IMAGE_NAME:${VERSION} $DIGEST_AMD64 $DIGEST_ARM64
-          docker manifest push $IMAGE_NAME:${VERSION}
+          if [ -n "$before_commit" ]; then
+            CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
+            echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
+          else
+            echo "No previous commit found, skipping build."
+            echo "changed_dirs=" >> $GITHUB_ENV
+          fi
 
-      - name: Create and Push Docker Manifest (Latest)
-        if: github.ref == 'refs/heads/master'
+      - name: Set VERSION environment variable
+        id: set-version
         run: |
-          IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ matrix.dir }}"
-          docker manifest create $IMAGE_NAME:latest $DIGEST_AMD64 $DIGEST_ARM64
-          docker manifest push $IMAGE_NAME:latest
+          for dir in ${{ env.changed_dirs }}; do
+            if [ -f "$dir/VERSION" ]; then
+              RELEASE_VERSION=$(cat "$dir/VERSION" | tr -d ' \t\n\r')
+              echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+              echo "Version found: $RELEASE_VERSION in $dir"
+              break
+            fi
+          done
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          for dir in ${{ env.changed_dirs }}; do
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${dir#./}"
+            
+            # プラットフォーム固有のダイジェストを収集
+            digests=()
+            for digest in *; do
+              digests+=("$IMAGE_NAME@sha256:$digest")
+            done
+            # バージョンタグでマニフェストを作成・プッシュ
+            docker buildx imagetools create -t $IMAGE_NAME:${{ env.RELEASE_VERSION }} ${digests[@]}
+            # mainブランチの場合、latestタグも作成
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              docker buildx imagetools create -t $IMAGE_NAME:latest ${digests[@]}
+            fi
+          done
