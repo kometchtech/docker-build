@@ -87,7 +87,7 @@ jobs:
 
       - name: Read version from VERSION file
         id: set-version
-        run: echo "VERSION=$(cat ${{ matrix.dir }}/VERSION | tr -d ' ')" >> $GITHUB_ENV
+        run: echo "VERSION=$(cat ${{ env.changed_dirs }}/VERSION | tr -d ' ')" >> $GITHUB_ENV
 
       - name: Build and Push by Image
         uses: docker/build-push-action@v6
