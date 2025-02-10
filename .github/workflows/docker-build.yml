@@ -2,39 +2,25 @@ name: Build and Push Multi-Arch Docker Images
 
 on:
   push:
+    branches:
+      - main
     paths:
       - '**/Dockerfile'
       - '**/VERSION'
-  workflow_dispatch:
-    inputs:
-      no-cache:
-        description: "Build docker images with no cache"
-        default: false
-        required: false
-        type: boolean
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        platform:
+        arch: 
           - linux/amd64
           - linux/arm64
 
-    steps:
-      - name: Prepare
-        run: |
-          platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-      - name: Checkout repository with full history
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 全コミットを取得
 
-      - name: Ensure latest commit is checked out
-        run: git checkout ${{ github.sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -42,187 +28,65 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set Swap Space
-        uses: pierotofy/set-swap-space@master
-        with:
-          swap-size-gb: 10
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Determine previous commit
-        id: previous-commit
-        run: |
-          if [ -z "${{ github.event.before }}" ] || ! git rev-parse ${{ github.event.before }} >/dev/null 2>&1; then
-            BEFORE_COMMIT=$(git rev-parse HEAD^ || echo "")
-          else
-            BEFORE_COMMIT=${{ github.event.before }}
-          fi
-          echo "before_commit=$BEFORE_COMMIT" >> $GITHUB_ENV
-
-      - name: Find modified directories
-        id: find-dirs
-        run: |
-          if [ -n "$before_commit" ]; then
-            CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
-            echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
-            # 変更されたディレクトリをファイルに保存
-            echo "$CHANGED_DIRS" > changed_dirs_${{ env.PLATFORM_PAIR }}.txt
-          else
-            echo "No previous commit found, skipping build."
-            echo "changed_dirs=." >> $GITHUB_ENV
-            echo "." > changed_dirs_${{ env.PLATFORM_PAIR }}.txt
-          fi
-
-      # 変更されたディレクトリ情報をアーティファクトとして保存
-      - name: Upload changed directories
-        uses: actions/upload-artifact@v4
-        with:
-          name: changed-directories-${{ env.PLATFORM_PAIR }}
-          path: changed_dirs_${{ env.PLATFORM_PAIR }}.txt
-          retention-days: 1
-
-      - name: Set VERSION environment variable
-        id: set-version
-        run: |
-          for dir in ${{ env.changed_dirs }}; do
-            if [ -f "$dir/VERSION" ]; then
-              RELEASE_VERSION=$(cat $dir/VERSION | tr -d ' ')  # VERSIONファイルからバージョンを取得
-              echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV  # 環境変数にセット
-              echo "Version set to: $RELEASE_VERSION"
-            else
-              echo "No VERSION file found in $dir, skipping..."
-            fi
-          done
-
-      - name: Build and push images for ${{ matrix.platform }}
-        id: build
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ env.changed_dirs }}
-          platforms: ${{ matrix.platform }}
-          build-args: |
-            VERSION=${{ env.RELEASE_VERSION }}
-          push: true
-          no-cache: ${{ inputs.no-cache == true }}
-          provenance: false
-          outputs: |
-            type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }},push-by-digest=true
-
-      - name: Export digest
-        run: |
-          mkdir -p ${{ runner.temp }}/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${digest#sha256:}"
-
-      - name: Upload digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ env.PLATFORM_PAIR }}
-          path: ${{ runner.temp }}/digests/*
-          if-no-files-found: error
-          retention-days: 1
-
-  merge:
-    needs: 
-      - build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ runner.temp }}/digests
-          pattern: digests-*
-          merge-multiple: true
-
-      # 変更されたディレクトリ情報を取得
-      - name: Download changed directories
-        uses: actions/download-artifact@v4
-        with:
-          pattern: changed-directories-*
-          merge-multiple: true
-          path: ./
-
-      - name: Set changed directories
-        id: set-dirs
-        run: |
-          CHANGED_DIRS=$(cat ./changed-dirs/changed_dirs_*.txt | head -n 1)
-          echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
-          echo "Using directories: $CHANGED_DIRS"
-
-      # プラットフォーム情報を取得
-      - name: Download platform info
-        uses: actions/download-artifact@v4
-        with:
-          name: platform-info
-          path: ./platform-info
-
-      - name: Prepare manifest images
-        id: prepare-manifest
-        run: |
-          # プラットフォーム情報からイメージリストを構築
-          IMAGES=""
-          for platform_file in ./platform-info/platforms-*.txt; do
-            if [ -f "$platform_file" ]; then
-              if [ -n "$IMAGES" ]; then
-                IMAGES="${IMAGES},"
-              fi
-              platform_tag=$(cat "$platform_file")
-              IMAGES="${IMAGES}${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${platform_tag}"
-              echo "Processing file $platform_file with tag: ${platform_tag}"
-            fi
-          done
-          
-          if [ -z "$IMAGES" ]; then
-            echo "Error: No platform files found"
-            exit 1
-          fi
-          
-          echo "manifest_images=${IMAGES}" >> $GITHUB_OUTPUT
-          echo "Images to be included in manifest: $IMAGES"
-
-      - name: Set VERSION environment variable
-        id: set-version
-        run: |
-          for dir in ${{ env.changed_dirs }}; do
-            if [ -f "$dir/VERSION" ]; then
-              RELEASE_VERSION=$(cat "$dir/VERSION" | tr -d ' \t\n\r')
-              echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
-              echo "Version found: $RELEASE_VERSION in $dir"
-              break
-            fi
-          done
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Read version from VERSION file
+        id: set-version
+        run: echo "VERSION=$(cat ./VERSION | tr -d ' ')" >> $GITHUB_ENV
 
-      - name: Create manifest list and push
-        working-directory: ${{ runner.temp }}/digests
+      - name: Build and Push Image for ${{ matrix.arch }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: ${{ matrix.arch }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/your-image-name:${{ env.VERSION }}-${{ matrix.arch }}
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Read version from VERSION file
+        id: set-version
+        run: echo "VERSION=$(cat ./VERSION | tr -d ' ')" >> $GITHUB_ENV
+
+      - name: Create Docker Manifest List
         run: |
-          for dir in ${{ env.changed_dirs }}; do
-            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${dir#./}"
-            
-            # プラットフォーム固有のダイジェストを収集
-            digests=()
-            for digest in *; do
-              digests+=("$IMAGE_NAME@sha256:$digest")
-            done
-            # バージョンタグでマニフェストを作成・プッシュ
-            docker buildx imagetools create -t $IMAGE_NAME:${{ env.RELEASE_VERSION }} ${digests[@]}
-            # mainブランチの場合、latestタグも作成
-            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-              docker buildx imagetools create -t $IMAGE_NAME:latest ${digests[@]}
-            fi
+          ARCHS="linux/amd64 linux/arm64"  # 必要なアーキテクチャを列挙（将来追加可）
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/your-image-name"
+          
+          # `--amend` を動的に構築
+          AMEND_ARGS=""
+          for ARCH in $ARCHS; do
+            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$ARCH"
           done
+
+          # マルチアーキテクチャの Docker イメージを作成・プッシュ
+          docker manifest create $IMAGE_NAME:${VERSION} $AMEND_ARGS
+          docker manifest push $IMAGE_NAME:${VERSION}
+
+      - name: Create and Push Docker Manifest (Latest)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          ARCHS="linux/amd64 linux/arm64"
+          IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/your-image-name"
+
+          AMEND_ARGS=""
+          for ARCH in $ARCHS; do
+            AMEND_ARGS="$AMEND_ARGS --amend $IMAGE_NAME:${VERSION}-$ARCH"
+          done
+
+          docker manifest create $IMAGE_NAME:latest $AMEND_ARGS
+          docker manifest push $IMAGE_NAME:latest
+
