@@ -113,13 +113,11 @@ jobs:
           cache-to: type=gha,mode=max
           outputs: |
             type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }},push-by-digest=true
-#          tags: |
-#            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.VERSION }}-${{ matrix.arch }}
 
       - name: Export digest
         run: |
           mkdir -p ${{ runner.temp }}/digests
-          digest="${{ steps.build.outputs.digest }}"
+          digest="${{ steps.build-and-push.outputs.digest }}"
           touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
       - name: Upload digest
@@ -148,11 +146,11 @@ jobs:
 
       - name: Load version and archs from previous step
         run: |
-          echo "VERSION=${{ needs.build.outputs.version }}" >> $GITHUB_ENV
-          echo "ARCHS=${{ needs.build.outputs.archs }}" >> $GITHUB_ENV
+          echo "VERSION=${{ needs.build-and-push.outputs.version }}" >> $GITHUB_ENV
+          echo "ARCHS=${{ needs.build-and-push.outputs.archs }}" >> $GITHUB_ENV
 
       - name: Debug ARCHS
-        run: echo "ARCHS=${{ needs.build.outputs.archs }}"
+        run: echo "ARCHS=${{ needs.build-and-push.outputs.archs }}"
 
       - name: Download digests
         uses: actions/download-artifact@v4
