@@ -2,8 +2,6 @@ name: Build and Push Multi-Arch Docker Images
 
 on:
   push:
-    branches:
-      - main
     paths:
       - '**/Dockerfile'
       - '**/VERSION'
