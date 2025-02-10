@@ -30,6 +30,8 @@ jobs:
           CHANGED_DIRS=$(git diff --name-only HEAD~1 HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
           if [[ -z "$CHANGED_DIRS" ]]; then
             CHANGED_DIRS="[]"
+          else
+            CHANGED_DIRS=$(echo $CHANGED_DIRS | jq -R -c 'split(" ")')
           fi
           echo "Changed directories: $CHANGED_DIRS"
           echo "changed_dirs=$(echo $CHANGED_DIRS)" >> $GITHUB_ENV
