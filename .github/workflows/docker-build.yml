@@ -162,7 +162,7 @@ jobs:
       - name: Find modified directories
         id: find-dirs
         run: |
-          if [ -n "${{ needs.build-and-push.outputs.changed_dirs }}"; then
+          if [ -n "${{ needs.build-and-push.outputs.changed_dirs }}" ]; then
             echo "changed_dirs=${{ needs.build-and-push.outputs.changed_dirs }}" >> $GITHUB_ENV
           else
             echo "No previous commit found, skipping build."
