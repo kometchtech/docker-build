@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 # build stage
-FROM golang:latest as build-env
+FROM golang:latest as build
 
 ARG VERSION
 ARG BUILD_PKGS="git automake libtool autoconf pkg-config curl libunbound-dev libhiredis-dev ca-certificates libcap2-bin "
@@ -31,8 +31,8 @@ ENV TZ Asia/Tokyo
 EXPOSE 53/TCP 53/UDP 443/TCP 443/udp
 
 # copy file
-COPY --from=build-env /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=build-env /go/src/github.com/coredns/coredns/coredns /coredns
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=build /go/src/github.com/coredns/coredns/coredns /coredns
 
 # User
 USER nonroot:nonroot
