@@ -70,11 +70,11 @@ jobs:
             CHANGED_DIRS=$(git diff --name-only $before_commit HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
             echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
             # 変更されたディレクトリをファイルに保存
-            echo "$CHANGED_DIRS" > changed_dirs.txt
+            echo "$CHANGED_DIRS" > changed_dirs_${{ env.PLATFORM_PAIR }}.txt
           else
             echo "No previous commit found, skipping build."
             echo "changed_dirs=." >> $GITHUB_ENV
-            echo "." > changed_dirs.txt
+            echo "." > changed_dirs_${{ env.PLATFORM_PAIR }}..txt
           fi
 
       # 変更されたディレクトリ情報をアーティファクトとして保存
@@ -145,13 +145,14 @@ jobs:
       - name: Download changed directories
         uses: actions/download-artifact@v4
         with:
-          name: changed-directories
+          pattern: changed-directories-*
+          merge-multiple: true
           path: ./
 
       - name: Set changed directories
         id: set-dirs
         run: |
-          CHANGED_DIRS=$(cat changed_dirs.txt)
+          CHANGED_DIRS=$(cat ./changed-dirs/changed_dirs_*.txt | head -n 1)
           echo "changed_dirs=$CHANGED_DIRS" >> $GITHUB_ENV
           echo "Using directories: $CHANGED_DIRS"
 
