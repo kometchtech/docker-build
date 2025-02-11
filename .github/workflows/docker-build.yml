@@ -112,29 +112,26 @@ jobs:
           cache-from: type=gha,scope=${{ fromJson(matrix.target).packageName }}
           cache-to: type=gha,mode=max,scope=${{ fromJson(matrix.target).packageName }}
   
-    create-manifests:
-      runs-on: ubuntu-latest
-      needs: build-and-push
-      steps:
-        - uses: actions/checkout@v4
+  create-manifests:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.3.0
+        with:
+          image: tonistiigi/binfmt:qemu-v8.1.5
+          platforms: ${{ matrix.platform }}
+
+        - name: Log in to Docker Hub
+          uses: docker/login-action@v3
           with:
-            fetch-depth: 0
-  
-        - name: Set up QEMU
-          uses: docker/setup-qemu-action@v3.3.0
-          with:
-            image: tonistiigi/binfmt:qemu-v8.1.5
-            platforms: ${{ matrix.platform }}
-  
-          - name: Log in to Docker Hub
-            uses: docker/login-action@v3
-            with:
-              username: ${{ secrets.DOCKER_USERNAME }}
-              password: ${{ secrets.DOCKER_PASSWORD }}
- 
-        - name: Create versioned manifest and push
-          run: |
-            docker manifest create \
-              ${{ steps.meta.outputs.tags }} \
-              --ameng ${{ steps.meta.outputs.tags }}-${{ env.PLATFORM_PAIR }}
-            docker manifest push ${{ steps.meta.outputs.tags }}
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create versioned manifest and push
+        run: |
+          docker manifest create \
+            ${{ steps.meta.outputs.tags }} \
+            --ameng ${{ steps.meta.outputs.tags }}-${{ env.PLATFORM_PAIR }}
+          docker manifest push ${{ steps.meta.outputs.tags }}
