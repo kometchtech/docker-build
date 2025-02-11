@@ -135,7 +135,7 @@ jobs:
 
     outputs:
       version: ${{ env.RELEASE_VERSION }}
-      platforms: ${{ toJson(matrix.platform) }}
+      platforms: ${{ matrix.platform }}
       changed_dirs: ${{ env.changed_dirs }}
 
   manifest:
