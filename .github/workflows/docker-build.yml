@@ -103,8 +103,6 @@ jobs:
           no-cache: ${{ inputs.no-cache == true }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: |
-            type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }},push-by-digest=true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
             ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest
