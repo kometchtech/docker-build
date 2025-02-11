@@ -164,7 +164,7 @@ jobs:
             # プラットフォーム固有のダイジェストを収集
             digests=()
             for arch in ${{ env.ARCHS }}; do
-              digest_file="${{ runner.temp }}/digests/$arch"
+              digest_file="${{ runner.temp }}/digests/${arch//\//-}"
               if [[ -f "$digest_file" ]]; then
                 digest=$(cat "$digest_file")
                 digests+=("$IMAGE_NAME@$digest")
