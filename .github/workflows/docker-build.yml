@@ -18,10 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        platform: 
-          - linux/amd64 
-          - linux/arm64
 
     steps:
       - name: Prepare
@@ -64,7 +60,6 @@ jobs:
         uses: docker/setup-qemu-action@v3.3.0
         with:
           image: tonistiigi/binfmt:qemu-v8.1.5
-          platforms: ${{ matrix.platform }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -97,40 +92,18 @@ jobs:
             type=raw,value=latest
             type=raw,value=${{ env.RELEASE_VERSION }}
 
-      - name: Build and push images for ${{ matrix.platform }}
+      - name: Build and push images 
         id: build-and-push
         uses: docker/build-push-action@v6
         with:
           context: ./${{ env.changed_dirs }}
           push: true
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
           build-args:
             VERSION=${{ env.RELEASE_VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
-          tags: ${{ steps.meta.outputs.tags }}-${{ env.PLATFORM_PAIR }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
   
-  create-manifests:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.3.0
-        with:
-          image: tonistiigi/binfmt:qemu-v8.1.5
-          platforms: ${{ matrix.platform }}
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Create versioned manifest and push
-        run: |
-          docker manifest create \
-            ${{ steps.meta.outputs.tags }} \
-            --amend ${{ steps.meta.outputs.tags }}-${{ env.PLATFORM_PAIR }}
-          docker manifest push ${{ steps.meta.outputs.tags }}
