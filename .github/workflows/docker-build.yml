@@ -118,6 +118,7 @@ jobs:
         run: |
           mkdir -p ${{ runner.temp }}/digests
           digest="${{ steps.build-and-push.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${{ env.PLATFORM_PAIR }}"
           echo "$digest" > "${{ runner.temp }}/digests/${{ env.PLATFORM_PAIR }}"
 
       - name: Upload digest
@@ -127,6 +128,10 @@ jobs:
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
+
+      - name: Debug build digest
+        run: |
+          echo "Built digest: ${{ steps.build-and-push.outputs.digest }}"
 
     outputs:
       version: ${{ env.RELEASE_VERSION }}
@@ -168,6 +173,8 @@ jobs:
               if [[ -f "$digest_file" ]]; then
                 digest=$(cat "$digest_file")
                 digests+=("$IMAGE_NAME@$digest")
+              else
+                echo "WARNING: No digest found for $arch"
               fi
             done
 
