@@ -100,6 +100,14 @@ jobs:
             fi
           done
 
+      - name: Docker Metadata action
+        uses: docker/metadata-action@v5
+        with:
+          iamges: ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ env.RELEASE_VERSION }}
+
       - name: Build and push images for ${{ matrix.platform }}
         id: build-and-push
         uses: docker/build-push-action@v6
@@ -110,7 +118,8 @@ jobs:
           build-args:
             VERSION=${{ env.RELEASE_VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
-          tags: 
-            - ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
-            - ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
