@@ -78,3 +78,4 @@ VOLUME /var/cache/knot-resolver
 
 ENTRYPOINT ["/usr/bin/knot-resolver"]
 CMD ["-c", "/etc/knot-resolver/config.yaml"]
+
