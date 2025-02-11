@@ -20,11 +20,6 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Prepare
-        run: |
-          platform=${{ matrix.platform }}
-          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-
       - name: Checkout repository with full history
         uses: actions/checkout@v4
         with:
@@ -98,7 +93,7 @@ jobs:
         with:
           context: ./${{ env.changed_dirs }}
           push: true
-          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          platforms: linux/amd64,linux/arm64
           build-args:
             VERSION=${{ env.RELEASE_VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
