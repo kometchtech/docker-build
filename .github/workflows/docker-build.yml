@@ -170,5 +170,5 @@ jobs:
           fi
 
       - name: Inspect image
-          run: |
-            docker buildx imagetools inspect ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.VERSION }}
+        run: |
+          docker buildx imagetools inspect ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.VERSION }}
