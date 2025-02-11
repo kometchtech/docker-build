@@ -118,19 +118,19 @@ jobs:
         run: |
           mkdir -p ${{ runner.temp }}/digests
           digest="${{ steps.build-and-push.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+          echo "$digest" > "${{ runner.temp }}/digests/${{ matrix.platform }}"
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ env.PLATFORM_PAIR }}
+          name: digests-${{ matrix.platform }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
 
     outputs:
       version: ${{ env.RELEASE_VERSION }}
-      platforms: ${{ toJson(matrix.platform) }}  # <-- ARCHS を outputs に追加
+      platforms: ${{ toJson(matrix.platform) }}
       changed_dirs: ${{ env.changed_dirs }}
 
   manifest:
@@ -148,9 +148,7 @@ jobs:
         run: |
           echo "VERSION=${{ needs.build-and-push.outputs.version }}" >> $GITHUB_ENV
           echo "ARCHS=${{ needs.build-and-push.outputs.platforms }}" >> $GITHUB_ENV
-
-      - name: Debug ARCHS
-        run: echo "ARCHS=${{ needs.build-and-push.outputs.platforms }}"
+          echo "changed_dirs=${{ needs.build-and-push.outputs.changed_dirs }}" >> $GITHUB_ENV
 
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -159,41 +157,52 @@ jobs:
           pattern: digests-*
           merge-multiple: true
 
-      - name: Find modified directories
-        id: find-dirs
-        run: |
-          if [ -n "${{ needs.build-and-push.outputs.changed_dirs }}" ]; then
-            echo "changed_dirs=${{ needs.build-and-push.outputs.changed_dirs }}" >> $GITHUB_ENV
-          else
-            echo "No previous commit found, skipping build."
-            echo "changed_dirs=" >> $GITHUB_ENV
-          fi
+  manifest:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set VERSION environment variable
-        id: set-version
+      - name: Load version and platforms
         run: |
-          for dir in ${{ needs.build-and-push.outputs.changed_dirs }}; do
-            if [ -f "$dir/VERSION" ]; then
-              RELEASE_VERSION=$(cat "$dir/VERSION" | tr -d ' \t\n\r')
-              echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
-              echo "Version found: $RELEASE_VERSION in $dir"
-              break
-            fi
-          done
+          echo "VERSION=${{ needs.build-and-push.outputs.version }}" >> $GITHUB_ENV
+          echo "ARCHS=${{ needs.build-and-push.outputs.platforms }}" >> $GITHUB_ENV
+          echo "changed_dirs=${{ needs.build-and-push.outputs.changed_dirs }}" >> $GITHUB_ENV
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
 
       - name: Create manifest list and push
-        working-directory: ${{ runner.temp }}/digests
         run: |
           for dir in ${{ env.changed_dirs }}; do
-            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
-            
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/$dir"
+
             # プラットフォーム固有のダイジェストを収集
             digests=()
-            for digest in *; do
-              digests+=("$IMAGE_NAME@sha256:$digest")
+            for arch in ${{ env.ARCHS }}; do
+              digest_file="${{ runner.temp }}/digests/$arch"
+              if [[ -f "$digest_file" ]]; then
+                digest=$(cat "$digest_file")
+                digests+=("$IMAGE_NAME@$digest")
+              fi
             done
+
+            if [[ ${#digests[@]} -eq 0 ]]; then
+              echo "ERROR: No valid image digests found."
+              exit 1
+            fi
+
             # バージョンタグでマニフェストを作成・プッシュ
-            docker buildx imagetools create -t $IMAGE_NAME:${{ env.RELEASE_VERSION }} ${digests[@]}
+            docker buildx imagetools create -t $IMAGE_NAME:${{ env.VERSION }} ${digests[@]}
+
             # mainブランチの場合、latestタグも作成
             if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
               docker buildx imagetools create -t $IMAGE_NAME:latest ${digests[@]}
