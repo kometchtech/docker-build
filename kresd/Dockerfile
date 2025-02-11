@@ -3,7 +3,6 @@ FROM debian:12 AS build
 
 ARG VERSION
 ARG BUILD_PKGS="apt-transport-https ca-certificates wget pipx devscripts mkdocs "
-#ARG PY_PKGS="python3-psutil python3-six python3-pluggy python3-unidiff python3-joblib python3-lunr  "	
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     apt-get -qqq -y install ${BUILD_PKGS} ${PY_PKGS}
