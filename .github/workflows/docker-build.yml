@@ -109,8 +109,8 @@ jobs:
           no-cache: ${{ inputs.no-cache == true }}
           tags: ${{ steps.meta.outputs.tags }}-${{ env.PLATFORM_PAIR }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ fromJson(matrix.target).packageName }}
-          cache-to: type=gha,mode=max,scope=${{ fromJson(matrix.target).packageName }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
   
   create-manifests:
     needs: build-and-push
