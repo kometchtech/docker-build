@@ -101,6 +101,7 @@ jobs:
           done
 
       - name: Docker Metadata action
+        id: meta
         uses: docker/metadata-action@v5
         with:
           iamges: ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}
