@@ -129,7 +129,7 @@ jobs:
           retention-days: 1
 
     outputs:
-      version: ${{ env.VERSION }}
+      version: ${{ env.RELEASE_VERSION }}
       platforms: ${{ toJson(matrix.platform) }}  # <-- ARCHS を outputs に追加
       changed_dirs: ${{ env.changed_dirs }}
 
@@ -172,7 +172,7 @@ jobs:
       - name: Set VERSION environment variable
         id: set-version
         run: |
-          for dir in ${{ env.changed_dirs }}; do
+          for dir in ${{ needs.build-and-push.outputs.changed_dirs }}; do
             if [ -f "$dir/VERSION" ]; then
               RELEASE_VERSION=$(cat "$dir/VERSION" | tr -d ' \t\n\r')
               echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
@@ -185,7 +185,7 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         run: |
           for dir in ${{ env.changed_dirs }}; do
-            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${dir#./}"
             
             # プラットフォーム固有のダイジェストを収集
             digests=()
