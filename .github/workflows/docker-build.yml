@@ -118,7 +118,7 @@ jobs:
         run: |
           mkdir -p ${{ runner.temp }}/digests
           digest="${{ steps.build-and-push.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${{ env.PLATFORM_PAIR }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
           echo "$digest" > "${{ runner.temp }}/digests/${{ env.PLATFORM_PAIR }}"
 
       - name: Upload digest
@@ -162,32 +162,13 @@ jobs:
           merge-multiple: true
 
       - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
         run: |
-          for dir in ${{ env.changed_dirs }}; do
-            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/$dir"
+          docker buildx imagetools create -t ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.VERSION }} ${digests[@]}
+          if [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            docker buildx imagetools create -t ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest ${digests[@]}
+          fi
 
-            # プラットフォーム固有のダイジェストを収集
-            digests=()
-            for arch in ${{ env.ARCHS }}; do
-              digest_file="${{ runner.temp }}/digests/${arch//\//-}"
-              if [[ -f "$digest_file" ]]; then
-                digest=$(cat "$digest_file")
-                digests+=("$IMAGE_NAME@$digest")
-              else
-                echo "WARNING: No digest found for $arch"
-              fi
-            done
-
-            if [[ ${#digests[@]} -eq 0 ]]; then
-              echo "ERROR: No valid image digests found."
-              exit 1
-            fi
-
-            # バージョンタグでマニフェストを作成・プッシュ
-            docker buildx imagetools create -t $IMAGE_NAME:${{ env.VERSION }} ${digests[@]}
-
-            # mainブランチの場合、latestタグも作成
-            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-              docker buildx imagetools create -t $IMAGE_NAME:latest ${digests[@]}
-            fi
-          done
+      - name: Inspect image
+          run: |
+            docker buildx imagetools inspect ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.VERSION }}
