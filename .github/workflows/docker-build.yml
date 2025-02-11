@@ -104,7 +104,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          iamges: ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}
+          images: ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}
           tags: |
             type=raw,value=latest
             type=raw,value=${{ env.RELEASE_VERSION }}
