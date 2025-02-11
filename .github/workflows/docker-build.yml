@@ -58,6 +58,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Docker meta
+        id: metadata
+        uses: docker/metadata-action@v4
+        with:
+          images: username/repository-name
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}  
+
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
@@ -101,9 +110,7 @@ jobs:
           build-args:
             VERSION=${{ env.RELEASE_VERSION }}
           no-cache: ${{ inputs.no-cache == true }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest
+          tags: 
+            - ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}
+            - ${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:latest
 
