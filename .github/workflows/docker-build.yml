@@ -185,7 +185,7 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         run: |
           for dir in ${{ env.changed_dirs }}; do
-            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/$dir"
+            IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}"
             
             # プラットフォーム固有のダイジェストを収集
             digests=()
