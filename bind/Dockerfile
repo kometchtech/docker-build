@@ -6,7 +6,7 @@ ARG VERSION
 ARG BUILD_PKGS="build-essential gawk autoconf automake libtool xz-utils curl ldnsutils clang \
                 libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev libjemalloc-dev libidn2-dev libfstrm-dev \
                 libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev ca-certificates \
-                libmaxminddb-dev liblmdb-dev libkrb5-dev "
+                libmaxminddb-dev liblmdb-dev libkrb5-dev libgssapi-krb5-2 "
 ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS} "
 ARG LDFLAGS="-Wl,--as-needed "
@@ -49,7 +49,7 @@ FROM debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libprotobuf-c1 tzdata openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu8 tini libjemalloc2 libidn2-0 \
-              libfstrm0 liblmdb0 libmaxminddb0 libkrb5-3 "
+              libfstrm0 liblmdb0 libmaxminddb0 libkrb5-3 libgssapi-krb5-2 "
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
