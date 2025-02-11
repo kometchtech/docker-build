@@ -132,5 +132,5 @@ jobs:
         run: |
           docker manifest create \
             ${{ steps.meta.outputs.tags }} \
-            --ameng ${{ steps.meta.outputs.tags }}-${{ env.PLATFORM_PAIR }}
+            --amend ${{ steps.meta.outputs.tags }}-${{ env.PLATFORM_PAIR }}
           docker manifest push ${{ steps.meta.outputs.tags }}
