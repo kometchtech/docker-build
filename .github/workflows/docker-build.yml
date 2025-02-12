@@ -102,3 +102,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   
+  scan:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Vulnerablityi Scan
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: 'image'
+          image-ref: '${{ secrets.DOCKER_USERNAME }}/${{ env.changed_dirs }}:${{ env.RELEASE_VERSION }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
