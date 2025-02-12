@@ -3,13 +3,11 @@ FROM --platform=$TARGETPLATFORM debian:latest AS build
 
 # Env
 ARG VERSION
-ARG BUILD_BASE="build-essential binutils make gawk autoconf automake libtool curl clang "
+ARG BUILD_BASE="build-essential binutils make gawk autoconf automake libtool curl clang cmake "
 ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev lua5.1-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev libluajit-5.1-dev \
                libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libh2o-evloop-dev libfstrm-dev "
-#ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
 ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
-#ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
 ARG LDFLAGS="-Wl,--as-needed -rdynamic "
 ARG CC=clang
 ARG CXX=clang++
@@ -31,6 +29,7 @@ RUN cd /usr/src \
       --sysconfdir=/etc/dnsdist \
       --localstatedir=/var \
       --enable-lto=thin \
+      --enable-option-checking=fatal \
       --with-libsodium \
       --with-libssl \
       --with-gnutls \
@@ -82,19 +81,14 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 ENV TZ Asia/Tokyo
 
 # Publish port
-EXPOSE 53/tcp 
-EXPOSE 53/udp 
-EXPOSE 443/tcp 
-EXPOSE 853/tcp 
-EXPOSE 8083/tcp 
-EXPOSE 8443/tcp 
-EXPOSE 8443/udp
+EXPOSE 53/tcp 53/udp 443/tcp 853/tcp 8083/tcp 8443/tcp 8443/udp
 
 # service running
 STOPSIGNAL SIGTERM
 
 # Volume
 WORKDIR /etc/dnsdist
+RUN chmod 1777 /tmp
 
 # Select entrypoint
 COPY ["entrypoint.sh", "/usr/bin/"]
