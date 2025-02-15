@@ -87,4 +87,3 @@ COPY --from=build-env \
 RUN hickory-dns --version
 
 ENTRYPOINT [ "hickory-dns" ]
-
