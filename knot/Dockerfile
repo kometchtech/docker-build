@@ -85,3 +85,4 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 RUN ldconfig /
 
 WORKDIR /etc/knot-dns
+
