@@ -38,11 +38,18 @@ jobs:
         id: find-dirs
         run: |
           if [ -n "${{ env.before_commit }}" ]; then
-            CHANGED_DIRS=$(git diff --name-only ${{ env.before_commit }} HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq | xargs echo)
+            CHANGED_DIRS=$(git diff --name-only ${{ env.before_commit }} HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
             if [ -n "$CHANGED_DIRS" ]; then
-              # JSON配列として出力
-              JSON_DIRS=$(echo "$CHANGED_DIRS" | tr ' ' '\n' | jq -R . | jq -s .)
-              echo "directories=$JSON_DIRS" >> $GITHUB_OUTPUT
+              # 配列を作成
+              DIRS_JSON="["
+              for dir in $CHANGED_DIRS; do
+                if [ "$DIRS_JSON" != "[" ]; then
+                  DIRS_JSON="$DIRS_JSON,"
+                fi
+                DIRS_JSON="$DIRS_JSON\"$dir\""
+              done
+              DIRS_JSON="$DIRS_JSON]"
+              echo "directories=$DIRS_JSON" >> $GITHUB_OUTPUT
               echo "Changed directories: $CHANGED_DIRS"
             else
               echo "No relevant changes found"
