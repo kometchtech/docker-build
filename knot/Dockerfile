@@ -4,14 +4,14 @@ FROM --platform=$TARGETPLATFORM debian:stable AS build
 # Environment
 ARG VERSION="2.8.2"
 # Build dependencies
-ARG BUILD_BASE="build-essential autoconf automake wget libtool mold "
+ARG BUILD_BASE="build-essential autoconf automake wget libtool "
 ARG KNOT_DNS_BUILD_DEPS="${BUILD_BASE} pkg-config liblmdb-dev libmaxminddb-dev liburcu-dev libfstrm-dev \
                          libprotobuf-c-dev libprotobuf-dev libedit-dev zlib1g-dev libidn2-0-dev protobuf-c-compiler libxdp-dev \
 			 libmnl-dev libnghttp2-dev libngtcp2-crypto-gnutls-dev libngtcp2-dev libgnutls28-dev libbpf-dev"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
+#ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer "
+ARG CFLAGS="-Os -fomit-frame-pointer "
 ARG CXXFLAGS="${CFLAGS}"
-#ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-#ENV LD="ld.lld"
+ARG LDFLAGS="-Wl,--as-needed -rdynamic "
 
 # Install dependencies and sources
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -85,3 +85,4 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]
 RUN ldconfig /
 
 WORKDIR /etc/knot-dns
+
