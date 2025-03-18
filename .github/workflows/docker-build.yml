@@ -128,7 +128,6 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-${{ steps.arch-suffix.outputs.suffix }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
