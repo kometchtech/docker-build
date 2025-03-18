@@ -38,28 +38,30 @@ jobs:
         id: find-dirs
         run: |
           if [ -n "${{ env.before_commit }}" ]; then
-            CHANGED_DIRS=$(git diff --name-only ${{ env.before_commit }} HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
+            CHANGED_DIRS=$(git diff --name-only ${{ env.before_commit }} HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq | xargs echo)
             if [ -n "$CHANGED_DIRS" ]; then
-              echo "directories=$(echo $CHANGED_DIRS | tr ' ' ',')" >> $GITHUB_OUTPUT
+              # JSON配列として出力
+              JSON_DIRS=$(echo "$CHANGED_DIRS" | tr ' ' '\n' | jq -R . | jq -s .)
+              echo "directories=$JSON_DIRS" >> $GITHUB_OUTPUT
               echo "Changed directories: $CHANGED_DIRS"
             else
               echo "No relevant changes found"
-              echo "directories=" >> $GITHUB_OUTPUT
+              echo "directories=[]" >> $GITHUB_OUTPUT
             fi
           else
             echo "No previous commit found, skipping build."
-            echo "directories=" >> $GITHUB_OUTPUT
+            echo "directories=[]" >> $GITHUB_OUTPUT
           fi
 
   build:
     needs: prepare
-    if: needs.prepare.outputs.directories != ''
+    if: needs.prepare.outputs.directories != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         platform: [linux/amd64, linux/arm64]
-        directory: ${{ fromJson(format('[{0}]', needs.prepare.outputs.directories)) }}
+        directory: ${{ fromJson(needs.prepare.outputs.directories) }}
 
     steps:
       - name: Checkout repository
@@ -141,11 +143,11 @@ jobs:
 
   merge:
     needs: [prepare, build]
-    if: needs.prepare.outputs.directories != ''
+    if: needs.prepare.outputs.directories != '[]'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        directory: ${{ fromJson(format('[{0}]', needs.prepare.outputs.directories)) }}
+        directory: ${{ fromJson(needs.prepare.outputs.directories) }}
     steps:
       - name: Get image name from directory
         id: image-name
