@@ -73,6 +73,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          path: source
+        with:
+          path: source
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3.3.0
@@ -102,8 +106,8 @@ jobs:
       - name: Set VERSION environment variable
         id: set-version
         run: |
-          if [ -f "${{ matrix.directory }}/VERSION" ]; then
-            RELEASE_VERSION=$(cat ${{ matrix.directory }}/VERSION | tr -d ' ')
+          if [ -f "source/${{ matrix.directory }}/VERSION" ]; then
+            RELEASE_VERSION=$(cat "source/${{ matrix.directory }}/VERSION" | tr -d ' \n\t\r')
             echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
             echo "Version set to: ${RELEASE_VERSION}"
           else
@@ -124,10 +128,12 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: ./${{ matrix.directory }}
+          context: source/${{ matrix.directory }}
           platforms: ${{ matrix.platform }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
+          build-args: |
+            VERSION=${{ steps.set-version.outputs.release_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
@@ -180,8 +186,8 @@ jobs:
       - name: Set VERSION environment variable
         id: set-version
         run: |
-          if [ -f "${{ matrix.directory }}/VERSION" ]; then
-            RELEASE_VERSION=$(cat ${{ matrix.directory }}/VERSION | tr -d ' ')
+          if [ -f "source/${{ matrix.directory }}/VERSION" ]; then
+            RELEASE_VERSION=$(cat "source/${{ matrix.directory }}/VERSION" | tr -d ' \n\t\r')
             echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
             echo "Version set to: ${RELEASE_VERSION}"
           else
@@ -192,16 +198,32 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
+          # Check if both digest files exist
+          if [ ! -f "digest-amd64" ]; then
+            echo "Error: AMD64 digest file not found"
+            exit 1
+          fi
+          
+          if [ ! -f "digest-arm64" ]; then
+            echo "Error: ARM64 digest file not found"
+            exit 1
+          fi
+          
           AMD64_DIGEST=$(cat digest-amd64 | cut -d ',' -f2)
           ARM64_DIGEST=$(cat digest-arm64 | cut -d ',' -f2)
           
+          echo "AMD64 digest: ${AMD64_DIGEST}"
+          echo "ARM64 digest: ${ARM64_DIGEST}"
+          
           # Create manifest with version tag
+          echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
           docker buildx imagetools create \
             -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
             ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
             ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
           
           # Also tag as latest
+          echo "Creating manifest with latest tag"
           docker buildx imagetools create \
             -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:latest \
             ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
