@@ -6,7 +6,7 @@ ARG VERSION=2.0.0-alpha1
 ARG BUILD_BASE="build-essential binutils make gawk curl clang lld cmake ninja-build python3-full python3-pip python3-venv"
 ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
                libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libfstrm-dev \
-               libsystemd-dev libcap-dev libyaml-cpp-dev libcdb-dev liblmdb-dev"
+               libsystemd-dev libcap-dev libyaml-cpp-dev libcdb-dev liblmdb-dev libluajit-5.1-dev"
 ARG LUAVER=lua5.3
 ARG CC=clang
 ARG CXX=clang++
@@ -110,8 +110,9 @@ RUN rm -rf /tmp/root/usr/local/share/man/*
 FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
-ARG RUN_PKGS="tzdata liblua5.3-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl \
-              libnghttp2-14 libgnutls30 libxdp1 libbpf1 libfstrm0 libsystemd0 libcap2 libyaml-cpp0.7 libcdb1 liblmdb0"
+#ARG RUN_PKGS="tzdata liblua5.3-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl python3 python3-jinja2 ca-certificates\
+ARG RUN_PKGS="tzdata liblua5.3-0 ca-certificates libcap2-bin libyaml-cpp0.7 libcdb1 liblmdb0 libluajit-5.1-2 \
+              libfstrm0 libedit2 libnghttp2-14 libgnutls30 libsnmp40 libsodium23 libre2-9 libxdp1 libbpf1  "
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
