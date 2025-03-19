@@ -18,7 +18,7 @@ ARG SOURCE_FILE
 ## version 0.25.0-alpha.5
 # https://docs.rs/crate/hickory-dns/0.25.0-alpha.5/features
 ARG DEFAULT_FEATURES="ascii-art,resolver,rustls-platform-verifier,sqlite"
-ARG FEATURES="dns-over-h3,dns-over-https-rustls,dns-over-quic,dns-over-rustls,dns-over-tls,dnssec-ring,recursor,$DEFAULT_FEATURES"
+ARG FEATURES="dns-over-h3,dns-over-quic,dns-over-rustls,dns-over-https-rustls,dnssec,dnssec-ring,$DEFAULT_FEATURES"
 ARG BUILD_PKGS="libssl-dev "
 
 WORKDIR /workspace
