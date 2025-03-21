@@ -112,7 +112,7 @@ FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 # Install runtime dependencies
 #ARG RUN_PKGS="tzdata liblua5.3-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl python3 python3-jinja2 ca-certificates\
 ARG RUN_PKGS="tzdata liblua5.3-0 ca-certificates libcap2-bin libyaml-cpp0.7 libcdb1 liblmdb0 libluajit-5.1-2 \
-              libfstrm0 libedit2 libnghttp2-14 libgnutls30 libsnmp40 libsodium23 libre2-9 libxdp1 libbpf1  "
+              libfstrm0 libedit2 libnghttp2-14 libgnutls30 libsnmp40 libsodium23 libre2-9 libxdp1 libbpf1 tini "
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
@@ -147,7 +147,7 @@ RUN chmod 1777 /tmp
 # Select entrypoint
 COPY ["entrypoint.sh", "/usr/bin/"]
 HEALTHCHECK CMD ["dnsdist", "-e", "showVersion()", "||", "exit", "1"]
-ENTRYPOINT ["/usr/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/bin/entrypoint.sh"]
 CMD ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
 # Fetch pdns-dnsdist libraries from build image and update ldconfig
