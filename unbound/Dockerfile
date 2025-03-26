@@ -2,16 +2,18 @@
 FROM debian:stable AS build
 
 # Environment variables
-ARG VERSION \
-    BUILD_BASE="build-essential make gawk autoconf automake libtool curl ldnsutils " \
-    BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev libprotobuf-c-dev protobuf-c-compiler" 
-ARG CFLAGS="-Os -fomit-frame-pointer "
-ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,--as-needed "
+ARG VERSION=1.20.0
+ARG BUILD_BASE="build-essential make gawk autoconf automake libtool curl ldnsutils"
+ARG BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev libfl-dev libhiredis-dev libsodium-dev libnghttp2-dev libprotobuf-c-dev protobuf-c-compiler ca-certificates" 
+ARG CFLAGS="-Os -fomit-frame-pointer"
+ARG CXXFLAGS="${CFLAGS}"
+ARG LDFLAGS="-Wl,--as-needed"
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y ${BUILD_BASE} ${BUILD_PKGS} \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ${BUILD_BASE} ${BUILD_PKGS} \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates
 
 # Download and extract Unbound source
 WORKDIR /usr/src
@@ -21,7 +23,6 @@ RUN curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.ta
 RUN ./configure \
     --prefix=/usr/local \
     --with-libevent \
-#    --disable-dependency-tracking \
     --sysconfdir=/etc/unbound \
     --with-conf-file=/etc/unbound/unbound.conf \
     --with-pidfile=/var/run/unbound.pid \
@@ -37,20 +38,24 @@ RUN ./configure \
     --with-libnghttp2 \
     --with-pthreads \
     && make -j$(nproc) \
-    && make strip  \
+    && make strip \
     && make install DESTDIR=/tmp/root
 
 # Runtime stage
 FROM debian:stable-slim
 
 # Runtime dependencies
+ARG RUNTIME_PKGS="curl openssl libevent-2.1-7 ca-certificates ldnsutils tzdata \
+                  expat flex bison libhiredis0.14 libsodium23 libnghttp2-14 \
+                  libexpat1 libprotobuf-c1 bsdmainutils"
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl openssl libevent-2.1-7 ca-certificates ldnsutils tzdata expat flex bison \
-    libhiredis0.14 libsodium23 libnghttp2-14 libexpat1 libprotobuf-c1 bsdmainutils \
+    ${RUNTIME_PKGS} \
     && rm -rf /var/lib/apt/lists/*
 
 # Create unbound user and group
-RUN groupadd -r unbound && useradd -r -g unbound -s /sbin/nologin -d /etc/unbound unbound
+RUN groupadd -r unbound \
+    && useradd -r -g unbound -s /sbin/nologin -d /etc/unbound unbound
 
 # Copy Unbound files from build stage
 COPY --from=build /tmp/root/ /
@@ -83,8 +88,6 @@ CMD ["unbound", "-d", "-c", "/etc/unbound/unbound.conf"]
 
 # Labels
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="$TARGETPLATFORM" \
+      arch="amd64" \
       description="Unbound is a validating, recursive, caching DNS resolver." \
       url="https://nlnetlabs.nl/projects/unbound/about/"
-
-
