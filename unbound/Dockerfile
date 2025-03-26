@@ -88,6 +88,5 @@ CMD ["unbound", "-d", "-c", "/etc/unbound/unbound.conf"]
 
 # Labels
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="amd64" \
       description="Unbound is a validating, recursive, caching DNS resolver." \
       url="https://nlnetlabs.nl/projects/unbound/about/"
