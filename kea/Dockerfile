@@ -1,100 +1,158 @@
-# syntax = docker/dockerfile:experimental
-## base image
-FROM --platform=$TARGETPLATFORM debian:latest AS base-image
+# syntax = docker/dockerfile:1.4
+# Multi-architecture build for x86_64 and arm64
 
-ARG TARGETPLATFORM
-ARG BUILD_BASE="build-essential binutils mold gawk autoconf automake libtool curl "
-ARG BUILD_PKGS="${BUILD_BASE}"
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
-ARG CXXFLAGS="${CFLAGS} "
-ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-#ENV LD="ld.lld"
+##############################################################################
+# Base image for all stages
+##############################################################################
+FROM debian:stable-slim AS base
 
-# make base image
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${BUILD_PKGS}
+ARG VERSION=2.7.6
 
-## log4cplus
-FROM base-image AS log4cplus
+# Common environment variables
+ENV TZ=Asia/Tokyo \
+    DEBIAN_FRONTEND=noninteractive
 
-# Environment
-ENV LOG4CPLUS="2.1.1"
-ENV LOG4CPLUS_SOURCE="https://sourceforge.net/projects/log4cplus/files/log4cplus-stable/${LOG4CPLUS}/log4cplus-${LOG4CPLUS}.tar.bz2"
+# Common build flags
+ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -Wno-enum-constexpr-conversion"
+ARG CXXFLAGS="${CFLAGS} -std=c++20"
+ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld"
+ARG CC="clang"
+ARG CXX="clang++"
 
-# build library
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${BUILD_PKGS}
-RUN mkdir -p /usr/local/src \
-    && curl -fSsL ${LOG4CPLUS_SOURCE} -o log4cplus.tar.bz2 \
-    && tar xf log4cplus.tar.bz2 --strip-components=1 -C /usr/local/src \
-    && rm log4cplus.tar.bz2
-RUN cd /usr/local/src \
-    && ./configure \
-        CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    && make -j$(nproc) \
-    && make install-strip DESTDIR=/tmp/root
-RUN ldconfig /
+# Install base packages
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        binutils \
+        autoconf \
+        automake \
+        libtool \
+        curl \
+        ca-certificates \
+        pkg-config \
+        xz-utils \
+        clang-19 \
+        lld-19 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100 && \
+    update-alternatives --install /usr/bin/lld lld /usr/bin/lld-19 100
+
+##############################################################################
+# Build log4cplus library
+##############################################################################
+FROM base AS log4cplus-builder
+
+# Environment variables
+ENV LOG4CPLUS="2.1.2"
+# Convert dots to underscores for GitHub tag format
+RUN LOG4CPLUS_TAG=$(echo ${LOG4CPLUS} | tr '.' '_') && \
+    echo "LOG4CPLUS_SOURCE=https://github.com/log4cplus/log4cplus/releases/download/REL_${LOG4CPLUS_TAG}/log4cplus-${LOG4CPLUS}.tar.bz2" >> /etc/environment && \
+    . /etc/environment
 
 
-## botan
-FROM base-image AS botan
+# Download and extract log4cplus
+RUN mkdir -p /usr/local/src && \
+    LOG4CPLUS_TAG=$(echo ${LOG4CPLUS} | tr '.' '_') && \
+    curl -fSsL "https://github.com/log4cplus/log4cplus/releases/download/REL_${LOG4CPLUS_TAG}/log4cplus-${LOG4CPLUS}.tar.xz" -o log4cplus.tar.xz && \
+    tar xf log4cplus.tar.xz --strip-components=1 -C /usr/local/src && \
+    rm log4cplus.tar.xz
 
-# Environment
-ENV BOTAN="2.19.1"
-ARG BUILD_PKGS="libboost-dev libboost-system-dev libbz2-dev libssl-dev zlib1g-dev libsqlite3-dev python3 "
-ARG CFLAGS="-O2 -pthread -pipe -fomit-frame-pointer -fuse-ld=mold "
-ARG CXXFLAGS="${CFLAGS} "
-ARG CPPFLAGS="${CFLAGS} "
+# Build log4cplus
+WORKDIR /usr/local/src
+RUN ./configure \
+        CFLAGS="${CFLAGS}" \
+        CXXFLAGS="${CXXFLAGS}" \
+        LDFLAGS="${LDFLAGS}" && \
+    make -j$(nproc) && \
+    make install-strip DESTDIR=/opt/log4cplus
 
-# build library
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${BUILD_PKGS}
-RUN mkdir -p /usr/local/src \
-    && curl -fsSL "https://github.com/randombit/botan/archive/${BOTAN}.tar.gz" -o botan.tar.gz \
-    && tar xf botan.tar.gz --strip-components=1 -C /usr/local/src \
-    && rm botan.tar.gz
-RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN cd /usr/local/src \
-    && ./configure.py \
-        --with-boost \
-        --with-bzip2 \
-        --with-openssl \
-        --with-sqlite3 \
-        --with-zlib \
-        --disable-static-library \
+##############################################################################
+# Build botan library
+##############################################################################
+FROM base AS botan-builder
+
+# Environment variables
+ENV BOTAN="3.7.1"
+
+# Install botan dependencies
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+        libboost-dev \
+        libboost-system-dev \
+        zlib1g-dev \
+        python3 \
+        python3-setuptools \
+        libsqlite3-dev \
+        libbz2-dev \
+        libboost-filesystem-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and extract botan
+RUN mkdir -p /usr/local/src && \
+    curl -fsSL "https://botan.randombit.net/releases/Botan-${BOTAN}.tar.xz" -o botan.tar.xz && \
+    tar xf botan.tar.xz --strip-components=1 -C /usr/local/src && \
+    rm botan.tar.xz
+
+# Build botan
+WORKDIR /usr/local/src
+RUN ./configure.py \
         --optimize-for-size \
-        --minimized-build \
-        --enable-modules=aes,aes_armv8,aes_ni,asn1,auto_rng,base,base32,base58,base64,blowfish,bzip2,cbc,cbc_mac,chacha,chacha20poly1305,chacha_rng,chacha_simd32,checksum,cmac,compression,cpuid,crc24,crc32,ctr,curve25519,des,dev_random,dh,dsa,ec_group,ecdh,ecdsa,ecgdsa,ecies,eckcdsa,ed25519,entropy,fd_unix,getentropy,hash,hash_id,hex,hmac,hmac_drbg,locking_allocator,md5,mem_pool,numbertheory,openssl,pk_pad,pkcs11,prf_tls,prf_x942,proc_walk,psk_db,pubkey,rc4,rdrand_rng,rdseed,rfc3394,rfc6979,rmd160,rng,rsa,scrypt,sha1,sha1_armv8,sha2_32,sha2_32_armv8,sha2_32_bmi2,sha2_64,sha2_64_bmi2,simd,socket,sodium,sqlite3,stateful_rng,stream,system_rng,thread_utils,tls,tls_10,tls_cbc,uuid,x509,zlib \
-        --without-documentation
-RUN cd /usr/local/src \
-    && make -j"$(nproc)" install DESTDIR=/tmp/root \
-    && rm -f /tmp/root/usr/local/bin/botan
-RUN ldconfig /
+        --with-boost \
+        --with-zlib \
+        --with-commoncrypto \
+        --with-sqlite3 \
+        --with-bzip2 \
+        --disable-static-library \
+        --without-documentation \
+        --cc-bin=clang++ \
+        --cxxflags="-std=c++20" && \
+    make -j$(nproc) install DESTDIR=/opt/botan && \
+    rm -f /opt/botan/usr/local/bin/botan
 
+##############################################################################
+# Build Kea
+##############################################################################
+FROM base AS kea-builder
 
-# build binary
-FROM base-image AS build
+# Copy built dependencies
+COPY --from=log4cplus-builder /opt/log4cplus/ /
+COPY --from=botan-builder /opt/botan/ /
 
-# Environment
-ARG VERSION="1.6.0-beta"
-ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-15 default-libmysqlclient-dev bison flex perl curl libssl-dev "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -fuse-ld=mold "
-ARG CXXFLAGS="${CFLAGS} "
+# Install kea build dependencies
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+        libboost-dev \
+        libboost-system-dev \
+        postgresql-server-dev-all \
+        default-libmysqlclient-dev \
+        bison \
+        flex \
+        perl \
+        libssl-dev \
+        g++ && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    ldconfig
 
-# dev package install
-COPY --from=log4cplus /tmp/root /
-COPY --from=botan /tmp/root /
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${BUILD_PKGS}
-## build
-RUN mkdir -p /tmp/build \
-  && curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" \
-          -o kea.tar.gz \
-  && tar xf kea.tar.gz --strip-components=1 -C /tmp/build \
-  && rm -f kea.tar.gz
-RUN cd /tmp/build \
-  && autoreconf -if \
-  && ./configure \
+# Download and extract Kea source
+ARG VERSION
+RUN mkdir -p /usr/src/kea && \
+    curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" -o kea.tar.gz && \
+    tar xf kea.tar.gz --strip-components=1 -C /usr/src/kea && \
+    rm -f kea.tar.gz
+
+# Build Kea
+WORKDIR /usr/src/kea
+RUN autoreconf -if && \
+    export CC="gcc" && \
+    export CXX="g++" && \
+    export CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer" && \
+    export CXXFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -std=c++17" && \
+    export LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now" && \
+    ./configure \
         --prefix=/usr/local \
         --sysconfdir=/etc \
         --disable-rpath \
@@ -104,57 +162,65 @@ RUN cd /tmp/build \
         --with-openssl \
         --with-mysql \
         --with-pgsql \
-#        --with-cql \
-        --with-log4cplus \
-        CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}"
-RUN cd /tmp/build \
-    && make -j"$(nproc)" \
-    && make install DESTDIR=/tmp/root
-RUN ldconfig /
-# Delete unnecessary directory
-RUN rm -rf /tmp/root/var/run /tmp/root/usr/local/share/man/* /tmp/root/usr/local/include /tmp/root/usr/include \
-           /tmp/root/usr/share/kea /tmp/root/usr/share/doc/kea /tmp/root/usr/local/lib/kea/hooks/*.la \
-           /tmp/root/usr/local/lib/*.la /tmp/root/usr/local/include/*
+        --with-log4cplus && \
+    make -j$(nproc) && \
+    make install DESTDIR=/opt/kea
 
+# Remove unnecessary files
+RUN rm -rf /opt/kea/var/run \
+           /opt/kea/usr/local/share/man/* \
+           /opt/kea/usr/local/include \
+           /opt/kea/usr/include \
+           /opt/kea/usr/share/kea \
+           /opt/kea/usr/share/doc/kea \
+           /opt/kea/usr/local/lib/kea/hooks/*.la \
+           /opt/kea/usr/local/lib/*.la \
+           /opt/kea/usr/local/include/*
 
-# Intermediate container with runtime dependencies
-FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
+##############################################################################
+# Final image
+##############################################################################
+FROM debian:stable-slim
 
 # Install runtime dependencies
-ARG RUN_PKGS="gcc-11-base libboost-system1.74.0 libpq5 tzdata procps libatomic1 libsqlite3-0 libbz2-1.0 libmariadb3 tini "
-COPY --from=log4cplus /tmp/root /
-COPY --from=botan /tmp/root /
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get -y -qqq install ${RUN_PKGS} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
-    && mkdir -p /var/lib/kea
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+        libboost-system1.74.0 \
+        libpq5 \
+        tzdata \
+        procps \
+        libatomic1 \
+        libsqlite3-0 \
+        libbz2-1.0 \
+        libmariadb3 \
+        tini \
+        ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /usr/local/share/man/* && \
+    mkdir -p /var/lib/kea /usr/local/var/run/kea
 
-# Final container
-FROM runtime
-LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="$TARGETPLATFORM" \
-      description="Kea is an open source implementation of the Dynamic Host Configuration \
-                   Protocol (DHCP) servers, developed and maintained by Internet Systems Consortium (ISC)." \
-      url="https://www.isc.org/kea/"
+# Copy built binaries and libraries
+COPY --from=log4cplus-builder /opt/log4cplus/ /
+COPY --from=botan-builder /opt/botan/ /
+COPY --from=kea-builder /opt/kea/ /
+
+# Add entrypoint script
+COPY entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh && ldconfig
 
 # Environment
-ENV TZ Asia/Tokyo
+ENV TZ=Asia/Tokyo
 
-# publish port TCP and UDP
+# Expose ports
 EXPOSE 67/UDP 547/TCP 547/UDP 8080
 
-# service running
+# Configure service
 STOPSIGNAL SIGTERM
-
-# select entrypoint
 WORKDIR /etc/kea
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 CMD ["/usr/local/bin/entrypoint.sh"]
 
-COPY ./entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Fetch isc Kea libraries from build image
-COPY --from=build /tmp/root/ /
-RUN ldconfig /
+# Labels (placed at the end to minimize build cache impact)
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      description="Kea is an open source implementation of the Dynamic Host Configuration Protocol (DHCP) servers, developed and maintained by Internet Systems Consortium (ISC)." \
+      url="https://www.isc.org/kea/"
