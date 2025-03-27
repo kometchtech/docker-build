@@ -224,3 +224,4 @@ CMD ["/usr/local/bin/entrypoint.sh"]
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="Kea is an open source implementation of the Dynamic Host Configuration Protocol (DHCP) servers, developed and maintained by Internet Systems Consortium (ISC)." \
       url="https://www.isc.org/kea/"
+
