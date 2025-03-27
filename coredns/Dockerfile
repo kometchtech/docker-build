@@ -1,42 +1,57 @@
-# syntax = docker/dockerfile:experimental
-# build stage
-FROM golang:latest as build
+# syntax = docker/dockerfile:1.4
+# Multi-architecture and multi-stage build for CoreDNS
 
+# Build stage
+FROM golang:latest AS builder
+
+# Build arguments
 ARG VERSION
-ARG BUILD_PKGS="git automake libtool autoconf pkg-config curl libunbound-dev libhiredis-dev ca-certificates libcap2-bin "
+ARG BUILD_PKGS="git automake libtool autoconf pkg-config curl libunbound-dev libhiredis-dev ca-certificates libcap2-bin"
+# Build for Linux
+ENV GOOS=linux
 
-ENV GOOS linux
-WORKDIR /go/src
+# Install build dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ${BUILD_PKGS} && \
     rm -rf /var/lib/apt/lists/*
+
+# Setup workspace
+WORKDIR /go/src
+
+# Configure git for large repositories
 RUN git config --global http.postBuffer 524288000
-RUN git clone -b v${VERSION} https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
-#RUN git clone  https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
-RUN cd /go/src/github.com/coredns/coredns/ && \
-    make -j"$(nproc)"
 
-# runtime image
+# Clone CoreDNS repository
+RUN git clone -b v${VERSION} --depth 1 https://github.com/coredns/coredns.git /go/src/github.com/coredns/coredns/
+
+# Build CoreDNS
+WORKDIR /go/src/github.com/coredns/coredns
+RUN make -j"$(nproc)"
+
+# Runtime stage
 FROM gcr.io/distroless/static-debian12:nonroot
-LABEL maintainer="kometchtech <kometch@gmail.com>"
-LABEL description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function."
-LABEL url="https://github.com/coredns/coredns"
 
+# Working directory
 WORKDIR /
+
 # Environment
 ENV PATH "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ENV TZ Asia/Tokyo
 
-# publish port DNS over UDP & TCP
-EXPOSE 53/TCP 53/UDP 443/TCP 443/udp
+# Publish ports for DNS over UDP & TCP
+EXPOSE 53/TCP 53/UDP 443/TCP 443/UDP
 
-# copy file
-COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=build /go/src/github.com/coredns/coredns/coredns /coredns
+# Copy CA certificates and the CoreDNS binary
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /go/src/github.com/coredns/coredns/coredns /coredns
 
-# User
+# Run as non-root user
 USER nonroot:nonroot
 
-# Select entrypoint
+# Set entrypoint
 ENTRYPOINT ["/coredns"]
 
+# Labels (placed at the end to minimize impact on build caching)
+LABEL maintainer="kometchtech <kometch@gmail.com>"
+LABEL description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function."
+LABEL url="https://github.com/coredns/coredns"
