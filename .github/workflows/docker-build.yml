@@ -136,7 +136,7 @@ jobs:
           build-args: |
             VERSION=${{ steps.set-version.outputs.release_version }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha
           outputs: type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
 
       - name: Export digest
