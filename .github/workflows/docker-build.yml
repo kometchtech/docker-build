@@ -63,16 +63,12 @@ jobs:
   build:
     needs: prepare
     if: needs.prepare.outputs.directories != '[]'
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: linux/amd64
-            runner: ubuntu-latest
-          - platform: linux/arm64
-            runner: ubicloud-standard-2-arm
+        platform: [linux/amd64, linux/arm64]
         directory: ${{ fromJson(needs.prepare.outputs.directories) }}
+    runs-on: ${{ matrix.platform == 'linux/amd64' && 'ubuntu-latest' || 'ubicloud-standard-2-arm' }}
 
     steps:
       - name: Checkout repository
@@ -107,10 +103,13 @@ jobs:
             echo "suffix=arm64" >> $GITHUB_OUTPUT
           fi
 
-          #      - name: Set up QEMU
-          #        uses: docker/setup-qemu-action@v3.3.0
-          #        with:
-          #          image: tonistiigi/binfmt:qemu-v8.1.5
+      # QEMU setup is only needed for AMD64 runners building ARM64 images
+      # For native ARM64 runners, we can skip this step
+      - name: Set up QEMU
+        if: matrix.platform == 'linux/arm64' && runner.arch == 'X64'
+        uses: docker/setup-qemu-action@v3.3.0
+        with:
+          image: tonistiigi/binfmt:qemu-v8.1.5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
