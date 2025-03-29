@@ -54,5 +54,5 @@ fi
 ## If knotd exits or doesn't take over as the main process, keep container running
 ## This is a fallback in case knotd daemonizes itself despite our efforts
 echo "Knot DNS might have daemonized, keeping container alive..."
-exec tail -f /dev/null
+tail -f /dev/null
 
