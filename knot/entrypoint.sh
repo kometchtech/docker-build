@@ -44,11 +44,11 @@ if [ -f /etc/knot/knot.conf ]; then
   echo "Checking configuration..."
   knotc -c /etc/knot/knot.conf conf-check 
   echo "Starting Knot DNS with configuration..."
-  knotd -d -v -c /etc/knot/knot.conf "$@"
+  knotd -v -c /etc/knot/knot.conf "$@"
 else
   echo "No configuration found, starting Knot DNS with default settings..."
   # Run in foreground with verbosity
-  exec knotd -d -v "$@"
+  exec knotd -v "$@"
 fi
 
 ## If knotd exits or doesn't take over as the main process, keep container running
