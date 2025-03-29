@@ -5,6 +5,7 @@ on:
     paths:
       - '**/Dockerfile'
       - '**/VERSION'
+      - '**/entrypoint.sh'
   workflow_dispatch:
     inputs:
       no-cache:
