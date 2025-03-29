@@ -104,4 +104,3 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="Knot DNS authoritative server" \
       url="https://www.knot-dns.cz/" \
       version="${VERSION}"
-
