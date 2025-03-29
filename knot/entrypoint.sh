@@ -25,7 +25,8 @@ if [ ! -d /var/lib/knot/confdb ]; then
 fi
 
 # Ensure we have a proper configuration
-if [ -f /etc/knot-dns/knot.sample.conf ]; then
+if [ ! -f /etc/knot/knot.conf ] && [ -f /etc/knot-dns/knot.sample.conf ]; then
+  echo "No configuration found, copying sample config..."
   # Copy the sample config to the standard location
   cp /etc/knot-dns/knot.sample.conf /etc/knot/knot.conf
   
@@ -33,26 +34,26 @@ if [ -f /etc/knot-dns/knot.sample.conf ]; then
   sed -i 's|user: knot:knot|user: root:root|g' /etc/knot/knot.conf
   
   # Uncomment listen directives and set to listen on all interfaces
-  sed -i 's|#    listen: \[ 127.0.0.1@53, ::1@53 \]|    listen: \[ 0.0.0.0@53 \]|g' /etc/knot/knot.conf
+  sed -i 's|#    listen: \[ 127.0.0.1@53, ::1@53 \]|    listen: \[ 0.0.0.0@53, ::@53 \]|g' /etc/knot/knot.conf
   
   # Change log target to stdout
   sed -i 's|  - target: syslog|  - target: stdout|g' /etc/knot/knot.conf
+  
+  echo "Sample configuration prepared at /etc/knot/knot.conf"
 fi
 
 # Start Knot DNS with configuration in non-daemon mode
 if [ -f /etc/knot/knot.conf ]; then
   echo "Checking configuration..."
-  knotc -c /etc/knot/knot.conf conf-check 
+  knotc -c /etc/knot/knot.conf conf-check
   echo "Starting Knot DNS with configuration..."
-  knotd -v -c /etc/knot/knot.conf "$@"
+  knotd -c /etc/knot/knot.conf -v "$@"
 else
-  echo "No configuration found, starting Knot DNS with default settings..."
-  # Run in foreground with verbosity
-  exec knotd -v "$@"
+  echo "ERROR: No valid configuration found"
+  exit 1
 fi
 
-## If knotd exits or doesn't take over as the main process, keep container running
-## This is a fallback in case knotd daemonizes itself despite our efforts
+# If knotd exits or doesn't take over as the main process, keep container running
+# This is a fallback in case knotd daemonizes itself despite our efforts
 echo "Knot DNS might have daemonized, keeping container alive..."
 tail -f /dev/null
-
