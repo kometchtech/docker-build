@@ -39,7 +39,7 @@ jobs:
         id: find-dirs
         run: |
           if [ -n "${{ env.before_commit }}" ]; then
-            CHANGED_DIRS=$(git diff --name-only ${{ env.before_commit }} HEAD | grep -E 'Dockerfile|VERSION' | xargs -I {} dirname {} | sort -u | uniq)
+            CHANGED_DIRS=$(git diff --name-only ${{ env.before_commit }} HEAD | grep -E 'Dockerfile|VERSION|entrypoint.sh' | xargs -I {} dirname {} | sort -u | uniq)
             if [ -n "$CHANGED_DIRS" ]; then
               # 配列を作成
               DIRS_JSON="["
