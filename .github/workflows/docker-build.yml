@@ -13,10 +13,10 @@ on:
         type: boolean
         default: false
   push:
-    paths-ignore:
-      - '*.md'
-      - 'docs/**'
-      - '.github/**/*.md'
+    paths:
+      - '**/Dockerfile'
+      - '**/VERSION'
+      - '**/entrypoint.sh'
 
 jobs:
   prepare:
