@@ -67,16 +67,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
+        arch:
           - os: ubuntu-latest
             platform: linux/amd64
-            platform_pair: linux-amd64
+            suffix: amd64
           - os: ubuntu-24.04-arm
             platform: linux/arm64
-            platform_pair: linux-arm64
+            suffix: arm64
         directory: ${{ fromJson(needs.prepare.outputs.directories) }}
-    runs-on: ${{ matrix.os }}
-
+    runs-on: ${{ matrix.arch.os }}
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -102,9 +102,8 @@ jobs:
           fi
 
       # QEMU setup is only needed for AMD64 runners building ARM64 images
-      # For native ARM64 runners, we can skip this step
       - name: Set up QEMU
-        if: matrix.platform == 'linux/arm64' && runner.arch == 'X64'
+        if: matrix.arch.platform == 'linux/arm64' && runner.arch == 'X64'
         uses: docker/setup-qemu-action@v3.3.0
         with:
           image: tonistiigi/binfmt:qemu-v8.1.5
@@ -128,27 +127,26 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: source/${{ matrix.directory }}
-          platforms: ${{ matrix.platform }}
+          platforms: ${{ matrix.arch.platform }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
           build-args: |
             VERSION=${{ steps.set-version.outputs.release_version }}
-          cache-from: type=gha,scope=${{ matrix.platform_pair }}-${{ steps.image-name.outputs.image_name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.platform_pair }}-${{ steps.image-name.outputs.image_name }}
+          cache-from: type=gha,scope=${{ matrix.arch.suffix }}-${{ steps.image-name.outputs.image_name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch.suffix }}-${{ steps.image-name.outputs.image_name }}
           outputs: type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
 
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-          echo "${{ matrix.platform }},${{ steps.build.outputs.digest }}" >> /tmp/digests/digest-info
+          echo "${digest}" > /tmp/digests/digest.txt
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ steps.image-name.outputs.image_name }}-${{ matrix.platform_pair }}
-          path: /tmp/digests/*
+          name: digest-${{ steps.image-name.outputs.image_name }}-${{ matrix.arch.suffix }}
+          path: /tmp/digests/digest.txt
           retention-days: 1
           if-no-files-found: error
 
@@ -175,8 +173,34 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
-          pattern: digests-${{ steps.image-name.outputs.image_name }}-*
+          pattern: digest-${{ steps.image-name.outputs.image_name }}-*
           merge-multiple: true
+
+      - name: Extract digests
+        id: extract
+        run: |
+          # 各アーキテクチャのダイジェストファイルを検索
+          AMD64_FILE=$(find /tmp/digests -name "digest-${{ steps.image-name.outputs.image_name }}-amd64" -type d | head -n 1)
+          ARM64_FILE=$(find /tmp/digests -name "digest-${{ steps.image-name.outputs.image_name }}-arm64" -type d | head -n 1)
+          
+          if [ -z "$AMD64_FILE" ] || [ ! -f "$AMD64_FILE/digest.txt" ]; then
+            echo "Error: AMD64 digest not found"
+            exit 1
+          fi
+          
+          if [ -z "$ARM64_FILE" ] || [ ! -f "$ARM64_FILE/digest.txt" ]; then
+            echo "Error: ARM64 digest not found"
+            exit 1
+          fi
+          
+          AMD64_DIGEST=$(cat "$AMD64_FILE/digest.txt")
+          ARM64_DIGEST=$(cat "$ARM64_FILE/digest.txt")
+          
+          echo "amd64=${AMD64_DIGEST}" >> $GITHUB_OUTPUT
+          echo "arm64=${ARM64_DIGEST}" >> $GITHUB_OUTPUT
+          
+          echo "AMD64 digest: ${AMD64_DIGEST}"
+          echo "ARM64 digest: ${ARM64_DIGEST}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -199,50 +223,20 @@ jobs:
             echo "release_version=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Extract digests
-        id: extract-digests
-        working-directory: /tmp/digests
-        run: |
-          # Check for digest info file
-          if [ ! -f "digest-info" ]; then
-            echo "Error: digest-info file not found"
-            exit 1
-          fi
-          
-          # Extract digests for both architectures
-          AMD64_DIGEST=$(grep 'linux/amd64' digest-info | cut -d ',' -f2 || echo "")
-          ARM64_DIGEST=$(grep 'linux/arm64' digest-info | cut -d ',' -f2 || echo "")
-          
-          if [ -z "$AMD64_DIGEST" ]; then
-            echo "Error: AMD64 digest not found"
-            exit 1
-          fi
-          
-          if [ -z "$ARM64_DIGEST" ]; then
-            echo "Error: ARM64 digest not found"
-            exit 1
-          fi
-          
-          echo "amd64_digest=${AMD64_DIGEST}" >> $GITHUB_OUTPUT
-          echo "arm64_digest=${ARM64_DIGEST}" >> $GITHUB_OUTPUT
-          
-          echo "AMD64 digest: ${AMD64_DIGEST}"
-          echo "ARM64 digest: ${ARM64_DIGEST}"
-
       - name: Create manifest list and push
         run: |
           # Create manifest with version tag
           echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
           docker buildx imagetools create \
             -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${{ steps.extract-digests.outputs.amd64_digest }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${{ steps.extract-digests.outputs.arm64_digest }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${{ steps.extract.outputs.amd64 }} \
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${{ steps.extract.outputs.arm64 }}
           
           # Also tag as latest
           echo "Creating manifest with latest tag"
           docker buildx imagetools create \
             -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:latest \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${{ steps.extract-digests.outputs.amd64_digest }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${{ steps.extract-digests.outputs.arm64_digest }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${{ steps.extract.outputs.amd64 }} \
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${{ steps.extract.outputs.arm64 }}
           
           echo "Created and pushed manifest list for ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}"
