@@ -13,10 +13,10 @@ on:
         type: boolean
         default: false
   push:
-    paths:
-      - '**/Dockerfile'
-      - '**/VERSION'
-      - '**/entrypoint.sh'
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.github/**/*.md'
 
 jobs:
   prepare:
@@ -110,6 +110,19 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Debug information
+        run: |
+          echo "Working directory: $(pwd)"
+          echo "App directory: ${{ matrix.app_directory }}"
+          echo "App content:"
+          ls -la ${{ matrix.app_directory }}
+          echo "Version check:"
+          if [ -f "${{ matrix.app_directory }}/VERSION" ]; then
+            cat "${{ matrix.app_directory }}/VERSION"
+          else
+            echo "VERSION file not found!"
+          fi
+          
       - name: Set architecture suffix
         id: arch-suffix
         run: |
@@ -117,7 +130,7 @@ jobs:
 
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
           context: ./${{ needs.prepare.outputs.app_directory }}
           file: ./${{ needs.prepare.outputs.app_directory }}/Dockerfile
