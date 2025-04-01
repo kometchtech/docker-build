@@ -52,7 +52,7 @@ USER nonroot:nonroot
 ENTRYPOINT ["/coredns"]
 
 # Labels (placed at the end to minimize impact on build caching)
-LABEL maintainer="kometchtech <kometch@gmail.com>"
-LABEL description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function."
-LABEL url="https://github.com/coredns/coredns"
+LABEL maintainer="kometchtech <kometch@gmail.com>" \
+      description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
+      url="https://github.com/coredns/coredns"
 
