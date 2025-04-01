@@ -17,10 +17,6 @@ on:
       - '**/Dockerfile'
       - '**/VERSION'
       - '**/entrypoint.sh'
-    paths-ignore:
-      - '*.md'
-      - 'docs/**'
-      - '.github/**/*.md'
 
 jobs:
   prepare:
