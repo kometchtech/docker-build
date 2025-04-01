@@ -1,131 +1,127 @@
-name: Build and Push Multi-Arch Docker Images
+name: Docker Multi-Architecture Build
 
 on:
+  workflow_dispatch:
+    inputs:
+      app_directory:
+        description: 'Directory of the application to build'
+        required: true
+        type: string
+      no-cache:
+        description: 'Disable build cache'
+        required: false
+        type: boolean
+        default: false
   push:
     paths:
       - '**/Dockerfile'
       - '**/VERSION'
       - '**/entrypoint.sh'
-  workflow_dispatch:
-    inputs:
-      no-cache:
-        description: "Build docker images with no cache"
-        default: false
-        required: false
-        type: boolean
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
-      directories: ${{ steps.find-dirs.outputs.directories }}
-    steps:
-      - name: Checkout repository with full history
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 全コミットを取得
-
-      - name: Determine previous commit
-        id: previous-commit
-        run: |
-          if [ -z "${{ github.event.before }}" ] || ! git rev-parse ${{ github.event.before }} >/dev/null 2>&1; then
-            BEFORE_COMMIT=$(git rev-parse HEAD^ || echo "")
-          else
-            BEFORE_COMMIT=${{ github.event.before }}
-          fi
-          echo "before_commit=$BEFORE_COMMIT" >> $GITHUB_ENV
-
-      - name: Find modified directories
-        id: find-dirs
-        run: |
-          if [ -n "${{ env.before_commit }}" ]; then
-            CHANGED_DIRS=$(git diff --name-only ${{ env.before_commit }} HEAD | grep -E 'Dockerfile|VERSION|entrypoint.sh' | xargs -I {} dirname {} | sort -u | uniq)
-            if [ -n "$CHANGED_DIRS" ]; then
-              # 配列を作成
-              DIRS_JSON="["
-              for dir in $CHANGED_DIRS; do
-                if [ "$DIRS_JSON" != "[" ]; then
-                  DIRS_JSON="$DIRS_JSON,"
-                fi
-                DIRS_JSON="$DIRS_JSON\"$dir\""
-              done
-              DIRS_JSON="$DIRS_JSON]"
-              echo "directories=$DIRS_JSON" >> $GITHUB_OUTPUT
-              echo "Changed directories: $CHANGED_DIRS"
-            else
-              echo "No relevant changes found"
-              echo "directories=[]" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "No previous commit found, skipping build."
-            echo "directories=[]" >> $GITHUB_OUTPUT
-          fi
-
-  build:
-    needs: prepare
-    if: needs.prepare.outputs.directories != '[]'
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [linux/amd64, linux/arm64]
-        directory: ${{ fromJson(needs.prepare.outputs.directories) }}
-    runs-on: ${{ matrix.platform == 'linux/amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
-
+      app_directory: ${{ steps.set-app-dir.outputs.app_directory }}
+      version: ${{ steps.get-version.outputs.version }}
+      image_name: ${{ steps.set-image-name.outputs.image_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: source
 
-      - name: Get image name from directory
-        id: image-name
+      - name: Set application directory
+        id: set-app-dir
         run: |
-          IMAGE_NAME=$(basename ${{ matrix.directory }})
-          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Set VERSION environment variable
-        id: set-version
-        run: |
-          if [ -f "source/${{ matrix.directory }}/VERSION" ]; then
-            RELEASE_VERSION=$(cat "source/${{ matrix.directory }}/VERSION" | tr -d ' \n\t\r')
-            echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
-            echo "Version set to: ${RELEASE_VERSION}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "app_directory=${{ github.event.inputs.app_directory }}" >> $GITHUB_OUTPUT
           else
-            echo "No VERSION file found, using latest"
-            echo "release_version=latest" >> $GITHUB_OUTPUT
+            # Get changed files from the commit
+            CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }})
+            
+            # Look for modified Dockerfile, VERSION or entrypoint.sh
+            DOCKERFILE_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/Dockerfile')
+            VERSION_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/VERSION')
+            ENTRYPOINT_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/entrypoint.sh')
+            
+            if [[ ! -z "$DOCKERFILE_CHANGE" ]]; then
+              APP_DIR=$(echo "$DOCKERFILE_CHANGE" | head -n 1 | cut -d'/' -f1)
+              echo "Dockerfile changed in directory: $APP_DIR"
+            elif [[ ! -z "$VERSION_CHANGE" ]]; then
+              APP_DIR=$(echo "$VERSION_CHANGE" | head -n 1 | cut -d'/' -f1)
+              echo "VERSION changed in directory: $APP_DIR"
+            elif [[ ! -z "$ENTRYPOINT_CHANGE" ]]; then
+              APP_DIR=$(echo "$ENTRYPOINT_CHANGE" | head -n 1 | cut -d'/' -f1)
+              echo "entrypoint.sh changed in directory: $APP_DIR"
+            else
+              echo "No relevant changes detected in Dockerfile, VERSION, or entrypoint.sh files"
+              exit 1
+            fi
+            
+            echo "app_directory=${APP_DIR}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get architecture suffix
-        id: arch-suffix
+      - name: Get version from VERSION file
+        id: get-version
         run: |
-          if [[ "${{ matrix.platform }}" == "linux/amd64" ]]; then
-            echo "suffix=amd64" >> $GITHUB_OUTPUT
+          APP_DIR="${{ steps.set-app-dir.outputs.app_directory }}"
+          if [ -f "${APP_DIR}/VERSION" ]; then
+            VERSION=$(cat "${APP_DIR}/VERSION" | tr -d '\n')
+            echo "version=${VERSION}" >> $GITHUB_OUTPUT
           else
-            echo "suffix=arm64" >> $GITHUB_OUTPUT
+            echo "Error: VERSION file not found in ${APP_DIR}"
+            exit 1
           fi
+
+      - name: Set image name
+        id: set-image-name
+        run: |
+          APP_DIR="${{ steps.set-app-dir.outputs.app_directory }}"
+          echo "image_name=${APP_DIR}" >> $GITHUB_OUTPUT
+
+  build:
+    needs: prepare
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            os: ubuntu-latest
+            platform: linux/amd64
+          - arch: arm64
+            os: ubuntu-24.04-arm
+            platform: linux/arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set architecture suffix
+        id: arch-suffix
+        run: |
+          echo "suffix=${{ matrix.arch }}" >> $GITHUB_OUTPUT
 
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
-          context: source/${{ matrix.directory }}
+          context: ./${{ needs.prepare.outputs.app_directory }}
+          file: ./${{ needs.prepare.outputs.app_directory }}/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
           build-args: |
-            VERSION=${{ steps.set-version.outputs.release_version }}
+            VERSION=${{ needs.prepare.outputs.version }}
           cache-from: type=gha,scope=platform-${{ steps.arch-suffix.outputs.suffix }}
           cache-to: type=gha,mode=max,scope=platform-${{ steps.arch-suffix.outputs.suffix }}
-          outputs: type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
+          outputs: type=image,name=kometchtech/${{ needs.prepare.outputs.image_name }},push-by-digest=true,name-canonical=true
 
       - name: Export digest
         run: |
@@ -138,90 +134,47 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ steps.image-name.outputs.image_name }}-${{ steps.arch-suffix.outputs.suffix }}
+          name: digests-${{ needs.prepare.outputs.image_name }}-${{ steps.arch-suffix.outputs.suffix }}
           path: /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
           retention-days: 1
 
   merge:
     needs: [prepare, build]
-    if: needs.prepare.outputs.directories != '[]'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        directory: ${{ fromJson(needs.prepare.outputs.directories) }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: source
-
-      - name: Get image name from directory
-        id: image-name
-        run: |
-          IMAGE_NAME=$(basename ${{ matrix.directory }})
-          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
-          pattern: digests-${{ steps.image-name.outputs.image_name }}-*
+          pattern: digests-${{ needs.prepare.outputs.image_name }}-*
           merge-multiple: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Set VERSION environment variable
-        id: set-version
-        run: |
-          if [ -f "source/${{ matrix.directory }}/VERSION" ]; then
-            RELEASE_VERSION=$(cat "source/${{ matrix.directory }}/VERSION" | tr -d ' \n\t\r')
-            echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
-            echo "Version set to: ${RELEASE_VERSION}"
-          else
-            echo "No VERSION file found, using latest"
-            echo "release_version=latest" >> $GITHUB_OUTPUT
-          fi
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Create manifest list and push
-        working-directory: /tmp/digests
         run: |
-          # Check if both digest files exist
-          if [ ! -f "digest-amd64" ]; then
-            echo "Error: AMD64 digest file not found"
-            exit 1
-          fi
+          APP_NAME="${{ needs.prepare.outputs.image_name }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           
-          if [ ! -f "digest-arm64" ]; then
-            echo "Error: ARM64 digest file not found"
-            exit 1
-          fi
+          # Parse the digests collected from the previous step
+          DIGESTS=""
+          for FILE in /tmp/digests/digest-*; do
+            while IFS= read -r line; do
+              PLATFORM=$(echo $line | cut -d ',' -f 1)
+              DIGEST=$(echo $line | cut -d ',' -f 2)
+              DIGESTS="${DIGESTS} ${DIGEST}"
+            done < $FILE
+          done
           
-          AMD64_DIGEST=$(cat digest-amd64 | cut -d ',' -f2)
-          ARM64_DIGEST=$(cat digest-arm64 | cut -d ',' -f2)
+          # Create versioned tag
+          docker buildx imagetools create -t kometchtech/${APP_NAME}:${VERSION} ${DIGESTS}
           
-          echo "AMD64 digest: ${AMD64_DIGEST}"
-          echo "ARM64 digest: ${ARM64_DIGEST}"
-          
-          # Create manifest with version tag
-          echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
-          docker buildx imagetools create \
-            -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
-          
-          # Also tag as latest
-          echo "Creating manifest with latest tag"
-          docker buildx imagetools create \
-            -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:latest \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
-          
-          echo "Created and pushed manifest list for ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}"
-
+          # Create latest tag
+          docker buildx imagetools create -t kometchtech/${APP_NAME}:latest ${DIGESTS}
