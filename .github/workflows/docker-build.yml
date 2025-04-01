@@ -17,53 +17,70 @@ on:
       - '**/Dockerfile'
       - '**/VERSION'
       - '**/entrypoint.sh'
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+      - '.github/**/*.md'
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
-      app_directory: ${{ steps.set-app-dir.outputs.app_directory }}
+      directories: ${{ steps.find-dirs.outputs.directories }}
       version: ${{ steps.get-version.outputs.version }}
-      image_name: ${{ steps.set-image-name.outputs.image_name }}
     steps:
-      - name: Checkout repository
+      - name: Checkout repository with full history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 全コミットを取得
 
-      - name: Set application directory
-        id: set-app-dir
+      - name: Determine previous commit
+        id: previous-commit
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "app_directory=${{ github.event.inputs.app_directory }}" >> $GITHUB_OUTPUT
+          if [ -z "${{ github.event.before }}" ] || ! git rev-parse ${{ github.event.before }} >/dev/null 2>&1; then
+            BEFORE_COMMIT=$(git rev-parse HEAD^ || echo "")
           else
-            # Get changed files from the commit
-            CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }})
-            
-            # Look for modified Dockerfile, VERSION or entrypoint.sh
-            DOCKERFILE_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/Dockerfile' || true)
-            VERSION_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/VERSION' || true)
-            ENTRYPOINT_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/entrypoint.sh' || true)
-            
-            if [[ ! -z "$DOCKERFILE_CHANGE" ]]; then
-              APP_DIR=$(echo "$DOCKERFILE_CHANGE" | head -n 1 | cut -d'/' -f1)
-              echo "Dockerfile changed in directory: $APP_DIR"
-            elif [[ ! -z "$VERSION_CHANGE" ]]; then
-              APP_DIR=$(echo "$VERSION_CHANGE" | head -n 1 | cut -d'/' -f1)
-              echo "VERSION changed in directory: $APP_DIR"
-            elif [[ ! -z "$ENTRYPOINT_CHANGE" ]]; then
-              APP_DIR=$(echo "$ENTRYPOINT_CHANGE" | head -n 1 | cut -d'/' -f1)
-              echo "entrypoint.sh changed in directory: $APP_DIR"
-            else
-              echo "No relevant changes detected in Dockerfile, VERSION, or entrypoint.sh files"
-              exit 1
-            fi
-            
-            echo "app_directory=${APP_DIR}" >> $GITHUB_OUTPUT
+            BEFORE_COMMIT=${{ github.event.before }}
           fi
+          echo "before_commit=$BEFORE_COMMIT" >> $GITHUB_ENV
+
+      - name: Find modified directories
+        id: find-dirs
+        run: |
+          if [ -n "${{ env.before_commit }}" ]; then
+            CHANGED_DIRS=$(git diff --name-only ${{ env.before_commit }} HEAD | grep -E 'Dockerfile|VERSION|entrypoint.sh' | xargs -I {} dirname {} | sort -u | uniq)
+            if [ -n "$CHANGED_DIRS" ]; then
+              # 配列を作成
+              DIRS_JSON="["
+              for dir in $CHANGED_DIRS; do
+                if [ "$DIRS_JSON" != "[" ]; then
+                  DIRS_JSON="$DIRS_JSON,"
+                fi
+                DIRS_JSON="$DIRS_JSON\"$dir\""
+              done
+              DIRS_JSON="$DIRS_JSON]"
+              echo "directories=$DIRS_JSON" >> $GITHUB_OUTPUT
+              echo "Changed directories: $CHANGED_DIRS"
+            else
+              echo "No relevant changes found"
+              echo "directories=[]" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No previous commit found, skipping build."
+            echo "directories=[]" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Set workflow dispatch directory
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          DIRS_JSON="[\"${{ github.event.inputs.app_directory }}\"]"
+          echo "directories=$DIRS_JSON" >> $GITHUB_OUTPUT
 
       - name: Get version from VERSION file
         id: get-version
+        if: github.event_name == 'workflow_dispatch'
         run: |
-          APP_DIR="${{ steps.set-app-dir.outputs.app_directory }}"
+          APP_DIR="${{ github.event.inputs.app_directory }}"
           if [ -f "${APP_DIR}/VERSION" ]; then
             VERSION=$(cat "${APP_DIR}/VERSION" | tr -d '\n')
             echo "version=${VERSION}" >> $GITHUB_OUTPUT
@@ -71,12 +88,6 @@ jobs:
             echo "Error: VERSION file not found in ${APP_DIR}"
             exit 1
           fi
-
-      - name: Set image name
-        id: set-image-name
-        run: |
-          APP_DIR="${{ steps.set-app-dir.outputs.app_directory }}"
-          echo "image_name=${APP_DIR}" >> $GITHUB_OUTPUT
 
   build:
     needs: prepare
