@@ -101,13 +101,6 @@ jobs:
             echo "release_version=latest" >> $GITHUB_OUTPUT
           fi
 
-      # QEMU setup is only needed for AMD64 runners building ARM64 images
-      - name: Set up QEMU
-        if: matrix.arch.platform == 'linux/arm64' && runner.arch == 'X64'
-        uses: docker/setup-qemu-action@v3.3.0
-        with:
-          image: tonistiigi/binfmt:qemu-v8.1.5
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -145,7 +138,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digest-${{ steps.image-name.outputs.image_name }}-${{ matrix.arch.suffix }}
+          name: digests-${{ steps.image-name.outputs.image_name }}-${{ matrix.arch.suffix }}
           path: /tmp/digests/digest.txt
           retention-days: 1
           if-no-files-found: error
@@ -173,28 +166,35 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
-          pattern: digest-${{ steps.image-name.outputs.image_name }}-*
+          pattern: digests-${{ steps.image-name.outputs.image_name }}-*
           merge-multiple: true
 
       - name: Extract digests
         id: extract
         run: |
-          # 各アーキテクチャのダイジェストファイルを検索
-          AMD64_FILE=$(find /tmp/digests -name "digest-${{ steps.image-name.outputs.image_name }}-amd64" -type d | head -n 1)
-          ARM64_FILE=$(find /tmp/digests -name "digest-${{ steps.image-name.outputs.image_name }}-arm64" -type d | head -n 1)
+          # ダウンロードされたファイル構造を確認
+          echo "Listing downloaded files:"
+          find /tmp/digests -type f
           
-          if [ -z "$AMD64_FILE" ] || [ ! -f "$AMD64_FILE/digest.txt" ]; then
-            echo "Error: AMD64 digest not found"
+          # 直接ファイルパスを探す
+          AMD64_DIGEST_FILE=$(find /tmp/digests -path "*/digests-${{ steps.image-name.outputs.image_name }}-amd64/*" -name "digest.txt" | head -n 1)
+          ARM64_DIGEST_FILE=$(find /tmp/digests -path "*/digests-${{ steps.image-name.outputs.image_name }}-arm64/*" -name "digest.txt" | head -n 1)
+          
+          echo "AMD64 file path: $AMD64_DIGEST_FILE"
+          echo "ARM64 file path: $ARM64_DIGEST_FILE"
+          
+          if [ -z "$AMD64_DIGEST_FILE" ] || [ ! -f "$AMD64_DIGEST_FILE" ]; then
+            echo "Error: AMD64 digest file not found"
             exit 1
           fi
           
-          if [ -z "$ARM64_FILE" ] || [ ! -f "$ARM64_FILE/digest.txt" ]; then
-            echo "Error: ARM64 digest not found"
+          if [ -z "$ARM64_DIGEST_FILE" ] || [ ! -f "$ARM64_DIGEST_FILE" ]; then
+            echo "Error: ARM64 digest file not found"
             exit 1
           fi
           
-          AMD64_DIGEST=$(cat "$AMD64_FILE/digest.txt")
-          ARM64_DIGEST=$(cat "$ARM64_FILE/digest.txt")
+          AMD64_DIGEST=$(cat "$AMD64_DIGEST_FILE")
+          ARM64_DIGEST=$(cat "$ARM64_DIGEST_FILE")
           
           echo "amd64=${AMD64_DIGEST}" >> $GITHUB_OUTPUT
           echo "arm64=${ARM64_DIGEST}" >> $GITHUB_OUTPUT
