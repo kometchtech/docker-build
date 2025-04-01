@@ -55,3 +55,4 @@ ENTRYPOINT ["/coredns"]
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
       url="https://github.com/coredns/coredns"
+
