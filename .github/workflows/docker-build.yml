@@ -117,10 +117,10 @@ jobs:
 
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./${{ needs.prepare.outputs.app_directory }}
-          file: ./Dockerfile
+          file: ./${{ needs.prepare.outputs.app_directory }}/Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
