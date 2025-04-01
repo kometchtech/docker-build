@@ -120,7 +120,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./${{ needs.prepare.outputs.app_directory }}
-          file: ./${{ needs.prepare.outputs.app_directory }}/Dockerfile
+          file: ./Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
           no-cache: ${{ inputs.no-cache == true }}
