@@ -67,9 +67,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [linux/amd64, linux/arm64]
         directory: ${{ fromJson(needs.prepare.outputs.directories) }}
-    runs-on: ${{ matrix.platform == 'linux/amd64' && 'ubuntu-latest' || 'ubicloud-standard-2-arm' }}
+        include:
+          - platform: linux/amd64
+            os: ubuntu-latest
+          - platform: linux/arm64
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
