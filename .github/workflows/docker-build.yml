@@ -39,9 +39,9 @@ jobs:
             CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }})
             
             # Look for modified Dockerfile, VERSION or entrypoint.sh
-            DOCKERFILE_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/Dockerfile')
-            VERSION_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/VERSION')
-            ENTRYPOINT_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/entrypoint.sh')
+            DOCKERFILE_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/Dockerfile' || true)
+            VERSION_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/VERSION' || true)
+            ENTRYPOINT_CHANGE=$(echo "$CHANGED_FILES" | grep -E '([^/]+)/entrypoint.sh' || true)
             
             if [[ ! -z "$DOCKERFILE_CHANGE" ]]; then
               APP_DIR=$(echo "$DOCKERFILE_CHANGE" | head -n 1 | cut -d'/' -f1)
