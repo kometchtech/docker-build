@@ -113,13 +113,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -132,34 +125,14 @@ jobs:
             VERSION=${{ steps.set-version.outputs.release_version }}
           cache-from: type=gha,scope=platform-${{ steps.arch-suffix.outputs.suffix }}
           cache-to: type=gha,mode=max,scope=platform-${{ steps.arch-suffix.outputs.suffix }}
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-${{ steps.arch-suffix.outputs.suffix }}
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-${{ steps.arch-suffix.outputs.suffix }}
-          outputs: |
-            type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
-            type=image,name=ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
+          outputs: type=image,name=${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
 
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          
-          # Check if digest is empty or null
-          if [ -z "$digest" ]; then
-            echo "Digest is empty, trying to retrieve from Docker Hub"
-            # Retrieve digest from the pushed image tag
-            digest=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-${{ steps.arch-suffix.outputs.suffix }} | cut -d '@' -f 2)
-            echo "Retrieved digest: $digest"
-          fi
-          
-          # Check again to make sure we have a digest
-          if [ -z "$digest" ]; then
-            echo "Error: Could not retrieve digest."
-            exit 1
-          fi
-          
           touch "/tmp/digests/${digest#sha256:}"
-          echo "${{ matrix.platform }},$digest" >> /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
+          echo "${{ matrix.platform }},${{ steps.build.outputs.digest }}" >> /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
           cat /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
 
       - name: Upload digest
@@ -204,13 +177,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Set VERSION environment variable
         id: set-version
         run: |
@@ -223,7 +189,7 @@ jobs:
             echo "release_version=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create manifest list and push to Docker Hub
+      - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
           # Check if both digest files exist
@@ -243,37 +209,19 @@ jobs:
           echo "AMD64 digest: ${AMD64_DIGEST}"
           echo "ARM64 digest: ${ARM64_DIGEST}"
           
-          # Create manifest with version tag for Docker Hub using the tagged images directly
+          # Create manifest with version tag
           echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
           docker buildx imagetools create \
             -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-amd64 \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-arm64
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
           
-          # Also tag as latest for Docker Hub
+          # Also tag as latest
           echo "Creating manifest with latest tag"
           docker buildx imagetools create \
             -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:latest \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-amd64 \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-arm64
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
           
           echo "Created and pushed manifest list for ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}"
 
-      - name: Create manifest list and push to GitHub Container Registry
-        working-directory: /tmp/digests
-        run: |
-          # Create manifest with version tag for GitHub Container Registry using the tagged images directly
-          echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
-          docker buildx imagetools create \
-            -t ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-amd64 \
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-arm64
-          
-          # Also tag as latest for GitHub Container Registry
-          echo "Creating manifest with latest tag"
-          docker buildx imagetools create \
-            -t ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:latest \
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-amd64 \
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-arm64
-          
-          echo "Created and pushed manifest list for ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}"
