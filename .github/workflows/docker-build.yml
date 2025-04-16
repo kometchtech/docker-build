@@ -107,7 +107,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # GitHub Container Registryにログイン
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -115,14 +114,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Docker Hubにログイン
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      # 共通イメージをビルドし、1つのダイジェストとしてプッシュ
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -135,45 +126,24 @@ jobs:
             VERSION=${{ steps.set-version.outputs.release_version }}
           cache-from: type=gha,scope=platform-${{ steps.arch-suffix.outputs.suffix }}
           cache-to: type=gha,mode=max,scope=platform-${{ steps.arch-suffix.outputs.suffix }}
-          # 両方のイメージ名を指定（出力は単一のダイジェストになります）
           outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
 
-      # GitHub Container Registryのダイジェストをエクスポート
-      - name: Export GHCR digest
+      - name: Export digest
         run: |
-          mkdir -p /tmp/digests/ghcr
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/ghcr/${digest#sha256:}"
-          echo "${{ matrix.platform }},${{ steps.build.outputs.digest }}" >> /tmp/digests/ghcr/digest-${{ steps.arch-suffix.outputs.suffix }}
-          cat /tmp/digests/ghcr/digest-${{ steps.arch-suffix.outputs.suffix }}
+          touch "/tmp/digests/${digest#sha256:}"
+          echo "${{ matrix.platform }},${{ steps.build.outputs.digest }}" >> /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
+          cat /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
 
-      # Docker Hubのダイジェストもエクスポート
-      - name: Export Docker Hub digest
-        run: |
-          mkdir -p /tmp/digests/dockerhub
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/dockerhub/${digest#sha256:}"
-          echo "${{ matrix.platform }},${{ steps.build.outputs.digest }}" >> /tmp/digests/dockerhub/digest-${{ steps.arch-suffix.outputs.suffix }}
-          cat /tmp/digests/dockerhub/digest-${{ steps.arch-suffix.outputs.suffix }}
-
-      # GitHub Container Registryのダイジェストをアップロード
-      - name: Upload GHCR digest
+      - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-ghcr-${{ steps.image-name.outputs.image_name }}-${{ steps.arch-suffix.outputs.suffix }}
-          path: /tmp/digests/ghcr/digest-${{ steps.arch-suffix.outputs.suffix }}
+          name: digests-${{ steps.image-name.outputs.image_name }}-${{ steps.arch-suffix.outputs.suffix }}
+          path: /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
           retention-days: 1
 
-      # Docker Hubのダイジェストをアップロード
-      - name: Upload Docker Hub digest
-        uses: actions/upload-artifact@v4
-        with:
-          name: digests-dockerhub-${{ steps.image-name.outputs.image_name }}-${{ steps.arch-suffix.outputs.suffix }}
-          path: /tmp/digests/dockerhub/digest-${{ steps.arch-suffix.outputs.suffix }}
-          retention-days: 1
-
-  # GitHub Container Registryのマニフェストマージ
-  merge-ghcr:
+  merge:
     needs: [prepare, build]
     if: needs.prepare.outputs.directories != '[]'
     runs-on: ubuntu-latest
@@ -192,11 +162,11 @@ jobs:
           IMAGE_NAME=$(basename ${{ matrix.directory }})
           echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
 
-      - name: Download GHCR digests
+      - name: Download digests
         uses: actions/download-artifact@v4
         with:
           path: /tmp/digests
-          pattern: digests-ghcr-${{ steps.image-name.outputs.image_name }}-*
+          pattern: digests-${{ steps.image-name.outputs.image_name }}-*
           merge-multiple: true
 
       - name: Set up Docker Buildx
@@ -221,7 +191,7 @@ jobs:
             echo "release_version=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create manifest list and push to GHCR
+      - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
           # Check if both digest files exist
@@ -256,87 +226,3 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
           
           echo "Created and pushed manifest list for ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}"
-
-  # Docker Hubのマニフェストマージ
-  merge-dockerhub:
-    needs: [prepare, build]
-    if: needs.prepare.outputs.directories != '[]'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        directory: ${{ fromJson(needs.prepare.outputs.directories) }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: source
-
-      - name: Get image name from directory
-        id: image-name
-        run: |
-          IMAGE_NAME=$(basename ${{ matrix.directory }})
-          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Download Docker Hub digests
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests
-          pattern: digests-dockerhub-${{ steps.image-name.outputs.image_name }}-*
-          merge-multiple: true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Set VERSION environment variable
-        id: set-version
-        run: |
-          if [ -f "source/${{ matrix.directory }}/VERSION" ]; then
-            RELEASE_VERSION=$(cat "source/${{ matrix.directory }}/VERSION" | tr -d ' \n\t\r')
-            echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
-            echo "Version set to: ${RELEASE_VERSION}"
-          else
-            echo "No VERSION file found, using latest"
-            echo "release_version=latest" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Create manifest list and push to Docker Hub
-        working-directory: /tmp/digests
-        run: |
-          # Check if both digest files exist
-          if [ ! -f "digest-amd64" ]; then
-            echo "Error: AMD64 digest file not found"
-            exit 1
-          fi
-          
-          if [ ! -f "digest-arm64" ]; then
-            echo "Error: ARM64 digest file not found"
-            exit 1
-          fi
-          
-          AMD64_DIGEST=$(cat digest-amd64 | cut -d ',' -f2)
-          ARM64_DIGEST=$(cat digest-arm64 | cut -d ',' -f2)
-          
-          echo "AMD64 digest: ${AMD64_DIGEST}"
-          echo "ARM64 digest: ${ARM64_DIGEST}"
-          
-          # Create manifest with version tag
-          echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
-          docker buildx imagetools create \
-            -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
-          
-          # Also tag as latest
-          echo "Creating manifest with latest tag"
-          docker buildx imagetools create \
-            -t ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:latest \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
-          
-          echo "Created and pushed manifest list for ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}"
