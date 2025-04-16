@@ -138,4 +138,3 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
                   in the early 1980s at the University of California at Berkeley." \
       org.opencontainers.image.url="https://www.isc.org/downloads/bind/" \
       org.opencontainers.image.source="https://github.com/isc-projects/bind9"
-
