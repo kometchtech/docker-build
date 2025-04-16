@@ -14,7 +14,7 @@ ENV GOOS=linux
 ENV CGO_ENABLED=0
 
 # Install build dependencies
-RUN apt-get update && \
+RUN apt-get -qqq update && \
     apt-get install -y --no-install-recommends ${COMMON_BUILD_PKGS} ${BUILD_PKGS} && \
     rm -rf /var/lib/apt/lists/*
 
@@ -53,3 +53,4 @@ ENTRYPOINT ["/coredns"]
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
       url="https://github.com/coredns/coredns"
+
