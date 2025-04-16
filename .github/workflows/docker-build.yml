@@ -107,6 +107,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # GitHub Container Registryにログイン
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -114,8 +115,16 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push by digest
-        id: build
+      # Docker Hubにログイン
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # GitHub Container Registryにビルドとプッシュ（ダイジェスト形式）
+      - name: Build and push to GitHub Container Registry
+        id: build-ghcr
         uses: docker/build-push-action@v6
         with:
           context: source/${{ matrix.directory }}
@@ -124,26 +133,44 @@ jobs:
           no-cache: ${{ inputs.no-cache == true }}
           build-args: |
             VERSION=${{ steps.set-version.outputs.release_version }}
-          cache-from: type=gha,scope=platform-${{ steps.arch-suffix.outputs.suffix }}
-          cache-to: type=gha,mode=max,scope=platform-${{ steps.arch-suffix.outputs.suffix }}
-          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true,name-canonical=true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-${{ steps.arch-suffix.outputs.suffix }}
+          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }},push-by-digest=true
 
+      # Docker Hubにビルドとプッシュ（同じダイジェストを再利用）
+      - name: Copy image to Docker Hub
+        env:
+          GHCR_DIGEST: ${{ steps.build-ghcr.outputs.digest }}
+        run: |
+          # Pull the image by digest from GitHub Container Registry
+          docker pull ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${GHCR_DIGEST}
+
+          # Tag for Docker Hub with architecture tag
+          docker tag ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${GHCR_DIGEST} \
+            ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-${{ steps.arch-suffix.outputs.suffix }}
+
+          # Push to Docker Hub
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-${{ steps.arch-suffix.outputs.suffix }}
+
+      # GitHub Container Registry用のダイジェストをエクスポート
       - name: Export digest
+        env:
+          DIGEST: ${{ steps.build-ghcr.outputs.digest }}
         run: |
           mkdir -p /tmp/digests
-          digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"
-          echo "${{ matrix.platform }},${{ steps.build.outputs.digest }}" >> /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
-          cat /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
+          echo "${{ matrix.platform }}=${DIGEST}" >> /tmp/digests/ghcr-${{ steps.arch-suffix.outputs.suffix }}
+          echo "${{ matrix.platform }},${{ steps.arch-suffix.outputs.suffix }}" >> /tmp/digests/mapping-${{ steps.arch-suffix.outputs.suffix }}
 
+      # ダイジェストをアップロード
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
           name: digests-${{ steps.image-name.outputs.image_name }}-${{ steps.arch-suffix.outputs.suffix }}
-          path: /tmp/digests/digest-${{ steps.arch-suffix.outputs.suffix }}
+          path: /tmp/digests/
           retention-days: 1
 
-  merge:
+  # GitHub Container Registry のマニフェスト作成
+  create-ghcr-manifest:
     needs: [prepare, build]
     if: needs.prepare.outputs.directories != '[]'
     runs-on: ubuntu-latest
@@ -162,6 +189,18 @@ jobs:
           IMAGE_NAME=$(basename ${{ matrix.directory }})
           echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
 
+      - name: Set VERSION environment variable
+        id: set-version
+        run: |
+          if [ -f "source/${{ matrix.directory }}/VERSION" ]; then
+            RELEASE_VERSION=$(cat "source/${{ matrix.directory }}/VERSION" | tr -d ' \n\t\r')
+            echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
+            echo "Version set to: ${RELEASE_VERSION}"
+          else
+            echo "No VERSION file found, using latest"
+            echo "release_version=latest" >> $GITHUB_OUTPUT
+          fi
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
@@ -179,6 +218,65 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create and push manifest for GitHub Container Registry
+        run: |
+          # ファイル一覧を表示（デバッグ用）
+          find /tmp/digests -type f -ls
+          
+          # アーキテクチャとダイジェストのマッピングを取得
+          if [ -f "/tmp/digests/ghcr-amd64" ] && [ -f "/tmp/digests/ghcr-arm64" ] && [ -f "/tmp/digests/mapping-amd64" ] && [ -f "/tmp/digests/mapping-arm64" ]; then
+            AMD64_DIGEST=$(cat /tmp/digests/ghcr-amd64 | cut -d '=' -f2)
+            ARM64_DIGEST=$(cat /tmp/digests/ghcr-arm64 | cut -d '=' -f2)
+            
+            echo "AMD64 digest: ${AMD64_DIGEST}"
+            echo "ARM64 digest: ${ARM64_DIGEST}"
+            
+            # バージョンタグのマニフェスト作成
+            echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
+            docker manifest create \
+              ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
+              ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
+              ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
+            
+            # マニフェストをプッシュ
+            docker manifest push ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}
+            
+            # latestタグのマニフェスト作成
+            echo "Creating manifest with latest tag"
+            docker manifest create \
+              ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:latest \
+              ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
+              ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
+            
+            # latestマニフェストをプッシュ
+            docker manifest push ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:latest
+            
+            echo "Created and pushed manifest list for ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}"
+          else
+            echo "Error: Required digest files are missing"
+            exit 1
+          fi
+
+  # Docker Hub のマニフェスト作成
+  create-dockerhub-manifest:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.directories != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory: ${{ fromJson(needs.prepare.outputs.directories) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Get image name from directory
+        id: image-name
+        run: |
+          IMAGE_NAME=$(basename ${{ matrix.directory }})
+          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+
       - name: Set VERSION environment variable
         id: set-version
         run: |
@@ -191,38 +289,51 @@ jobs:
             echo "release_version=latest" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create manifest list and push
-        working-directory: /tmp/digests
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-${{ steps.image-name.outputs.image_name }}-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create and push manifest for Docker Hub
         run: |
-          # Check if both digest files exist
-          if [ ! -f "digest-amd64" ]; then
-            echo "Error: AMD64 digest file not found"
+          # ファイル一覧を表示（デバッグ用）
+          find /tmp/digests -type f -ls
+          
+          # アーキテクチャマッピングファイルが存在することを確認
+          if [ -f "/tmp/digests/mapping-amd64" ] && [ -f "/tmp/digests/mapping-arm64" ]; then
+            # バージョンタグのマニフェスト作成
+            echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
+            docker manifest create \
+              ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
+              ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-amd64 \
+              ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-arm64
+            
+            # マニフェストをプッシュ
+            docker manifest push ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}
+            
+            # latestタグのマニフェスト作成
+            echo "Creating manifest with latest tag"
+            docker manifest create \
+              ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:latest \
+              ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-amd64 \
+              ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }}-arm64
+            
+            # latestマニフェストをプッシュ
+            docker manifest push ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}:latest
+            
+            echo "Created and pushed manifest list for ${{ secrets.DOCKER_USERNAME }}/${{ steps.image-name.outputs.image_name }}"
+          else
+            echo "Error: Mapping files are missing"
             exit 1
           fi
-          
-          if [ ! -f "digest-arm64" ]; then
-            echo "Error: ARM64 digest file not found"
-            exit 1
-          fi
-          
-          AMD64_DIGEST=$(cat digest-amd64 | cut -d ',' -f2)
-          ARM64_DIGEST=$(cat digest-arm64 | cut -d ',' -f2)
-          
-          echo "AMD64 digest: ${AMD64_DIGEST}"
-          echo "ARM64 digest: ${ARM64_DIGEST}"
-          
-          # Create manifest with version tag
-          echo "Creating manifest with version tag: ${{ steps.set-version.outputs.release_version }}"
-          docker buildx imagetools create \
-            -t ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${{ steps.set-version.outputs.release_version }} \
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
-          
-          # Also tag as latest
-          echo "Creating manifest with latest tag"
-          docker buildx imagetools create \
-            -t ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:latest \
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
-          
-          echo "Created and pushed manifest list for ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}"
