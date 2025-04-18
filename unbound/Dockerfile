@@ -10,14 +10,14 @@ ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed"
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ${BUILD_BASE} ${BUILD_PKGS} \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
+    apt-get install -y --no-install-recommends ${BUILD_BASE} ${BUILD_PKGS} \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
 
 # Download and extract Unbound source
 WORKDIR /usr/src
-RUN curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" | tar xz --strip-components=1
+RUN curl -fsSL "https://www.nlnetlabs.nl/downloads/unbound/unbound-${VERSION}.tar.gz" | tar zx --strip-components 1 
 
 # Configure and build Unbound
 RUN ./configure \
@@ -37,6 +37,7 @@ RUN ./configure \
     --enable-dnscrypt \
     --with-libnghttp2 \
     --with-pthreads \
+    --with-deprecate-rsa-1024 \
     && make -j$(nproc) \
     && make strip \
     && make install DESTDIR=/tmp/root
@@ -49,8 +50,8 @@ ARG RUNTIME_PKGS="curl openssl libevent-2.1-7 ca-certificates ldnsutils tzdata \
                   expat flex bison libhiredis0.14 libsodium23 libnghttp2-14 \
                   libexpat1 libprotobuf-c1 bsdmainutils"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ${RUNTIME_PKGS} \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
+    apt-get install -y --no-install-recommends ${RUNTIME_PKGS} \
     && rm -rf /var/lib/apt/lists/*
 
 # Create unbound user and group
