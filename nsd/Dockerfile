@@ -51,6 +51,7 @@ RUN autoreconf -if \
       --with-ssl \
       --enable-ratelimit \
       --enable-packed \
+      --enable-year2038 \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j$(nproc) \
     && make install DESTDIR=/tmp/root \
