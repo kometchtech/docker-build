@@ -88,7 +88,8 @@ VOLUME /etc/knot-resolver
 VOLUME /var/cache/knot-resolver
 
 # Set entrypoint and default command
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/knot-resolver"]
 CMD ["-c", "/etc/knot-resolver/config.yaml"]
 
 # Add labels at the end to minimize rebuild impact in multi-stage builds
