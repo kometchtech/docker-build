@@ -226,3 +226,33 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
           
           echo "Created and pushed manifest list for ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}"
+
+  sync-images:
+    needs: [prepare, merge]
+    if: needs.prepare.outputs.directories != '[]'
+    runs-on: ubuntu-latest
+      - name: Login to DockerHub
+        uses: regclient/actions/regctl-login@main
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GHCR
+        uses: regclient/actions/regctl-login@main
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: sync images
+        uses: it-bens/container-registry-sync-action@main
+        with:
+         sourceRepository: 'ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}'
+         loginToSourceRepository: 'true'
+         sourceRepositoryUsername: ${{ github.actor }}
+         sourceRepositoryPassword: ${{ secrets.GITHUB_TOKEN }}
+         targetRepository: '${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}'
+         loginToTargetRepository: 'true'
+         targetRepositoryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
+         targetRepositoryPassword: ${{ secrets.DOCKERHUB_TOKEN }}
