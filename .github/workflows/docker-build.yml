@@ -150,6 +150,8 @@ jobs:
     strategy:
       matrix:
         directory: ${{ fromJson(needs.prepare.outputs.directories) }}
+    outputs:
+      release_version: ${{ steps.set-version.outputs.release_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -234,7 +236,7 @@ jobs:
     strategy:
       matrix:
         directory: ${{ fromJson(needs.prepare.outputs.directories) }}
-        tag: [${{ needs.merge.outputs.release_version }}, latest]
+        tag: ['${{ needs.merge.outputs.release_version }}', 'latest']
     steps:
       - name: Get image name from directory
         id: image-name
