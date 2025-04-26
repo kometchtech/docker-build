@@ -231,6 +231,7 @@ jobs:
     needs: [prepare, merge]
     if: needs.prepare.outputs.directories != '[]'
     runs-on: ubuntu-latest
+    steps:
       - name: Login to DockerHub
         uses: regclient/actions/regctl-login@main
         with:
