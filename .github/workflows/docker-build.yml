@@ -232,15 +232,21 @@ jobs:
     if: needs.prepare.outputs.directories != '[]'
     runs-on: ubuntu-latest
     steps:
-      - name: Log in to docker hub
-        uses: docker/login-action@v3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@main
+        
+      - name: Install regctl
+        uses: regclient/actions/regctl-installer@main
+
+      - name: regctl login docker hub
+        uses: regclient/actions/regctl-login@main
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: regctl login GitHub Container Registry
+        uses: regclient/actions/regctl-login@main
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
