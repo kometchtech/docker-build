@@ -231,10 +231,19 @@ jobs:
     needs: [prepare, merge]
     if: needs.prepare.outputs.directories != '[]'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory: ${{ fromJson(needs.prepare.outputs.directories) }}
     steps:
+      - name: Get image name from directory
+        id: image-name
+        run: |
+          IMAGE_NAME=$(basename ${{ matrix.directory }})
+          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+
       - name: Install cosign
         uses: sigstore/cosign-installer@main
-        
+
       - name: Install regctl
         uses: regclient/actions/regctl-installer@main
 
