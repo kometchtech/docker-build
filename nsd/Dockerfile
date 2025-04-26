@@ -99,5 +99,4 @@ CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
 # Label information (at the end to minimize impact on build caching)
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="NLnet Labs Name Server Daemon (NSD) - Authoritative DNS server" \
-      url="https://nlnetlabs.nl/projects/nsd/about/" \
-      version="${VERSION}"
+      url="https://nlnetlabs.nl/projects/nsd/about/"
