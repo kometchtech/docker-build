@@ -236,19 +236,12 @@ jobs:
     strategy:
       matrix:
         directory: ${{ fromJson(needs.prepare.outputs.directories) }}
-        tag: ['${{ needs.merge.outputs.release_version }}', 'latest']
     steps:
       - name: Get image name from directory
         id: image-name
         run: |
           IMAGE_NAME=$(basename ${{ matrix.directory }})
           echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: source
-
       - name: Install cosign
         uses: sigstore/cosign-installer@main
 
@@ -269,7 +262,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Sync images
+      - name: sync images
         uses: it-bens/container-registry-sync-action@main
         with:
          sourceRepository: 'ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}'
@@ -280,4 +273,3 @@ jobs:
          loginToTargetRepository: 'true'
          targetRepositoryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
          targetRepositoryPassword: ${{ secrets.DOCKERHUB_TOKEN }}
-         tags: '${{ matrix.tag }}'
