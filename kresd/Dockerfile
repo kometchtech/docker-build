@@ -97,3 +97,4 @@ LABEL cz.knot-resolver.vendor="cz.nic" \
       maintainer="kometch@gmail.com" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.description="Knot Resolver - caching full resolver implementation"
+
