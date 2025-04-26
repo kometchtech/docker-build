@@ -241,11 +241,16 @@ jobs:
           IMAGE_NAME=$(basename ${{ matrix.directory }})
           echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: source
+
       - name: Set VERSION environment variable
         id: set-version
         run: |
-          if [ -f "${{ matrix.directory }}/VERSION" ]; then
-            RELEASE_VERSION=$(cat "${{ matrix.directory }}/VERSION" | tr -d ' \n\t\r')
+          if [ -f "source/${{ matrix.directory }}/VERSION" ]; then
+            RELEASE_VERSION=$(cat "source/${{ matrix.directory }}/VERSION" | tr -d ' \n\t\r')
             echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
             echo "Version set to: ${RELEASE_VERSION}"
           else
