@@ -140,9 +140,9 @@ RUN apt-get update -qq && \
 # Download and extract Kea source
 ARG VERSION
 RUN mkdir -p /usr/src/kea && \
-    curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.gz" -o kea.tar.gz && \
-    tar xf kea.tar.gz --strip-components=1 -C /usr/src/kea && \
-    rm -f kea.tar.gz
+    curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.xz" -o kea.tar.xz && \
+    tar -xf kea.tar.xz --strip-components=1 -C /usr/src/kea && \
+    rm -f kea.tar.xz
 
 # Build Kea
 WORKDIR /usr/src/kea
