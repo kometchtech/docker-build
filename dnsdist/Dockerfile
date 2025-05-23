@@ -1,19 +1,23 @@
 # syntax = docker/dockerfile:experimental
+FROM --platform=$TARGETPLATFORM rust:latest AS build
 
-# Common build stage with shared dependencies
-FROM rust:latest AS common-build
-
-# Common build dependencies
-ARG COMMON_BUILD="build-essential binutils make gawk curl clang lld cmake ninja-build python3-full python3-pip python3-venv"
-ARG VERSION
+# Env
+ARG VERSION=2.0.0-alpha1
+ARG BUILD_BASE="build-essential binutils make gawk curl clang lld cmake ninja-build python3-full python3-pip python3-venv"
+ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
+               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libfstrm-dev \
+               libsystemd-dev libcap-dev libyaml-cpp-dev libcdb-dev liblmdb-dev libluajit-5.1-dev"
 ARG LUAVER=lua5.3
 ARG CC=clang
 ARG CXX=clang++
+
+# H2O version
 ARG H2O_VERSION=v2.2.6
 
-# Set up Python venv with meson
+# dev package install and setup Python venv with latest meson
 RUN apt-get update -qq \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${COMMON_BUILD} \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${BUILD_PKGS} \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends lib${LUAVER}-dev \
     && python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir 'meson>=1.3.0' 'pyyaml' \
     && rm -rf /var/lib/apt/lists/* \
@@ -21,22 +25,6 @@ RUN apt-get update -qq \
 
 # Setup env
 ENV PATH="/opt/venv/bin:$PATH"
-
-# Main build stage
-FROM common-build AS build
-
-# Additional build dependencies
-ARG BUILD_PKGS="pkgconf libboost-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
-               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libfstrm-dev \
-               libsystemd-dev libcap-dev libyaml-cpp-dev libcdb-dev liblmdb-dev libluajit-5.1-dev"
-ARG LUAVER=lua5.3
-ARG VERSION
-
-# Install additional dev packages
-RUN apt-get update -qq \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${BUILD_PKGS} \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends lib${LUAVER}-dev \
-    && rm -rf /var/lib/apt/lists/*
 
 # Install h2o (based on install_h2o.sh)
 RUN cd /h2o \
@@ -61,7 +49,7 @@ RUN cd /h2o \
     && ln -sf /opt/lib/libh2o-evloop.* /usr/lib/ \
     && echo "/opt/lib" > /etc/ld.so.conf.d/h2o.conf
 
-# Download dnsdist source
+## download source
 RUN curl -fsSL "https://downloads.powerdns.com/releases/dnsdist-${VERSION}.tar.xz" -o dnsdist.tar.xz \
     && tar xf dnsdist.tar.xz --strip-components=1 -C /usr/src \
     && rm dnsdist.tar.xz \
@@ -112,18 +100,19 @@ RUN cd /usr/src \
     && meson compile -C ${BUILDDIR} \
     && meson install -C ${BUILDDIR} --destdir=/tmp/root \
     && strip /tmp/root/usr/local/bin/* \
-    && rm -rf /tmp/root/lib \
-    && ldconfig / \
-    && rm -rf /tmp/root/usr/local/share/man/* \
-    && rm -rf /tmp/root/usr/local/share/doc/*
+    && rm -rf /tmp/root/lib # remove systemd unit files, not needed
 
-# Runtime dependencies stage
-FROM debian:stable-slim AS runtime
+RUN ldconfig /
+RUN rm -rf /tmp/root/usr/local/share/man/*
+
+
+# Intermediate container with runtime dependencies
+FROM --platform=$TARGETPLATFORM debian:stable-slim AS runtime
 
 # Install runtime dependencies
+#ARG RUN_PKGS="tzdata liblua5.3-0 libsodium23 libprotobuf-c1 libre2-9 libsnmp-base libsnmp40 libedit2 openssl python3 python3-jinja2 ca-certificates\
 ARG RUN_PKGS="tzdata liblua5.3-0 ca-certificates libcap2-bin libyaml-cpp0.7 libcdb1 liblmdb0 libluajit-5.1-2 \
-              libfstrm0 libedit2 libnghttp2-14 libgnutls30 libsnmp40 libsodium23 libre2-9 libxdp1 libbpf1 tini"
-
+              libfstrm0 libedit2 libnghttp2-14 libgnutls30 libsnmp40 libsodium23 libre2-9 libxdp1 libbpf1 tini "
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${RUN_PKGS} \
     && apt-get clean \
@@ -132,37 +121,35 @@ RUN apt-get update -qq \
     && useradd -g _dnsdist -s /dev/null -d /etc _dnsdist \
     && mkdir -p /opt/lib
 
-# Final stage
+
+# Final container
 FROM runtime
 
 # Environment
 ENV TZ Asia/Tokyo
 
-# Publish ports
+# Publish port
 EXPOSE 53/tcp 53/udp 443/tcp 853/tcp 8083/tcp 8443/tcp 8443/udp
 
-# Service running
+# service running
 STOPSIGNAL SIGTERM
 
-# Volume and working directory setup
+# Volume
 WORKDIR /etc/dnsdist
 RUN chmod 1777 /tmp
 
-# Copy files from build stage
-COPY --from=build /tmp/root/ /
-COPY --from=build /opt/lib/ /opt/lib/
-COPY --from=build /opt/include/ /opt/include/
-COPY entrypoint.sh /usr/local/bin/
-
-# Configure dynamic libraries
-RUN echo "/opt/lib" > /etc/ld.so.conf.d/opt.conf && ldconfig
-
-# Health check and entrypoint
+# Select entrypoint
+COPY ["entrypoint.sh", "/usr/local/bin/"]
 HEALTHCHECK CMD ["dnsdist", "-e", "showVersion()", "||", "exit", "1"]
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 CMD ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
-# Labels placed at end to minimize impact on build caching
+# Fetch pdns-dnsdist libraries from build image and update ldconfig
+COPY --from=build /tmp/root/ /
+COPY --from=build /opt/lib/ /opt/lib/
+COPY --from=build /opt/include/ /opt/include/
+RUN echo "/opt/lib" > /etc/ld.so.conf.d/opt.conf && ldconfig
+
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="dnsdist is a highly DNS-, DoS- and abuse-aware loadbalancer. \
                   Its goal in life is to route traffic to the best server, delivering top \
