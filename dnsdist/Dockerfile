@@ -3,10 +3,10 @@ FROM --platform=$TARGETPLATFORM rust:latest AS build
 
 # Env
 ARG VERSION=2.0.0-alpha1
-ARG BUILD_BASE="build-essential binutils make gawk curl clang lld cmake ninja-build python3-full python3-pip python3-venv"
-ARG BUILD_PKGS="${BUILD_BASE} pkgconf libboost-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
-               libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libfstrm-dev \
-               libsystemd-dev libcap-dev libyaml-cpp-dev libcdb-dev liblmdb-dev libluajit-5.1-dev"
+ARG BUILD_BASE="clang lld pkg-config ninja-build python3-yaml python3-pip python3-venv cmake pkgconf "
+ARG BUILD_PKGS="${BUILD_BASE} libboost-all-dev libbpf-dev libcap-dev libcdb-dev libedit-dev libfstrm-dev libgnutls28-dev liblmdb-dev \
+                libluajit-5.1-dev liblua5.3-dev libnghttp2-dev libre2-dev libsnmp-dev libsodium-dev libssl-dev libsystemd-dev \
+                libwslay-dev libxdp-dev meson ragel libsystemd-dev liblmdb-dev"
 ARG LUAVER=lua5.3
 ARG CC=clang
 ARG CXX=clang++
@@ -15,6 +15,7 @@ ARG CXX=clang++
 ARG H2O_VERSION=v2.2.6
 
 # dev package install and setup Python venv with latest meson
+#RUN echo "Acquire::http::Pipeline-Depth 0;Acquire::http::No-Cache true;Acquire::BrokenProxy true;" >> /etc/apt/apt.conf.d/99fixbadproxy
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${BUILD_PKGS} \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends lib${LUAVER}-dev \
@@ -80,15 +81,15 @@ RUN cd /usr/src \
       -Db_lto=true \
       -Db_lto_mode=thin \
       -Db_pie=true \
-      -Ddns-over-https=true \
-      -Ddns-over-quic=false \
-      -Ddns-over-http3=false \
-      -Ddns-over-tls=true \
+      -Ddns-over-https=enabled \
+      -Ddns-over-quic=disabled \
+      -Ddns-over-http3=disabled \
+      -Ddns-over-tls=enabled \
       -Ddnscrypt=enabled \
       -Ddnstap=enabled \
       -Debpf=enabled \
       -Dtls-gnutls=enabled \
-      -Dsnmp=true \
+      -Dsnmp=enabled \
       -Dlibcap=enabled \
       -Dlibsodium=enabled \
       -Dre2=enabled \
