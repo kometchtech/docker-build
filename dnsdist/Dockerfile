@@ -41,7 +41,8 @@ RUN cd /quiche \
        fi \
     && mkdir -p /opt/include /opt/lib \
     && install -m644 quiche/include/quiche.h /opt/include/ \
-    && install -m644 target/release/libquiche.so /opt/lib/libdnsdist-quiche.so
+    && install -m644 target/release/libquiche.so /opt/lib/libdnsdist-quiche.so \
+    && strip /opt/lib/libdnsdist-quiche.so
 
 # Create quiche pkg-config file
 RUN mkdir -p /opt/lib/pkgconfig && \
