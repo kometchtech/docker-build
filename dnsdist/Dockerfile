@@ -98,7 +98,7 @@ ARG LUAVER=lua5.3
 # Additional build dependencies
 ARG BUILD_PKGS="pkgconf libboost-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
                libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libfstrm-dev \
-               libsystemd-dev libcap-dev libyaml-cpp-dev libcdb-dev liblmdb-dev libluajit-5.1-dev pkg-config"
+               libcap-dev libyaml-cpp-dev libcdb-dev liblmdb-dev libluajit-5.1-dev pkg-config equivs"
 
 # Install additional dev packages
 RUN apt-get update -qq \
@@ -175,15 +175,29 @@ RUN cd /usr/src \
     && rm -rf /tmp/root/usr/local/share/doc/* \
     && rm -rf ${BUILDDIR} /tmp/cargo-target
 
+# Generate runtime dependencies information
+RUN cd /tmp && mkdir -p /tmp/root/tmp && mkdir debian && \
+    echo 'Source: docker-deps-for-dnsdist' > debian/control && \
+    dpkg-shlibdeps /tmp/root/usr/local/bin/dnsdist && \
+    sed 's/^shlibs:Depends=/Depends: /' debian/substvars >> debian/control && \
+    equivs-build debian/control && \
+    dpkg-deb -I equivs-dummy_1.0_all.deb && \
+    cp equivs-dummy_1.0_all.deb /tmp/root/tmp/
+
 # Runtime stage
 FROM debian:stable-slim AS runtime
 
+# Copy files from build stage
+COPY --from=build /tmp/root/ /
+COPY --from=build /opt /opt
+RUN chmod 1777 /tmp # FIXME: better not use /build/tmp for equivs at all
+
 # Install runtime dependencies
-ARG RUN_PKGS="tzdata liblua5.3-0 ca-certificates libcap2-bin libyaml-cpp0.7 libcdb1 liblmdb0 libluajit-5.1-2 \
-              libfstrm0 libedit2 libnghttp2-14 libgnutls30 libsnmp40 libsodium23 libre2-9 libxdp1 libbpf1 tini"
+ARG RUN_PKGS="tini libcap2-bin ca-certificates"
 
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${RUN_PKGS} \
+    && apt-get install -y /tmp/equivs-dummy_1.0_all.deb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd _dnsdist \
@@ -197,8 +211,6 @@ FROM runtime
 ENV TZ Asia/Tokyo
 
 # Copy files from build stage
-COPY --from=build /tmp/root/ /
-COPY --from=build /opt /opt
 COPY entrypoint.sh /usr/local/bin/
 
 # Configure dynamic libraries
