@@ -35,7 +35,6 @@ RUN LOG4CPLUS_TAG=$(echo ${LOG4CPLUS} | tr '.' '_') && \
     echo "LOG4CPLUS_SOURCE=https://github.com/log4cplus/log4cplus/releases/download/REL_${LOG4CPLUS_TAG}/log4cplus-${LOG4CPLUS}.tar.bz2" >> /etc/environment && \
     . /etc/environment
 
-
 # Download and extract log4cplus
 RUN mkdir -p /usr/local/src && \
     LOG4CPLUS_TAG=$(echo ${LOG4CPLUS} | tr '.' '_') && \
@@ -52,51 +51,14 @@ RUN ./configure \
     make -j$(nproc) && \
     make install-strip DESTDIR=/opt/log4cplus
 
-# Build botan library
-FROM base AS botan-builder
-
-# Environment variables
-ENV BOTAN="3.7.1"
-
-ARG BUILD_PKGS="libboost-dev libboost-system-dev zlib1g-dev python3-setuptools libsqlite3-dev libbz2-dev libboost-filesystem-dev"
-# Install botan dependencies
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get install -y --no-install-recommends ${BUILD_PKGS} \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Download and extract botan
-RUN mkdir -p /usr/local/src && \
-    curl -fSL "https://botan.randombit.net/releases/Botan-${BOTAN}.tar.xz" -o botan.tar.xz && \
-    tar xf botan.tar.xz --strip-components=1 -C /usr/local/src && \
-    rm botan.tar.xz
-
-# Build botan
-WORKDIR /usr/local/src
-RUN export CXXFLAGS="-fPIC -std=c++20 -O2" && \
-    export LDFLAGS="-fPIC" && \
-    python3 ./configure.py \
-        --prefix=/usr/local \
-        --optimize-for-size \
-        --with-boost \
-        --with-zlib \
-        --with-sqlite3 \
-        --with-bzip2 \
-        --enable-shared-library \
-        --disable-static-library \
-        --without-documentation \
-        --cc-bin=clang++ && \
-    make -j$(nproc) CXXFLAGS="-fPIC -std=c++20 -O2" && \
-    make install DESTDIR=/opt/botan
-
 # Build Kea
 FROM base AS kea-builder
 
 # Copy built dependencies
 COPY --from=log4cplus-builder /opt/log4cplus /
-COPY --from=botan-builder /opt/botan /
 
-ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-all default-libmysqlclient-dev bison flex perl libssl-dev "
+ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-all default-libmysqlclient-dev \
+                bison flex perl libssl-dev "
 # Install kea build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get install -y --no-install-recommends ${BUILD_PKGS} \
@@ -124,20 +86,19 @@ RUN autoreconf -if && \
     export CXXFLAGS="${CXXFLAGS}" && \
     export LDFLAGS="${LDFLAGS}" && \
     export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}" && \
-    pkg-config --exists botan-3 && \
     ./configure \
         --prefix=/usr/local \
         --sysconfdir=/etc \
         --disable-rpath \
         --disable-static \
         --with-boost-include \
-        --with-botan-config=/usr/local/bin/botan-config \
         --with-openssl \
         --with-mysql \
         --with-pgsql \
         --with-log4cplus && \
     make -j$(nproc) && \
     make install DESTDIR=/opt/kea
+RUN find /opt/kea/usr/local/sbin -type f -exec sh -c 'file -b "$1" | grep -q "ELF" && strip "$1" || true' _ {} \;
 
 # Remove unnecessary files
 RUN rm -rf /opt/kea/var/run \
@@ -153,7 +114,8 @@ RUN rm -rf /opt/kea/var/run \
 # Final image
 FROM debian:stable-slim
 
-ARG RUNTIME_PKGS="libboost-system1.74.0 libpq5 tzdata procps libatomic1 libsqlite3-0 libbz2-1.0 libmariadb3 tini ca-certificates"
+ARG RUNTIME_PKGS="libboost-system1.74.0 libpq5 tzdata libc6 libatomic1 libsqlite3-0 libbz2-1.0 \
+                  libmariadb3 tini ca-certificates"
 
 # Install runtime dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -164,7 +126,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
 
 # Copy built binaries and libraries
 COPY --from=log4cplus-builder /opt/log4cplus /
-COPY --from=botan-builder /opt/botan /
+# COPY --from=botan-builder /opt/botan /
 COPY --from=kea-builder /opt/kea /
 
 # Add entrypoint script
