@@ -1,16 +1,12 @@
 # syntax = docker/dockerfile:1.4
-# Multi-architecture build for x86_64 and arm64
 
-##############################################################################
 # Base image for all stages
-##############################################################################
-FROM debian:stable-slim AS base
+FROM debian:stable AS base
 
 ARG VERSION=2.7.6
 
 # Common environment variables
-ENV TZ=Asia/Tokyo \
-    DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Tokyo
 
 # Common build flags
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -Wno-enum-constexpr-conversion"
@@ -18,30 +14,18 @@ ARG CXXFLAGS="${CFLAGS} -std=c++20"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld"
 ARG CC="clang"
 ARG CXX="clang++"
+ARG BUILD_PKGS="build-essential binutils autoconf automake libtool curl ca-certificates pkg-config xz-utils clang-19 lld-19"
 
 # Install base packages
-RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        binutils \
-        autoconf \
-        automake \
-        libtool \
-        curl \
-        ca-certificates \
-        pkg-config \
-        xz-utils \
-        clang-19 \
-        lld-19 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100 && \
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100 && \
-    update-alternatives --install /usr/bin/lld lld /usr/bin/lld-19 100
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get install -y ${BUILD_PKGS} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100 \
+    && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100 \
+    && update-alternatives --install /usr/bin/lld lld /usr/bin/lld-19 100
 
-##############################################################################
 # Build log4cplus library
-##############################################################################
 FROM base AS log4cplus-builder
 
 # Environment variables
@@ -55,7 +39,7 @@ RUN LOG4CPLUS_TAG=$(echo ${LOG4CPLUS} | tr '.' '_') && \
 # Download and extract log4cplus
 RUN mkdir -p /usr/local/src && \
     LOG4CPLUS_TAG=$(echo ${LOG4CPLUS} | tr '.' '_') && \
-    curl -fSsL "https://github.com/log4cplus/log4cplus/releases/download/REL_${LOG4CPLUS_TAG}/log4cplus-${LOG4CPLUS}.tar.xz" -o log4cplus.tar.xz && \
+    curl -fSL "https://github.com/log4cplus/log4cplus/releases/download/REL_${LOG4CPLUS_TAG}/log4cplus-${LOG4CPLUS}.tar.xz" -o log4cplus.tar.xz && \
     tar xf log4cplus.tar.xz --strip-components=1 -C /usr/local/src && \
     rm log4cplus.tar.xz
 
@@ -68,31 +52,22 @@ RUN ./configure \
     make -j$(nproc) && \
     make install-strip DESTDIR=/opt/log4cplus
 
-##############################################################################
 # Build botan library
-##############################################################################
 FROM base AS botan-builder
 
 # Environment variables
 ENV BOTAN="3.7.1"
 
+ARG BUILD_PKGS="libboost-dev libboost-system-dev zlib1g-dev python3-setuptools libsqlite3-dev libbz2-dev libboost-filesystem-dev"
 # Install botan dependencies
-RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends \
-        libboost-dev \
-        libboost-system-dev \
-        zlib1g-dev \
-        python3 \
-        python3-setuptools \
-        libsqlite3-dev \
-        libbz2-dev \
-        libboost-filesystem-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get install -y --no-install-recommends ${BUILD_PKGS} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Download and extract botan
 RUN mkdir -p /usr/local/src && \
-    curl -fsSL "https://botan.randombit.net/releases/Botan-${BOTAN}.tar.xz" -o botan.tar.xz && \
+    curl -fSL "https://botan.randombit.net/releases/Botan-${BOTAN}.tar.xz" -o botan.tar.xz && \
     tar xf botan.tar.xz --strip-components=1 -C /usr/local/src && \
     rm botan.tar.xz
 
@@ -112,35 +87,25 @@ RUN ./configure.py \
     make -j$(nproc) install DESTDIR=/opt/botan && \
     rm -f /opt/botan/usr/local/bin/botan
 
-##############################################################################
 # Build Kea
-##############################################################################
 FROM base AS kea-builder
 
 # Copy built dependencies
 COPY --from=log4cplus-builder /opt/log4cplus/ /
 COPY --from=botan-builder /opt/botan/ /
 
+ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-all default-libmysqlclient-dev bison flex perl libssl-dev "
 # Install kea build dependencies
-RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends \
-        libboost-dev \
-        libboost-system-dev \
-        postgresql-server-dev-all \
-        default-libmysqlclient-dev \
-        bison \
-        flex \
-        perl \
-        libssl-dev \
-        g++ && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    ldconfig
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get install -y --no-install-recommends ${BUILD_PKGS} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && ldconfig
 
 # Download and extract Kea source
 ARG VERSION
 RUN mkdir -p /usr/src/kea && \
-    curl -fSsL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.xz" -o kea.tar.xz && \
+    curl -fSL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.xz" -o kea.tar.xz && \
     tar -xf kea.tar.xz --strip-components=1 -C /usr/src/kea && \
     rm -f kea.tar.xz
 
@@ -177,27 +142,16 @@ RUN rm -rf /opt/kea/var/run \
            /opt/kea/usr/local/lib/*.la \
            /opt/kea/usr/local/include/*
 
-##############################################################################
 # Final image
-##############################################################################
 FROM debian:stable-slim
 
+ARG RUNTIME_PKGS="libboost-system1.74.0 libpq5 tzdata procps libatomic1 libsqlite3-0 libbz2-1.0 libmariadb3 tini ca-certificates"
 # Install runtime dependencies
-RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends \
-        libboost-system1.74.0 \
-        libpq5 \
-        tzdata \
-        procps \
-        libatomic1 \
-        libsqlite3-0 \
-        libbz2-1.0 \
-        libmariadb3 \
-        tini \
-        ca-certificates && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /usr/local/share/man/* && \
-    mkdir -p /var/lib/kea /usr/local/var/run/kea
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
+    && apt-get install -y --no-install-recommends ${RUNTIME_PKGS} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
+    && mkdir -p /var/lib/kea /usr/local/var/run/kea
 
 # Copy built binaries and libraries
 COPY --from=log4cplus-builder /opt/log4cplus/ /
@@ -212,7 +166,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh && ldconfig
 ENV TZ=Asia/Tokyo
 
 # Expose ports
-EXPOSE 67/UDP 547/TCP 547/UDP 8080
+EXPOSE 67/UDP 547/TCP 547/UDP 8080/TCP 8000/TCP
 
 # Configure service
 STOPSIGNAL SIGTERM
