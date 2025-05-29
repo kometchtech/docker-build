@@ -35,14 +35,14 @@ RUN git clone -b v${VERSION} --depth=1 --recursive https://gitlab.nic.cz/knot/kn
     /root/.local/bin/apkg build-dep -y && \
     /root/.local/bin/apkg build
 
-# Stage 2: Runtime environment
+# Runtime environment
 FROM debian:12-slim AS runtime
 
 # Define VERSION again as ARGs don't persist across build stages
 ARG VERSION=6.0.11
 
 # Install minimal dependencies
-RUN apt-get update -qq && \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     apt-get -qqq -y install apt-transport-https ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -56,7 +56,7 @@ COPY --from=build \
     /etc/apt/sources.list.d/cznic-labs-knot-resolver.list
 
 # Update packages
-RUN apt-get update -qq && \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     apt-get upgrade -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -88,7 +88,6 @@ VOLUME /etc/knot-resolver
 VOLUME /var/cache/knot-resolver
 
 # Set entrypoint and default command
-#ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 ENTRYPOINT ["/usr/bin/knot-resolver"]
 CMD ["-c", "/etc/knot-resolver/config.yaml"]
 

@@ -1,31 +1,27 @@
 #!/usr/bin/env sh
 
+# Exit on error, print commands for debugging
 set -ex
 
+# Configure default paths
 ROOTKEY=${ROOTKEY:-"/var/cache/knot-resolver/root.keys"}
 CACHE=${CACHE:-"/var/cache/knot-resolver"}
+# Commented out as it seems unused
 #GC_OPT=${GC_OPT:-"-d 1000"}
 
-# Deleting the trust anchor key file
+# Delete trust anchor key file if exists
 if [ -e ${ROOTKEY} ]; then
     rm -f ${ROOTKEY}
 fi
 
-## Knot Resolver Garbage Collector daemon
-#sleep 10 &
-#mkdir -p "$CACHE"
-#kres-cache-gc -c ${CACHE} ${GC_OPT}
+# Create cache directory if it doesn't exist
+mkdir -p "$CACHE"
 
-# Knot Resolver daemon
+# Handle different command formats
 if [ "${1#-}" != "$1" ]; then
-    #set -- /usr/local/sbin/kresd "$@"
+    # If first argument starts with a hyphen, assume it's a flag for kresd
     exec kresd "$@"
 else
+    # Otherwise, execute the command directly
     exec "$@"
 fi
-#exec "$@" &
-
-
-
-# process foreground
-#fg %1
