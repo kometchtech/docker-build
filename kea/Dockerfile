@@ -93,8 +93,8 @@ RUN export CXXFLAGS="-fPIC -std=c++20 -O2" && \
 FROM base AS kea-builder
 
 # Copy built dependencies
-COPY --from=log4cplus-builder /opt/log4cplus/ /
-COPY --from=botan-builder /opt/botan/ /
+COPY --from=log4cplus-builder /opt/log4cplus /
+COPY --from=botan-builder /opt/botan /
 
 ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-all default-libmysqlclient-dev bison flex perl libssl-dev "
 # Install kea build dependencies
@@ -124,9 +124,7 @@ RUN autoreconf -if && \
     export CXXFLAGS="${CXXFLAGS}" && \
     export LDFLAGS="${LDFLAGS}" && \
     export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}" && \
-    # Botanの検出を確認
-    pkg-config --exists botan-3 && echo "Botan pkg-config found" || echo "Botan pkg-config NOT found" && \
-    pkg-config --modversion botan-3 || echo "Failed to get botan version" && \
+    pkg-config --exists botan-3 && \
     ./configure \
         --prefix=/usr/local \
         --sysconfdir=/etc \
@@ -156,6 +154,7 @@ RUN rm -rf /opt/kea/var/run \
 FROM debian:stable-slim
 
 ARG RUNTIME_PKGS="libboost-system1.74.0 libpq5 tzdata procps libatomic1 libsqlite3-0 libbz2-1.0 libmariadb3 tini ca-certificates"
+
 # Install runtime dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get install -y --no-install-recommends ${RUNTIME_PKGS} \
@@ -164,13 +163,14 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && mkdir -p /var/lib/kea /usr/local/var/run/kea
 
 # Copy built binaries and libraries
-COPY --from=log4cplus-builder /opt/log4cplus/ /
-COPY --from=botan-builder /opt/botan/ /
-COPY --from=kea-builder /opt/kea/ /
+COPY --from=log4cplus-builder /opt/log4cplus /
+COPY --from=botan-builder /opt/botan /
+COPY --from=kea-builder /opt/kea /
 
 # Add entrypoint script
 COPY entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh && ldconfig
+RUN chmod +x /usr/local/bin/entrypoint.sh && \
+    ldconfig
 
 # Environment
 ENV TZ=Asia/Tokyo
