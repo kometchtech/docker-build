@@ -73,19 +73,21 @@ RUN mkdir -p /usr/local/src && \
 
 # Build botan
 WORKDIR /usr/local/src
-RUN ./configure.py \
+RUN export CXXFLAGS="-fPIC -std=c++20 -O2" && \
+    export LDFLAGS="-fPIC" && \
+    python3 ./configure.py \
+        --prefix=/usr/local \
         --optimize-for-size \
         --with-boost \
         --with-zlib \
-        --with-commoncrypto \
         --with-sqlite3 \
         --with-bzip2 \
+        --enable-shared-library \
         --disable-static-library \
         --without-documentation \
-        --cc-bin=clang++ \
-        --cxxflags="-std=c++20" && \
-    make -j$(nproc) install DESTDIR=/opt/botan && \
-    rm -f /opt/botan/usr/local/bin/botan
+        --cc-bin=clang++ && \
+    make -j$(nproc) CXXFLAGS="-fPIC -std=c++20 -O2" && \
+    make install DESTDIR=/opt/botan
 
 # Build Kea
 FROM base AS kea-builder
@@ -102,6 +104,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig
 
+# 環境変数を設定
+ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
+
 # Download and extract Kea source
 ARG VERSION
 RUN mkdir -p /usr/src/kea && \
@@ -112,18 +118,22 @@ RUN mkdir -p /usr/src/kea && \
 # Build Kea
 WORKDIR /usr/src/kea
 RUN autoreconf -if && \
-    export CC="gcc" && \
-    export CXX="g++" && \
-    export CFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer" && \
-    export CXXFLAGS="-O2 -pthread -pipe -fPIC -fPIE -fomit-frame-pointer -std=c++17" && \
-    export LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now" && \
+    export CC="clang" && \
+    export CXX="clang++" && \
+    export CFLAGS="${CFLAGS}" && \
+    export CXXFLAGS="${CXXFLAGS}" && \
+    export LDFLAGS="${LDFLAGS}" && \
+    export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}" && \
+    # Botanの検出を確認
+    pkg-config --exists botan-3 && echo "Botan pkg-config found" || echo "Botan pkg-config NOT found" && \
+    pkg-config --modversion botan-3 || echo "Failed to get botan version" && \
     ./configure \
         --prefix=/usr/local \
         --sysconfdir=/etc \
         --disable-rpath \
         --disable-static \
         --with-boost-include \
-        --with-botan-config \
+        --with-botan-config=/usr/local/bin/botan-config \
         --with-openssl \
         --with-mysql \
         --with-pgsql \
