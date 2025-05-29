@@ -7,6 +7,10 @@ set -e -u
 # Define run path for Kea PID files
 RUNPATH="/usr/local/var/run/kea"
 
+# Ensure the run directory exists with proper permissions
+mkdir -p "${RUNPATH}"
+chmod 755 "${RUNPATH}"
+
 # Remove any existing PID files to prevent startup issues
 for PID_FILE in "kea-dhcp4.kea-dhcp4.pid" "kea-dhcp6.kea-dhcp6.pid" "kea-ctrl-agent.kea-ctrl-agent.pid"; do
     if [ -e "${RUNPATH}/${PID_FILE}" ]; then

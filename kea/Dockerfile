@@ -151,8 +151,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get install -y --no-install-recommends ${RUNTIME_PKGS} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
-    && mkdir -p /var/lib/kea /usr/local/var/run/kea \
-    && chmod 750 /usr/local/var/run/kea
+    && mkdir -p /var/lib/kea /usr/local/var/run/kea
 
 # Copy built binaries and libraries
 COPY --from=log4cplus-builder /opt/log4cplus/ /
