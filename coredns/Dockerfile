@@ -14,7 +14,7 @@ ENV GOOS=linux
 ENV CGO_ENABLED=0
 
 # Install build dependencies
-RUN apt-get -qqq update && \
+RUN DEBIAN_FRONTEND=noninteractive apt-get -qqq update && \
     apt-get install -y --no-install-recommends ${COMMON_BUILD_PKGS} ${BUILD_PKGS} && \
     rm -rf /var/lib/apt/lists/*
 
