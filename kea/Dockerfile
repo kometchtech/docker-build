@@ -144,7 +144,6 @@ EXPOSE 67/UDP 547/TCP 547/UDP 8080/TCP 8000/TCP
 STOPSIGNAL SIGTERM
 WORKDIR /etc/kea
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
-CMD ["/usr/local/bin/entrypoint.sh"]
 
 # Labels (placed at the end to minimize build cache impact)
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
