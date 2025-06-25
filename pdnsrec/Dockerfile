@@ -14,10 +14,16 @@ ARG LDFLAGS="-Wl,--as-needed -rdynamic"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     apt-get install -y --no-install-recommends ${BUILD_PKGS}
 
-# Fetch source code and build
-WORKDIR /tmp/build
-RUN curl -fsSL "https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}.tar.bz2" | tar xj --strip-components=1 && \
-    ./configure \
+# Create build directory
+WORKDIR /usr/src
+
+# Download and extract source code
+RUN curl -fsSL "https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}.tar.xz" -o pdns-recursor.tar.xz && \
+    tar xf pdns-recursor.tar.xz --strip-components=1 && \
+    rm -f pdns-recursor.tar.xz
+
+# Configure build
+RUN ./configure \
       --prefix=/usr/local \
       --sysconfdir=/etc/powerdns \
       --localstatedir=/var \
@@ -29,10 +35,13 @@ RUN curl -fsSL "https://downloads.powerdns.com/releases/pdns-recursor-${VERSION}
       --with-service-user=pdns-recursor \
       --with-lua \
       --enable-dns-over-tls \
-      CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" && \
-    make -j$(( $(nproc) > 6 ? 6 : $(nproc) )) install DESTDIR=/tmp/root && \
-    strip /tmp/root/usr/local/bin/* /tmp/root/usr/local/sbin/* && \
-    rm -rf /tmp/root/usr/local/share/man/*
+      CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+
+# Compile and install
+RUN make -j$(( $(nproc) > 6 ? 6 : $(nproc) )) install DESTDIR=/tmp/root && \
+    strip /tmp/root/usr/local/bin/* /tmp/root/usr/local/sbin/* 2>/dev/null || true && \
+    rm -rf /tmp/root/usr/local/share/man/* \
+           /tmp/root/usr/local/share/doc/*
 
 # ===== Runtime Stage =====
 FROM debian:stable-slim
