@@ -19,10 +19,28 @@ for PID_FILE in "kea-dhcp4.kea-dhcp4.pid" "kea-dhcp6.kea-dhcp6.pid" "kea-ctrl-ag
     fi
 done
 
-# Start Kea services using keactrl
-echo "Starting Kea services..."
-keactrl start -c /etc/kea/keactrl.conf
+# Set proper ownership for kea user
+chown -R kea:kea "${RUNPATH}" /var/lib/kea
 
-# Keep container running
-echo "Kea services started. Container is now running..."
-exec tail -f /dev/null
+# Check if we're running as root
+if [ "$(id -u)" = "0" ]; then
+    echo "Starting Kea services as root, then dropping privileges..."
+
+    # Start Kea services using keactrl
+    echo "Starting Kea services..."
+    keactrl start -c /etc/kea/keactrl.conf
+
+    # Keep container running
+    echo "Kea services started. Container is now running..."
+    exec tail -f /dev/null
+else
+    echo "Starting Kea services as user kea..."
+
+    # Start Kea services using keactrl
+    echo "Starting Kea services..."
+    keactrl start -c /etc/kea/keactrl.conf
+
+    # Keep container running
+    echo "Kea services started. Container is now running..."
+    exec tail -f /dev/null
+fi
