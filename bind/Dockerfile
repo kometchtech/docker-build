@@ -4,7 +4,7 @@
 FROM debian:stable AS common-build
 
 # Common environment variables for build configuration
-ARG COMMON_BUILD_PKGS="build-essential autoconf automake libtool xz-utils curl ca-certificates"
+ARG COMMON_BUILD_PKGS="build-essential curl ca-certificates git python3 meson pkg-config ninja-build"
 
 # Install common build dependencies for better caching
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -19,7 +19,7 @@ FROM common-build AS build-deps
 ARG BUILD_PKGS="gawk ldnsutils \
                 libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev libjemalloc-dev libidn2-dev libfstrm-dev \
                 libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev \
-                libmaxminddb-dev liblmdb-dev libkrb5-dev libgssapi-krb5-2 zlib1g-dev"
+                libmaxminddb-dev liblmdb-dev libkrb5-dev libgssapi-krb5-2 zlib1g-dev libcmocka-dev "
 
 # Install build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -43,29 +43,23 @@ RUN mkdir -p /tmp/download \
     && tar xf /tmp/download/bind-${VERSION}.tar.xz --strip-components=1 -C /tmp/build \
     && rm -f /tmp/download/bind-${VERSION}.tar.xz
 
-# Configure and build
-RUN ./configure \
+# Configure with Meson build system
+RUN meson setup build \
     --prefix=/usr/local \
     --sysconfdir=/etc/named \
     --localstatedir=/var \
-    --enable-shared \
-    --disable-static \
-    --with-gssapi \
-    --with-libidn2 \
-    --with-json-c \
-    --with-lmdb \
-    --with-gnu-ld \
-    --with-maxminddb \
-    --enable-fixed-rrset \
-    --with-zlib \
-    --disable-documentation \
-    CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+    --buildtype=release \
+    --strip \
+    --optimization=s \
+    -Dgssapi=enabled \
+    -Dlmdb=enabled \
+    -Dzlib=enabled
 
 # Build with parallel compilation for speed
-RUN make -j$(nproc)
+RUN meson compile -C build -j$(nproc)
 
 # Install to temporary directory, exclude docs and tests
-RUN make install DESTDIR=/tmp/root \
+RUN DESTDIR=/tmp/root meson install -C build \
     && ldconfig / \
     && mkdir -p /tmp/root/var/cache/named \
     && rm -rf /tmp/root/var/run \
