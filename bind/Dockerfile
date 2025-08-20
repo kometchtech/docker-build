@@ -18,7 +18,7 @@ FROM common-build AS build-deps
 # Additional build dependencies for BIND
 ARG BUILD_PKGS="gawk ldnsutils \
                 libssl-dev libcap-dev libperl-dev libedit-dev libreadline-dev libncurses-dev libjemalloc-dev libidn2-dev libfstrm-dev \
-                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libstdc++-11-pic libc6 libnghttp2-dev liburcu-dev \
+                libxml2-dev libjson-c-dev libbsd-dev libuv1-dev libc6 libnghttp2-dev liburcu-dev \
                 libmaxminddb-dev liblmdb-dev libkrb5-dev libgssapi-krb5-2 zlib1g-dev libcmocka-dev "
 
 # Install build dependencies
