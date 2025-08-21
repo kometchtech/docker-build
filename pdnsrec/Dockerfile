@@ -3,7 +3,9 @@ FROM rust:slim AS build
 
 # Define arguments
 ARG VERSION="4.2.0"
-ARG BUILD_PKGS="build-essential autoconf automake libtool curl libboost-all-dev liblua5.3-dev luajit libluajit-5.1-dev libedit-dev libsodium-dev libprotobuf-dev libgnutls28-dev libatomic-ops-dev libsnmp-dev libfstrm-dev libcurl4-openssl-dev pkg-config"
+ARG BUILD_PKGS="build-essential autoconf automake libtool curl libboost-all-dev liblua5.3-dev luajit \
+		libluajit-5.1-dev libedit-dev libsodium-dev libprotobuf-dev libgnutls28-dev libatomic-ops-dev \
+		libsnmp-dev libfstrm-dev libcurl4-openssl-dev pkg-config"
 
 # Set optimization flags
 ARG CFLAGS="-Os -fomit-frame-pointer"
@@ -47,7 +49,7 @@ RUN make -j$(( $(nproc) > 6 ? 6 : $(nproc) )) install DESTDIR=/tmp/root && \
 FROM debian:stable-slim
 
 # Install runtime dependencies
-ARG RUN_PKGS="libboost-context1.74.0 libboost-filesystem1.74.0 libboost-system1.74.0 libboost-thread1.74.0 \
+ARG RUN_PKGS="libboost-context1.83.0 libboost-filesystem1.83.0 libboost-system1.83.0 libboost-thread1.83.0 \
               liblua5.3-0 libluajit-5.1-2 libedit2 libprotobuf32 libsodium23 tzdata libgnutls30 \
               libatomic1 ca-certificates tini libsnmp40 libfstrm0 libcurl4"
 
