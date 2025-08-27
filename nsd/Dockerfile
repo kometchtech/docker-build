@@ -20,7 +20,8 @@ FROM common-build-base AS build
 
 # Build-specific packages
 ARG VERSION
-ARG BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev zlib1g-dev bison libfl-dev"
+ARG BUILD_PKGS="libexpat1-dev libssl-dev libevent-dev zlib1g-dev bison libfl-dev \
+		libprotobuf-c-dev protobuf-c-compiler libfstrm-dev"
 
 # Install additional build packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -28,13 +29,15 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Build and configure NSD
+# Create build directories and user
 RUN mkdir -p /tmp/build /tmp/root/etc/nsd \
-    && curl -fsSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${VERSION}.tar.gz" -o nsd.tar.gz \
-    && tar xf "nsd.tar.gz" --strip-components=1 -C /tmp/build \
-    && rm -f "nsd.tar.gz" \
     && groupadd nsd \
     && useradd -g nsd -s /dev/null -d /etc nsd
+
+# Download and extract NSD source with version tag
+RUN curl -fsSL "https://www.nlnetlabs.nl/downloads/nsd/nsd-${VERSION}.tar.gz" -o nsd.tar.gz \
+    && tar xf nsd.tar.gz --strip-components=1 -C /tmp/build \
+    && rm -f nsd.tar.gz
 
 # Compile and install
 WORKDIR /tmp/build
@@ -44,6 +47,7 @@ RUN autoreconf -if \
       --with-zonesdir=/etc/nsd/zones \
       --with-dbfile=/var/cache/nsd/zone.db \
       --with-xfrdfile=/var/cache/nsd/xfrd.state \
+      --with-xfrdir=/var/cache/nsd \
       --sysconfdir=/etc \
       --disable-static \
       --with-user=nsd \
@@ -55,17 +59,20 @@ RUN autoreconf -if \
       CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j$(nproc) \
     && make install DESTDIR=/tmp/root \
-    && cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf \
+    && cp /tmp/root/etc/nsd/nsd.conf.sample /tmp/root/etc/nsd/nsd.conf
+
+
     # Remove unnecessary files to reduce image size
-    && find /tmp/root/usr/local/share/doc -type f -delete 2>/dev/null || true \
+RUN find /tmp/root/usr/local/share/doc -type f -delete 2>/dev/null || true \
     && find /tmp/root/usr/local/share/man -type f -delete 2>/dev/null || true
 
 # ===== Runtime Stage =====
 FROM debian:stable-slim AS runtime
 
 # Runtime dependencies
-ENV RUN_PKGS="openssl libevent-2.1-7 ca-certificates ldnsutils tzdata tini"
+ENV RUN_PKGS="openssl libevent-2.1-7 ca-certificates ldnsutils tzdata tini libprotobuf-c1 libfstrm0"
 ENV TZ=Asia/Tokyo
+ENV PATH="/usr/local/sbin:/usr/local/bin:${PATH}"
 
 # Setup runtime environment
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -73,7 +80,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
     && mkdir -p /var/cache/nsd /var/run/nsd /etc/nsd/zones \
-    && chmod -R 0777 /var/run/nsd \
+    && chmod -R 0755 /var/run/nsd \
+    && chmod 1777 /tmp \
     && groupadd -r nsd \
     && useradd -r -g nsd -s /sbin/nologin -d /etc/nsd nsd
 
@@ -85,7 +93,8 @@ COPY --from=build /tmp/root/ /
 COPY entrypoint.sh /usr/local/sbin/
 RUN chmod +x /usr/local/sbin/entrypoint.sh \
     && ldconfig / \
-    && chmod -R 0777 /tmp /var/cache/nsd \
+    && chmod -R 0755 /var/cache/nsd \
+    && chmod 1777 /tmp \
     && chown -R nsd:nsd /var/cache/nsd /var/run/nsd /etc/nsd/zones
 
 # Configure ports and signal
