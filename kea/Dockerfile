@@ -8,7 +8,7 @@ ARG VERSION
 # Common build flags
 ARG BUILD_PKGS="build-essential binutils ca-certificates curl xz-utils \
                 pkg-config ninja-build python3-pip python3-dev python3-setuptools \
-                python3-wheel clang-19 lld-19"
+                python3-wheel clang lld"
 
 # Install base packages
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
@@ -20,7 +20,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && update-alternatives --install /usr/bin/lld lld /usr/bin/lld-19 100
 
 # Install modern Meson version via pip (required for Kea 3.0.0)
-RUN pip3 install --break-system-packages meson>=1.8.0 \
+RUN pip3 install --break-system-packages --no-cache-dir meson>=1.8.0 \
     && ln -sf /usr/local/bin/meson /usr/bin/meson
 
 # Common environment variables and build flags
@@ -60,18 +60,19 @@ RUN ./configure \
     && make -j$(nproc) \
     && make install-exec DESTDIR=/opt/log4cplus \
     && make install-data DESTDIR=/opt/log4cplus \
-    && find /opt/log4cplus -name "*.la" -delete
+    && find /opt/log4cplus -name "*.la" -delete \
+    && find /opt/log4cplus -name "*.a" -delete
 
 # Build Kea
 FROM base AS kea-builder
 
-ARG BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-all default-libmysqlclient-dev \
-                bison flex perl libssl-dev python3-dev"
+ARG KEA_BUILD_PKGS="libboost-dev libboost-system-dev postgresql-server-dev-all \
+                default-libmysqlclient-dev bison flex perl libssl-dev python3-dev"
 # Install kea build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get install -y --no-install-recommends ${BUILD_PKGS} \
+    && apt-get install -y --no-install-recommends ${KEA_BUILD_PKGS} \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /usr/share/man/* /usr/share/doc/*
 
 # Copy log4cplus from previous stage
 COPY --from=log4cplus-builder /opt/log4cplus /
@@ -99,8 +100,8 @@ RUN meson setup build \
         --buildtype=release \
         --strip \
         --default-library=shared \
-	-D mysql=enabled \
-	-D postgresql=enabled
+	    -D mysql=enabled \
+	    -D postgresql=enabled
 
 # Build Kea
 RUN meson compile -C build -j $(nproc) \
@@ -117,19 +118,22 @@ RUN find /opt/kea -type f -executable -exec strip --strip-unneeded {} \; 2>/dev/
 # Final image
 FROM debian:stable-slim
 
-ARG RUNTIME_PKGS="libboost-system1.74.0 libpq5 tzdata libc6 libatomic1 libsqlite3-0 libbz2-1.0 \
-                  libmariadb3 tini ca-certificates libssl3 "
+ARG RUNTIME_PKGS="libboost-system1.83.0 libpq5 tzdata libc6 libatomic1 libsqlite3-0 \
+                  libbz2-1.0 libmariadb3 tini ca-certificates libssl3 "
 
 # Install runtime dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get install -y --no-install-recommends ${RUNTIME_PKGS} \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /usr/local/share/man/* \
+    && rm -rf /var/lib/apt/lists/* \
+              /usr/local/share/man/* \
+              /usr/share/doc/* \
+              /usr/share/info/* \
+              /var/cache/debconf/* \
     && mkdir -p /var/lib/kea /usr/local/var/run/kea
 
 # Copy built binaries and libraries
 COPY --from=log4cplus-builder /opt/log4cplus /
-# COPY --from=botan-builder /opt/botan /
 COPY --from=kea-builder /opt/kea /
 
 # Add entrypoint script
