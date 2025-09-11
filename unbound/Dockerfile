@@ -47,7 +47,7 @@ FROM debian:stable-slim
 
 # Runtime dependencies
 ARG RUNTIME_PKGS="curl openssl libevent-2.1-7 ca-certificates ldnsutils tzdata \
-                  expat flex bison libhiredis0.14 libsodium23 libnghttp2-14 \
+                  expat flex bison libhiredis1.1.0 libsodium23 libnghttp2-14 \
                   libexpat1 libprotobuf-c1 bsdmainutils"
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
