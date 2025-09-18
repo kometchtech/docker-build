@@ -58,7 +58,7 @@ FROM debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ARG KNOT_DNS_RUNTIME_DEPS="libbpf1 libedit2 libfstrm0 libgnutls30 libidn2-0 liblmdb0 libmaxminddb0 tini \
-                           libmnl0 libnghttp2-14 libngtcp2-crypto-gnutls2 libngtcp2-9 libprotobuf-c1 liburcu8 libxdp1"
+                           libmnl0 libnghttp2-14 libngtcp2-crypto-gnutls8 libngtcp2-16 libprotobuf-c1 liburcu8 libxdp1"
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qq install --no-install-recommends ${KNOT_DNS_RUNTIME_DEPS} \
