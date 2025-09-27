@@ -7,11 +7,10 @@ FROM golang:alpine AS builder
 ARG VERSION=""
 
 # Set build environment
-ENV CGO_ENABLED=0 \
-    GOOS=linux
+ENV CGO_ENABLED=0 GOOS=linux
 
 # Install git
-RUN apk add --no-cache git
+RUN apk add --no-cache git tzdata
 
 # Clone repository
 WORKDIR /src
@@ -38,6 +37,7 @@ EXPOSE 53/TCP 53/UDP
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /go/bin/dnscrypt-proxy /
 COPY --from=builder /src/dnscrypt-proxy/example-* /etc/dnscrypt-proxy/
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
 # Set working directory
 WORKDIR /etc/dnscrypt-proxy/
