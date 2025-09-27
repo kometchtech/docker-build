@@ -45,6 +45,7 @@ EXPOSE 53/TCP 53/UDP 443/TCP 443/UDP
 # Copy CA certificates and the CoreDNS binary
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /go/src/github.com/coredns/coredns/coredns /coredns
+COPY --from=builder /usr/share/zoneinfo/ /usr/share/zoneinfo/
 
 # Set entrypoint
 ENTRYPOINT ["/coredns"]
