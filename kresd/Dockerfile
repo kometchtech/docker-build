@@ -1,6 +1,6 @@
 # Multi-stage build for Knot Resolver
 # Stage 1: Build environment
-FROM debian:12 AS build
+FROM debian:stable AS build
 
 # Build arguments
 ARG VERSION=6.0.11
@@ -12,7 +12,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     pipx install apkg && \
     # Add Knot Resolver repository
     wget -O /usr/share/keyrings/cznic-labs-pkg.gpg https://pkg.labs.nic.cz/gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/cznic-labs-pkg.gpg] https://pkg.labs.nic.cz/knot-resolver bookworm main" \
+    echo "deb [signed-by=/usr/share/keyrings/cznic-labs-pkg.gpg] https://pkg.labs.nic.cz/knot-resolver trixie main" \
         > /etc/apt/sources.list.d/cznic-labs-knot-resolver.list && \
     apt-get update -qq
 
@@ -36,7 +36,7 @@ RUN git clone -b v${VERSION} --depth=1 --recursive https://gitlab.nic.cz/knot/kn
     /root/.local/bin/apkg build
 
 # Runtime environment
-FROM debian:12-slim AS runtime
+FROM debian:stable-slim AS runtime
 
 # Define VERSION again as ARGs don't persist across build stages
 ARG VERSION=6.0.11
@@ -62,7 +62,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy built packages from build stage
-COPY --from=build /source/pkg/pkgs/debian-12 /pkg
+COPY --from=build /source/pkg/pkgs/debian-13 /pkg
 
 # Install resolver and clean up
 RUN apt-get update -qq && \
