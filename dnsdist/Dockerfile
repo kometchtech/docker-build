@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:experimental
 
 # Common build stage with shared dependencies
-FROM rust:latest AS common-build
+FROM rust:latest AS common_build
 
 # Common build dependencies including base tools
 ARG COMMON_BUILD="clang lld cmake ninja-build python3-yaml python3-pip python3-venv jq patchelf"
@@ -22,7 +22,7 @@ ENV CC=clang
 ENV CXX=clang++
 
 # Quiche build stage
-FROM common-build AS quiche-build
+FROM common_build AS quiche-build
 
 ARG QUICHE_VERSION=0.24.2
 
@@ -57,7 +57,7 @@ RUN mkdir -p /opt/lib/pkgconfig && \
     cat /opt/lib/pkgconfig/quiche.pc
 
 # H2O build stage
-FROM common-build AS h2o-build
+FROM common_build AS h2o-build
 
 ARG H2O_VERSION=v2.2.6
 
@@ -89,14 +89,14 @@ RUN mkdir -p /opt/lib/pkgconfig && \
     cat /opt/lib/pkgconfig/libh2o-evloop.pc
 
 # Main build stage
-FROM common-build AS build
+FROM common_build AS build
 
 # Build version argument
 ARG VERSION
 ARG LUAVER=lua5.3
 
 # Additional build dependencies
-ARG BUILD_PKGS="pkgconf libboost-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
+ARG BUILD_PKGS="pkgconf libboost-all-dev libsodium-dev libprotobuf-c-dev libre2-dev libsnmp-dev \
                libedit-dev libssl-dev libnghttp2-dev libgnutls28-dev libxdp-dev libbpf-dev ca-certificates libfstrm-dev \
                libcap-dev libyaml-cpp-dev libcdb-dev liblmdb-dev libluajit-5.1-dev pkg-config equivs"
 
@@ -134,7 +134,8 @@ ARG DNSDIST_CPPFLAGS="-I/opt/include"
 # Build dnsdist with meson
 RUN cd /usr/src \
     && BUILDDIR=$(mktemp -d) \
-    && export PKG_CONFIG_PATH=/opt/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/aarch64-linux-gnu/pkgconfig \
+    && ARCH=$(dpkg --print-architecture) \
+    && export PKG_CONFIG_PATH=/opt/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib/${ARCH}-linux-gnu/pkgconfig \
     && export CARGO_TARGET_DIR=/tmp/cargo-target \
     && pkg-config --cflags --libs quiche || true \
     && pkg-config --cflags --libs libh2o-evloop || true \
@@ -199,7 +200,7 @@ RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${RUN_PKGS} \
     && apt-get install -y /tmp/equivs-dummy_1.0_all.deb \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/* /tmp/equivs-dummy_1.0_all.deb \
     && groupadd _dnsdist \
     && useradd -g _dnsdist -s /dev/null -d /etc _dnsdist \
     && mkdir -p /opt/lib
@@ -230,6 +231,8 @@ STOPSIGNAL SIGTERM
 
 # Health check and entrypoint
 HEALTHCHECK CMD ["dnsdist", "-e", "showVersion()", "||", "exit", "1"]
+
+# Entrypoint
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 CMD ["dnsdist", "--supervised", "--disable-syslog", "-u", "_dnsdist", "-g", "_dnsdist"]
 
@@ -238,4 +241,5 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="dnsdist is a highly DNS-, DoS- and abuse-aware loadbalancer. \
                   Its goal in life is to route traffic to the best server, delivering top \
                   performance to legitimate users while shunting or blocking abusive traffic." \
-      url="https://dnsdist.org/"
+      url="https://dnsdist.org/" \
+      version="${VERSION}"

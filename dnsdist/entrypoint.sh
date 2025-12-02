@@ -3,7 +3,7 @@
 set -e
 
 # デフォルトのコマンドとパラメータ
-DEFAULT_CMD="dnsdist --supervised --disable-syslog --log-timestamps -u _dnsdist -g _dnsdist --config /etc/dnsdist/dnsdist.conf"
+DEFAULT_CMD="dnsdist --supervised --disable-syslog --log-timestamps -u _dnsdist -g _dnsdist --config /etc/dnsdist/dnsdist.yaml"
 
 # 引数が渡されていれば使用し、なければデフォルトを使用
 if [ $# -eq 0 ]; then
