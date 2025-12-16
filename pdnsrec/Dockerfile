@@ -1,3 +1,5 @@
+# syntax = docker/dockerfile:1.4
+# check=error=true
 # ===== Build Stage =====
 FROM rust:slim AS build
 
