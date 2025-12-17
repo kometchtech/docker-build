@@ -1,4 +1,5 @@
 # syntax = docker/dockerfile:1.4
+# check=error=true
 
 # Common build dependencies stage
 FROM debian:stable AS common-build
