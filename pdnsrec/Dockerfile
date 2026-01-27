@@ -5,14 +5,19 @@ FROM rust:slim AS build
 
 # Define arguments
 ARG VERSION="4.2.0"
-ARG BUILD_PKGS="build-essential autoconf automake libtool curl libboost-all-dev liblua5.3-dev luajit \
-		libluajit-5.1-dev libedit-dev libsodium-dev libprotobuf-dev libgnutls28-dev libatomic-ops-dev \
-		libsnmp-dev libfstrm-dev libcurl4-openssl-dev pkg-config"
+ARG BUILD_PKGS="build-essential autoconf automake libtool curl libboost-all-dev liblua5.3-dev \
+        luajit libluajit-5.1-dev libedit-dev libsodium-dev libprotobuf-dev libgnutls28-dev \
+        libatomic-ops-dev libsnmp-dev libfstrm-dev libcurl4-openssl-dev pkg-config"
 
 # Set optimization flags
 ARG CFLAGS="-Os -fomit-frame-pointer"
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -rdynamic"
+
+# Use a specific reliable mirror
+RUN echo "deb http://ftp.jp.debian.org/debian/ trixie main" > /etc/apt/sources.list && \
+    echo "deb http://ftp.jp.debian.org/debian/ trixie-updates main" >> /etc/apt/sources.list && \
+    echo "deb http://security.debian.org/debian-security trixie-security main" >> /etc/apt/sources.list
 
 # Install development packages and build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
@@ -48,7 +53,7 @@ RUN make -j$(( $(nproc) > 6 ? 6 : $(nproc) )) install DESTDIR=/tmp/root && \
            /tmp/root/usr/local/share/doc/*
 
 # ===== Runtime Stage =====
-FROM debian:stable-slim
+FROM debian:stable-slim AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libboost-context1.83.0 libboost-filesystem1.83.0 libboost-system1.83.0 libboost-thread1.83.0 \
