@@ -1,4 +1,5 @@
 # syntax = docker/dockerfile:1.4
+# check=error=true
 
 # Base image for all stages
 FROM debian:stable AS base
@@ -80,18 +81,19 @@ COPY --from=log4cplus-builder /opt/log4cplus /
 # Update library paths
 RUN ldconfig
 
-# Set up environment for Kea build
-ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
+# Set up environment for Kea build (fix for undefined variable warnings)
+ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig" \
+    LD_LIBRARY_PATH="/usr/local/lib:/usr/lib"
 
 # Download and extract Kea source
 ARG VERSION
-RUN mkdir -p /usr/src/kea \
-    && curl -fSL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.xz" -o kea.tar.xz \
-    && tar -xf kea.tar.xz --strip-components=1 -C /usr/src/kea \
-    && rm -f kea.tar.xz
 
 WORKDIR /usr/src/kea
+
+# Download and extract Kea source from ISC FTP
+RUN curl -fSL "https://ftp.isc.org/isc/kea/${VERSION}/kea-${VERSION}.tar.xz" -o kea.tar.xz && \
+    tar -xf kea.tar.xz --strip-components=1 && \
+    rm -f kea.tar.xz
 
 # Configure Kea build with Meson
 RUN meson setup build \
@@ -129,8 +131,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
               /usr/local/share/man/* \
               /usr/share/doc/* \
               /usr/share/info/* \
-              /var/cache/debconf/* \
-    && mkdir -p /var/lib/kea /usr/local/var/run/kea
+              /var/cache/debconf/*
+
+# Create necessary directories
+RUN mkdir -p /var/lib/kea /usr/local/var/run/kea
 
 # Copy built binaries and libraries
 COPY --from=log4cplus-builder /opt/log4cplus /
@@ -145,8 +149,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh && \
 ENV TZ=Asia/Tokyo
 
 # Create non-root user for security
-RUN groupadd -r kea && useradd -r -g kea -d /var/lib/kea -s /sbin/nologin kea \
-    && chown -R kea:kea /var/lib/kea /usr/local/var/run/kea
+RUN groupadd -r kea && \
+    useradd -r -g kea -d /var/lib/kea -s /sbin/nologin kea && \
+    chown -R kea:kea /var/lib/kea /usr/local/var/run/kea
 
 # Expose standard DHCP and control ports
 EXPOSE 67/udp 68/udp 547/tcp 547/udp 8080/tcp 8000/tcp
@@ -158,13 +163,15 @@ WORKDIR /etc/kea
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 
 # Metadata labels (placed at the end to minimize layer cache impact)
-ARG VERSION
+ARG KEA_VERSION
+ARG LOG4CPLUS_VERSION
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      description="Kea ${VERSION} - Open source DHCP server implementation by ISC" \
-      version="${VERSION}" \
+      description="Kea ${KEA_VERSION} - Open source DHCP server implementation by ISC" \
+      version="${KEA_VERSION}" \
       url="https://www.isc.org/kea/" \
       org.opencontainers.image.title="ISC Kea DHCP Server" \
       org.opencontainers.image.description="Kea is an open source implementation of the Dynamic Host Configuration Protocol (DHCP) servers" \
-      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.version="${KEA_VERSION}" \
       org.opencontainers.image.url="https://www.isc.org/kea/" \
-      org.opencontainers.image.source="https://github.com/kometchtech/kea-docker"
+      org.opencontainers.image.source="https://github.com/kometchtech/kea-docker" \
+      log4cplus.version="${LOG4CPLUS_VERSION}"
