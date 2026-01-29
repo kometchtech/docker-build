@@ -8,6 +8,11 @@ ARG COMMON_BUILD="clang lld cmake ninja-build python3-yaml python3-pip python3-v
 ARG CC=clang
 ARG CXX=clang++
 
+# Use a specific reliable mirror
+RUN echo "deb http://ftp.jp.debian.org/debian/ trixie main" > /etc/apt/sources.list && \
+    echo "deb http://ftp.jp.debian.org/debian/ trixie-updates main" >> /etc/apt/sources.list && \
+    echo "deb http://security.debian.org/debian-security trixie-security main" >> /etc/apt/sources.list
+
 # Set up Python venv with meson
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${COMMON_BUILD} \
@@ -56,38 +61,6 @@ RUN mkdir -p /opt/lib/pkgconfig && \
     ls -la /opt/include/ && \
     cat /opt/lib/pkgconfig/quiche.pc
 
-# H2O build stage
-FROM common_build AS h2o-build
-
-ARG H2O_VERSION=v2.2.6
-
-# Build h2o
-RUN cd /h2o \
-    && curl -SL "https://github.com/h2o/h2o/archive/refs/tags/${H2O_VERSION}.tar.gz" -o h2o.tar.gz \
-    && tar xf h2o.tar.gz --strip-components=1 \
-    && rm h2o.tar.gz \
-    && cmake -DCMAKE_INSTALL_PREFIX=/opt \
-       -DWITH_MRUBY=OFF \
-       -DWITH_PICOTLS=OFF \
-       -DCMAKE_C_FLAGS="-mno-outline-atomics" \
-       -DWITH_BUNDLED_SSL=OFF . \
-    && make -j$(nproc) \
-    && make install
-
-# Create h2o pkg-config file
-RUN mkdir -p /opt/lib/pkgconfig && \
-    echo "prefix=/opt" > /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    echo "exec_prefix=\${prefix}" >> /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    echo "libdir=\${exec_prefix}/lib" >> /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    echo "includedir=\${prefix}/include" >> /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    echo "Name: libh2o-evloop" >> /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    echo "Description: H2O HTTP library" >> /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    echo "Version: ${H2O_VERSION#v}" >> /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    echo "Libs: -L\${libdir} -lh2o-evloop" >> /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    echo "Cflags: -I\${includedir}" >> /opt/lib/pkgconfig/libh2o-evloop.pc && \
-    ls -la /opt/lib/ && \
-    cat /opt/lib/pkgconfig/libh2o-evloop.pc
-
 # Main build stage
 FROM common_build AS build
 
@@ -107,8 +80,6 @@ RUN apt-get update -qq \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy pre-built dependencies
-COPY --from=h2o-build /opt/lib /opt/lib
-COPY --from=h2o-build /opt/include /opt/include
 COPY --from=quiche-build /opt/lib /opt/lib
 COPY --from=quiche-build /opt/include /opt/include
 
@@ -138,7 +109,6 @@ RUN cd /usr/src \
     && export PKG_CONFIG_PATH=/opt/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib/${ARCH}-linux-gnu/pkgconfig \
     && export CARGO_TARGET_DIR=/tmp/cargo-target \
     && pkg-config --cflags --libs quiche || true \
-    && pkg-config --cflags --libs libh2o-evloop || true \
     && meson setup ${BUILDDIR} \
       --prefix=/usr/local \
       --sysconfdir=/etc/dnsdist \
@@ -165,7 +135,6 @@ RUN cd /usr/src \
       -Dre2=enabled \
       -Dsystemd-service=disabled \
       -Dxsk=enabled \
-      -Dh2o=enabled \
       -Dquiche=enabled \
       -Dyaml=enabled \
     && meson compile -C ${BUILDDIR} \
@@ -209,7 +178,7 @@ RUN apt-get update -qq \
 FROM runtime
 
 # Environment
-ENV TZ Asia/Tokyo
+ENV TZ=Asia/Tokyo
 
 # Copy files from build stage
 COPY entrypoint.sh /usr/local/bin/
@@ -241,5 +210,4 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="dnsdist is a highly DNS-, DoS- and abuse-aware loadbalancer. \
                   Its goal in life is to route traffic to the best server, delivering top \
                   performance to legitimate users while shunting or blocking abusive traffic." \
-      url="https://dnsdist.org/" \
-      version="${VERSION}"
+      url="https://dnsdist.org/"
