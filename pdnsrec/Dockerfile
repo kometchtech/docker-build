@@ -20,7 +20,7 @@ RUN echo "deb http://ftp.jp.debian.org/debian/ trixie main" > /etc/apt/sources.l
     echo "deb http://security.debian.org/debian-security trixie-security main" >> /etc/apt/sources.list
 
 # Install development packages and build dependencies
-RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -qqq && \
     apt-get install -y --no-install-recommends ${BUILD_PKGS}
 
 # Create build directory
