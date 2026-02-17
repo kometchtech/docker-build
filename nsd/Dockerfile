@@ -1,5 +1,4 @@
 # syntax = docker/dockerfile:experimental
-
 # ===== Common Build Base =====
 FROM debian:latest AS common-build-base
 
