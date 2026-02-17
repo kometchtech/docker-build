@@ -14,11 +14,6 @@ ARG CFLAGS="-Os -fomit-frame-pointer"
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,--as-needed -rdynamic"
 
-# Use a specific reliable mirror
-RUN echo "deb http://ftp.jp.debian.org/debian/ trixie main" > /etc/apt/sources.list && \
-    echo "deb http://ftp.jp.debian.org/debian/ trixie-updates main" >> /etc/apt/sources.list && \
-    echo "deb http://security.debian.org/debian-security trixie-security main" >> /etc/apt/sources.list
-
 # Install development packages and build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qqq && \
     apt-get install -y --no-install-recommends ${BUILD_PKGS}
