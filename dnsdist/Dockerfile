@@ -8,11 +8,6 @@ ARG COMMON_BUILD="clang lld cmake ninja-build python3-yaml python3-pip python3-v
 ARG CC=clang
 ARG CXX=clang++
 
-# Use a specific reliable mirror
-RUN echo "deb http://ftp.jp.debian.org/debian/ trixie main" > /etc/apt/sources.list && \
-    echo "deb http://ftp.jp.debian.org/debian/ trixie-updates main" >> /etc/apt/sources.list && \
-    echo "deb http://security.debian.org/debian-security trixie-security main" >> /etc/apt/sources.list
-
 # Set up Python venv with meson
 RUN apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ${COMMON_BUILD} \
