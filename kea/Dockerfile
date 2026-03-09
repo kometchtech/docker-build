@@ -16,9 +16,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get install -y ${BUILD_PKGS} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-19 100 \
-    && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-19 100 \
-    && update-alternatives --install /usr/bin/lld lld /usr/bin/lld-19 100
+    && CLANG_VER=$(ls /usr/bin/clang-[0-9]* 2>/dev/null | grep -oP 'clang-\K[0-9]+' | sort -rn | head -1) \
+    && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VER} 100 \
+    && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VER} 100 \
+    && update-alternatives --install /usr/bin/lld lld /usr/bin/lld-${CLANG_VER} 100
 
 # Install modern Meson version via pip (required for Kea 3.0.0)
 RUN pip3 install --break-system-packages --no-cache-dir meson>=1.8.0 \

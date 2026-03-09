@@ -6,9 +6,8 @@ FROM debian:stable AS build
 ARG VERSION=6.0.11
 ARG BUILD_PKGS="apt-transport-https ca-certificates wget pipx devscripts mkdocs git"
 
-# Use a specific reliable mirror
-RUN echo "deb http://ftp.jp.debian.org/debian/ trixie main" > /etc/apt/sources.list && \
-    echo "deb http://ftp.jp.debian.org/debian/ trixie-updates main" >> /etc/apt/sources.list && \
+RUN echo "deb http://deb.debian.org/debian/ trixie main" > /etc/apt/sources.list && \
+    echo "deb http://deb.debian.org/debian/ trixie-updates main" >> /etc/apt/sources.list && \
     echo "deb http://security.debian.org/debian-security trixie-security main" >> /etc/apt/sources.list
 
 # Install build dependencies

@@ -31,7 +31,7 @@ RUN \
 
 # Install build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y ${BUILD_BASE} ${BUILD_PKGS} \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y ${BUILD_PKGS} \
     && rm -rf /var/lib/apt/lists/*
 
 RUN cargo fetch
@@ -75,7 +75,8 @@ LABEL org.label-schema.vendor="hickory-dns" \
 
 # https://github.com/mischov/meeseeks/issues/98#issuecomment-636615680
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y libssl3 \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libssl3 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r nobody
 
