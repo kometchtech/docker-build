@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 # ===== Common Build Base =====
-FROM debian:latest AS common-build-base
+FROM debian:stable AS common-build-base
 
 # Common build environment and packages
 ARG COMMON_BUILD="build-essential make gawk autoconf automake libtool curl binutils pkg-config"
