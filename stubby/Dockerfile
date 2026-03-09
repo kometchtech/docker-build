@@ -88,7 +88,7 @@ RUN unbound-anchor -v -a "/tmp/root/etc/unbound/getdns-root.key" || true \
 FROM debian:stable-slim AS runtime-base
 
 # Install tini and runtime dependencies
-ARG RUN_PKGS="libyaml-0-2 libuv1 libev4 libevent-2.1 tini libidn2-0 ca-certificates libp11-kit0 libssl3"
+ARG RUN_PKGS="libyaml-0-2 libuv1 libev4 libevent-2.1-7 tini libidn2-0 ca-certificates libp11-kit0 libssl3"
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get -y -qqq install --no-install-recommends ${RUN_PKGS} \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
