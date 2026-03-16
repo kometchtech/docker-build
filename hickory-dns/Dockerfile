@@ -75,7 +75,7 @@ LABEL org.label-schema.vendor="hickory-dns" \
 
 # https://github.com/mischov/meeseeks/issues/98#issuecomment-636615680
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libssl3 \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libssl3 ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r nobody
