@@ -1,4 +1,5 @@
 # syntax = docker/dockerfile:1.4
+# check=error=true
 # Multi-architecture and multi-stage build for CoreDNS
 
 # Build stage with common dependencies
@@ -34,18 +35,16 @@ RUN make -j"$(nproc)" && \
     rm -rf man/ test/ doc/
 
 # Runtime stage
-FROM scratch
+FROM gcr.io/distroless/static-debian13
 
 # Environment
-ENV TZ Asia/Tokyo
+ENV TZ=Asia/Tokyo
 
 # Publish ports for DNS over UDP & TCP
 EXPOSE 53/TCP 53/UDP 443/TCP 443/UDP
 
-# Copy CA certificates and the CoreDNS binary
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# Copy the CoreDNS binary
 COPY --from=builder /go/src/github.com/coredns/coredns/coredns /coredns
-COPY --from=builder /usr/share/zoneinfo/ /usr/share/zoneinfo/
 
 # Set entrypoint
 ENTRYPOINT ["/coredns"]
