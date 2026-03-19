@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
              -o /go/bin/dnscrypt-proxy
 
 # Final stage
-FROM scratch
+FROM gcr.io/distroless/static-debian13
 
 # Environment variables
 ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
@@ -33,11 +33,9 @@ ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
 # Expose DNS ports
 EXPOSE 53/TCP 53/UDP
 
-# Copy SSL certificates and binary from builder
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# Copy binary and config files from builder
 COPY --from=builder /go/bin/dnscrypt-proxy /
 COPY --from=builder /src/dnscrypt-proxy/example-* /etc/dnscrypt-proxy/
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
 # Set working directory
 WORKDIR /etc/dnscrypt-proxy/
