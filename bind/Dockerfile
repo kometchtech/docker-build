@@ -9,7 +9,8 @@ ARG COMMON_BUILD_PKGS="build-essential curl ca-certificates git python3 meson pk
 
 # Install common build dependencies for better caching
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-    && apt-get install -y --no-install-recommends ${COMMON_BUILD_PKGS} \
+#    && apt-get install -y --no-install-recommends ${COMMON_BUILD_PKGS} \
+    && apt-get install -y ${COMMON_BUILD_PKGS} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -53,7 +54,6 @@ RUN meson setup build \
     --strip \
     --optimization=s \
     -Dgssapi=enabled \
-    -Dlmdb=enabled \
     -Dzlib=enabled
 
 # Build with parallel compilation for speed
