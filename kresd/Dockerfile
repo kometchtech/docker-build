@@ -6,10 +6,6 @@ FROM debian:stable AS build
 ARG VERSION=6.0.11
 ARG BUILD_PKGS="apt-transport-https ca-certificates wget pipx devscripts mkdocs git"
 
-RUN echo "deb http://deb.debian.org/debian/ trixie main" > /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian/ trixie-updates main" >> /etc/apt/sources.list && \
-    echo "deb http://security.debian.org/debian-security trixie-security main" >> /etc/apt/sources.list
-
 # Install build dependencies
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq && \
     apt-get -qqq -y install ${BUILD_PKGS} && \
@@ -85,7 +81,7 @@ COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Expose ports for DNS, DoT, DoH and management
-EXPOSE 53/UDP 53/TCP 443/TCP 853/TCP 5000/TCP
+EXPOSE 53/udp 53/tcp 443/tcp 853/tcp 5000/tcp
 
 # Create volumes for configuration and cache
 VOLUME /etc/knot-resolver
