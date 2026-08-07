@@ -24,6 +24,8 @@ on:
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       directories: ${{ steps.find-dirs.outputs.directories }}
     steps:
@@ -71,6 +73,9 @@ jobs:
   build:
     needs: prepare
     if: needs.prepare.outputs.directories != '[]'
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -157,6 +162,9 @@ jobs:
     needs: [prepare, build]
     if: needs.prepare.outputs.directories != '[]' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         directory: ${{ fromJson(needs.prepare.outputs.directories) }}
@@ -243,6 +251,8 @@ jobs:
     needs: [prepare, merge]
     if: needs.prepare.outputs.directories != '[]' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      packages: read
     strategy:
       matrix:
         directory: ${{ fromJson(needs.prepare.outputs.directories) }}
