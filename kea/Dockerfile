@@ -16,13 +16,13 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
     && apt-get install -y ${BUILD_PKGS} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && CLANG_VER=$(ls /usr/bin/clang-[0-9]* 2>/dev/null | grep -oP 'clang-\K[0-9]+' | sort -rn | head -1) \
+    && CLANG_VER=$(ls /usr/bin/clang-[0-9]* 2>/dev/null | grep -oP 'clang-\K[0-9]+' | sort -rn | head -1) && test -n "${CLANG_VER}" \
     && update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${CLANG_VER} 100 \
     && update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${CLANG_VER} 100 \
     && update-alternatives --install /usr/bin/lld lld /usr/bin/lld-${CLANG_VER} 100
 
 # Install modern Meson version via pip (required for Kea 3.0.0)
-RUN pip3 install --break-system-packages --no-cache-dir meson>=1.8.0 \
+RUN pip3 install --break-system-packages --no-cache-dir "meson>=1.8.0" \
     && ln -sf /usr/local/bin/meson /usr/bin/meson
 
 # Common environment variables and build flags
@@ -144,7 +144,9 @@ COPY --from=kea-builder /opt/kea /
 # Add entrypoint script
 COPY entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh && \
-    ldconfig
+    ldconfig && \
+    kea-dhcp4 -v && \
+    kea-dhcp6 -v
 
 # Environment
 ENV TZ=Asia/Tokyo
@@ -155,7 +157,7 @@ RUN groupadd -r kea && \
     chown -R kea:kea /var/lib/kea /usr/local/var/run/kea
 
 # Expose standard DHCP and control ports
-EXPOSE 67/udp 68/udp 547/tcp 547/udp 8080/tcp 8000/tcp
+EXPOSE 67/udp 68/udp 547/tcp 547/udp 8080/tcp 8000/tcp 8004/tcp 8006/tcp
 
 # Configure container
 STOPSIGNAL SIGTERM
