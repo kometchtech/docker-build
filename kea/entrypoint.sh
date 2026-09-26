@@ -12,7 +12,7 @@ mkdir -p "${RUNPATH}"
 chmod 750 "${RUNPATH}"
 
 # Remove any existing PID files to prevent startup issues
-for PID_FILE in "kea-dhcp4.kea-dhcp4.pid" "kea-dhcp6.kea-dhcp6.pid" "kea-ctrl-agent.kea-ctrl-agent.pid"; do
+for PID_FILE in "kea-dhcp4.kea-dhcp4.pid" "kea-dhcp6.kea-dhcp6.pid"; do
     if [ -e "${RUNPATH}/${PID_FILE}" ]; then
         echo "Removing existing PID file: ${PID_FILE}"
         rm -f "${RUNPATH}/${PID_FILE}"
