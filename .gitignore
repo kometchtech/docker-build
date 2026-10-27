@@ -1,7 +1,10 @@
 
 .history
-build.sh
-release.sh
+build.sh*
+release.sh*
 key
 Dockerfile.*
+!Dockerfile.alpha
 slim.report.json
+docker-build.yml*
+entrypoint.sh.*
