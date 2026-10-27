@@ -1,16 +1,15 @@
-# syntax = docker/dockerfile:1.4
+# syntax = docker/dockerfile:1.8
 # check=error=true
 
 # Common build dependencies stage
-FROM debian:stable AS common-build
+FROM debian:trixie AS common-build
 
 # Common environment variables for build configuration
 ARG COMMON_BUILD_PKGS="build-essential curl ca-certificates git python3 meson pkg-config ninja-build"
 
 # Install common build dependencies for better caching
 RUN DEBIAN_FRONTEND=noninteractive apt-get update -qq \
-#    && apt-get install -y --no-install-recommends ${COMMON_BUILD_PKGS} \
-    && apt-get install -y ${COMMON_BUILD_PKGS} \
+    && apt-get install -y --no-install-recommends ${COMMON_BUILD_PKGS} \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -61,7 +60,6 @@ RUN meson compile -C build -j$(nproc)
 
 # Install to temporary directory, exclude docs and tests
 RUN DESTDIR=/tmp/root meson install -C build \
-    && ldconfig / \
     && mkdir -p /tmp/root/var/cache/named \
     && rm -rf /tmp/root/var/run \
            /tmp/root/usr/local/share/man \
@@ -76,7 +74,7 @@ RUN curl -fsSL "https://www.internic.net/domain/named.root" -o /tmp/root/var/cac
 
 
 # Runtime dependencies stage
-FROM debian:stable-slim AS runtime
+FROM debian:trixie-slim AS runtime
 
 # Install runtime dependencies
 ARG RUN_PKGS="libprotobuf-c1 tzdata openssl libcap2 libjson-c5 libxml2 libuv1 libnghttp2-14 liburcu8 tini libjemalloc2 libidn2-0 \
@@ -98,6 +96,7 @@ FROM runtime
 # Copy BIND binaries and configurations from build stage
 COPY --from=build /tmp/root/ /
 COPY ./named.conf /etc/named/named.conf
+COPY ./named.conf /usr/local/share/named/named.conf.default
 COPY ./local.rev ./local.zone /var/cache/named/pri/
 
 # Environment

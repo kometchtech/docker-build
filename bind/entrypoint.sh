@@ -8,7 +8,7 @@ chown -R _named:_named /etc/named /var/cache/named /var/run/named /var/cache/nam
 # named.conf が存在しない場合、デフォルトの設定をコピー
 if [ ! -f /etc/named/named.conf ]; then
     echo "No configuration found, using default named.conf..."
-    cp /etc/named/named.conf.default /etc/named/named.conf
+    cp /usr/local/share/named/named.conf.default /etc/named/named.conf
 fi
 
 # 環境変数から設定を動的に生成する機能をここに追加できます
@@ -21,4 +21,3 @@ if [ $# -eq 0 ]; then
 else
     exec "$@"
 fi
-
