@@ -1,6 +1,6 @@
 # ISC Kea container
 
-Kea 3.3.1 の DHCPv4 / DHCPv6 サーバーをソースからビルドします。
+Kea（バージョンは `kea/VERSION`、現在 3.3.3）の DHCPv4 / DHCPv6 サーバーをソースからビルドします。
 Kea Control Agent は 3.2 以降に含まれないため、各 DHCP デーモンの直接 HTTP API を使用します。
 詳細は [ISC の移行ガイド](https://kb.isc.org/docs/kea-control-agent-migration) を参照してください。
 
