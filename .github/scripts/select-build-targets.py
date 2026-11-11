@@ -19,9 +19,9 @@ def main():
         variant = os.environ['INPUT_VARIANT']
         if not directory or not all(part not in ('', '.', '..') for part in directory.split('/')):
             raise ValueError('Invalid image directory')
-        if variant not in ('stable', 'alpha'):
+        if variant not in ('stable', 'alpha', 'beta'):
             raise ValueError('Invalid build variant')
-        dockerfile = Path(directory, 'Dockerfile' + ('.alpha' if variant == 'alpha' else ''))
+        dockerfile = Path(directory, 'Dockerfile' + ('' if variant == 'stable' else f'.{variant}'))
         if not dockerfile.is_file():
             raise ValueError(f'Dockerfile not found: {dockerfile}')
         targets = [{'directory': directory, 'variant': variant}]
@@ -31,11 +31,12 @@ def main():
             before = 'HEAD^'
         files = git('diff', '--name-only', before, 'HEAD')
         targets = []
-        for directory in sorted({str(Path(f).parent) for f in files if Path(f).name in ('Dockerfile', 'Dockerfile.alpha', 'VERSION', 'VERSION.alpha', 'entrypoint.sh')}):
+        for directory in sorted({str(Path(f).parent) for f in files if Path(f).name in ('Dockerfile', 'Dockerfile.alpha', 'Dockerfile.beta', 'VERSION', 'VERSION.alpha', 'VERSION.beta', 'entrypoint.sh')}):
             changed = {Path(f).name for f in files if str(Path(f).parent) == directory}
             for variant, relevant, dockerfile in (
                 ('stable', {'Dockerfile', 'VERSION', 'entrypoint.sh'}, 'Dockerfile'),
                 ('alpha', {'Dockerfile.alpha', 'VERSION.alpha', 'entrypoint.sh'}, 'Dockerfile.alpha'),
+                ('beta', {'Dockerfile.beta', 'VERSION.beta', 'entrypoint.sh'}, 'Dockerfile.beta'),
             ):
                 if changed & relevant and Path(directory, dockerfile).is_file():
                     targets.append({'directory': directory, 'variant': variant})
