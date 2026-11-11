@@ -8,6 +8,8 @@ on:
       - '**/Dockerfile'
       - '**/Dockerfile.alpha'
       - '**/VERSION.alpha'
+      - '**/Dockerfile.beta'
+      - '**/VERSION.beta'
       - '**/VERSION'
       - '**/entrypoint.sh'
   pull_request:
@@ -15,6 +17,8 @@ on:
       - '**/Dockerfile'
       - '**/Dockerfile.alpha'
       - '**/VERSION.alpha'
+      - '**/Dockerfile.beta'
+      - '**/VERSION.beta'
       - '**/VERSION'
       - '**/entrypoint.sh'
   workflow_dispatch:
@@ -30,6 +34,7 @@ on:
         options:
           - stable
           - alpha
+          - beta
       no-cache:
         description: "Build docker images with no cache"
         default: false
@@ -93,17 +98,17 @@ jobs:
         id: set-version
         run: |
           VERSION_FILE="source/${{ matrix.target.directory }}/VERSION"
-          if [ "${{ matrix.target.variant }}" = "alpha" ]; then VERSION_FILE="${VERSION_FILE}.alpha"; fi
+          if [ "${{ matrix.target.variant }}" != "stable" ]; then VERSION_FILE="${VERSION_FILE}.${{ matrix.target.variant }}"; fi
           if [ -f "$VERSION_FILE" ]; then
             RELEASE_VERSION=$(cat "$VERSION_FILE" | tr -d ' \n\t\r')
-            if [ -z "$RELEASE_VERSION" ] || { [ "${{ matrix.target.variant }}" = "alpha" ] && [ "$RELEASE_VERSION" = latest ]; }; then
+            if [ -z "$RELEASE_VERSION" ] || { [ "${{ matrix.target.variant }}" != "stable" ] && [ "$RELEASE_VERSION" = latest ]; }; then
               echo "Error: invalid version in $VERSION_FILE" >&2
               exit 1
             fi
             echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
             echo "Version set to: ${RELEASE_VERSION}"
-          elif [ "${{ matrix.target.variant }}" = "alpha" ]; then
-            echo "Error: VERSION.alpha is required for alpha builds" >&2
+          elif [ "${{ matrix.target.variant }}" != "stable" ]; then
+            echo "Error: VERSION.${{ matrix.target.variant }} is required for ${{ matrix.target.variant }} builds" >&2
             exit 1
           else
             echo "No VERSION file found, using latest"
@@ -135,7 +140,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: source/${{ matrix.target.directory }}
-          file: source/${{ matrix.target.directory }}/Dockerfile${{ matrix.target.variant == 'alpha' && '.alpha' || '' }}
+          file: source/${{ matrix.target.directory }}/Dockerfile${{ matrix.target.variant != 'stable' && format('.{0}', matrix.target.variant) || '' }}
           platforms: ${{ matrix.platform }}
           push: ${{ github.event_name != 'pull_request' }}
           no-cache: ${{ inputs.no-cache == true }}
@@ -207,17 +212,17 @@ jobs:
         id: set-version
         run: |
           VERSION_FILE="source/${{ matrix.target.directory }}/VERSION"
-          if [ "${{ matrix.target.variant }}" = "alpha" ]; then VERSION_FILE="${VERSION_FILE}.alpha"; fi
+          if [ "${{ matrix.target.variant }}" != "stable" ]; then VERSION_FILE="${VERSION_FILE}.${{ matrix.target.variant }}"; fi
           if [ -f "$VERSION_FILE" ]; then
             RELEASE_VERSION=$(cat "$VERSION_FILE" | tr -d ' \n\t\r')
-            if [ -z "$RELEASE_VERSION" ] || { [ "${{ matrix.target.variant }}" = "alpha" ] && [ "$RELEASE_VERSION" = latest ]; }; then
+            if [ -z "$RELEASE_VERSION" ] || { [ "${{ matrix.target.variant }}" != "stable" ] && [ "$RELEASE_VERSION" = latest ]; }; then
               echo "Error: invalid version in $VERSION_FILE" >&2
               exit 1
             fi
             echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
             echo "Version set to: ${RELEASE_VERSION}"
-          elif [ "${{ matrix.target.variant }}" = "alpha" ]; then
-            echo "Error: VERSION.alpha is required for alpha builds" >&2
+          elif [ "${{ matrix.target.variant }}" != "stable" ]; then
+            echo "Error: VERSION.${{ matrix.target.variant }} is required for ${{ matrix.target.variant }} builds" >&2
             exit 1
           else
             echo "No VERSION file found, using latest"
@@ -231,8 +236,8 @@ jobs:
           TARGET_VARIANT: ${{ matrix.target.variant }}
         run: |
           git -C source fetch origin +refs/heads/master:refs/remotes/origin/master
-          if [ "$TARGET_VARIANT" = alpha ]; then
-            files=("$TARGET_DIRECTORY/Dockerfile.alpha" "$TARGET_DIRECTORY/VERSION.alpha" "$TARGET_DIRECTORY/entrypoint.sh")
+          if [ "$TARGET_VARIANT" != stable ]; then
+            files=("$TARGET_DIRECTORY/Dockerfile.$TARGET_VARIANT" "$TARGET_DIRECTORY/VERSION.$TARGET_VARIANT" "$TARGET_DIRECTORY/entrypoint.sh")
           else
             files=("$TARGET_DIRECTORY/Dockerfile" "$TARGET_DIRECTORY/VERSION" "$TARGET_DIRECTORY/entrypoint.sh")
           fi
@@ -271,8 +276,8 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
             ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
           
-          # Tag stable as latest and alpha as alpha.
-          if [ "${{ matrix.target.variant }}" = "alpha" ]; then CHANNEL_TAG=alpha; else CHANNEL_TAG=latest; fi
+          # Tag stable as latest; other variants use their own name.
+          if [ "${{ matrix.target.variant }}" != "stable" ]; then CHANNEL_TAG=${{ matrix.target.variant }}; else CHANNEL_TAG=latest; fi
           echo "Creating manifest with ${CHANNEL_TAG} tag"
           docker buildx imagetools create \
             -t ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}:${CHANNEL_TAG} \
