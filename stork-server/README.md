@@ -3,9 +3,12 @@
 ISC のリリースソースからサーバー、管理ツール、Web UI をビルドします。
 エージェントは `stork-agent` ディレクトリのイメージを使用します。
 
-> The `stork-server` / `stork-agent` Dockerfiles and VERSION files are only
-> present in local checkouts and are not tracked in this repository, so no
-> build command is provided here.
+```sh
+docker build --build-arg VERSION="$(cat stork-server/VERSION)" \
+  -t kometchtech/stork-server:$(cat stork-server/VERSION) stork-server
+docker build --build-arg VERSION="$(cat stork-agent/VERSION)" \
+  -t kometchtech/stork-agent:$(cat stork-agent/VERSION) stork-agent
+```
 
 サーバーには PostgreSQL が必要です。事前にデータベース、ユーザー、pgcrypto 拡張を準備し、
 `STORK_DATABASE_HOST`、`STORK_DATABASE_NAME`、`STORK_DATABASE_USER_NAME`、
@@ -25,4 +28,4 @@ DB の永続化と認証情報の管理は利用する環境側で設定して�
 | `STORK_REST_HOST` | `0.0.0.0` (set in the Dockerfile so the published port is reachable) |
 | Exposed port | `8080` |
 | Entrypoint | `/usr/bin/stork-server` |
-| Version file | `VERSION` (local-only; ISC release source used by the build) |
+| Version file | `VERSION` (ISC release source used by the build) |
