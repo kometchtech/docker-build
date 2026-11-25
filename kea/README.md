@@ -1,6 +1,6 @@
 # ISC Kea container
 
-Kea（バージョンは `kea/VERSION`、現在 3.3.3）の DHCPv4 / DHCPv6 サーバーをソースからビルドします。
+Kea（バージョンは [`VERSION`](VERSION) を参照）の DHCPv4 / DHCPv6 サーバーをソースからビルドします。
 Kea Control Agent は 3.2 以降に含まれないため、各 DHCP デーモンの直接 HTTP API を使用します。
 詳細は [ISC の移行ガイド](https://kb.isc.org/docs/kea-control-agent-migration) を参照してください。
 
@@ -14,6 +14,15 @@ docker build --build-arg VERSION="$(cat kea/VERSION)" -t kea:direct-api-test kea
 
 最終イメージのビルド時に `kea-dhcp4 -v` と `kea-dhcp6 -v` を実行し、
 バイナリと実行時ライブラリが利用できることを確認します。
+
+## コンテナの構成
+
+| 項目 | 値 |
+| --- | --- |
+| 公開ポート | `67/udp`, `68/udp`, `547/tcp`, `547/udp`, `8080/tcp`, `8000/tcp`, `8004/tcp`, `8006/tcp` |
+| エントリーポイント | `/usr/bin/tini -- /usr/local/bin/entrypoint.sh` |
+| 作業ディレクトリ | `/etc/kea` |
+| `TZ` | `Asia/Tokyo` |
 
 ## DHCP パケットを配布せずに起動を確認する
 
