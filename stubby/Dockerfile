@@ -132,10 +132,10 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
                    it to act as a local DNS Privacy stub resolver (using DNS-over-TLS)."
 
 # OCI image metadata
-org.opencontainers.image.title="Stubby" \
-org.opencontainers.image.description="Stubby is a mode of using getdns which enables it to act as a local DNS Privacy stub resolver using DNS-over-TLS." \
-org.opencontainers.image.url="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Daemon+-+Stubby" \
-org.opencontainers.image.source="https://github.com/getdnsapi/stubby" \
-org.opencontainers.image.documentation="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Daemon+-+Stubby" \
-org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
-org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.title="Stubby" \
+      org.opencontainers.image.description="Stubby is a mode of using getdns which enables it to act as a local DNS Privacy stub resolver using DNS-over-TLS." \
+      org.opencontainers.image.url="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Daemon+-+Stubby" \
+      org.opencontainers.image.source="https://github.com/getdnsapi/stubby" \
+      org.opencontainers.image.documentation="https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Daemon+-+Stubby" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
