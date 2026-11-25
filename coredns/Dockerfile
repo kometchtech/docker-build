@@ -54,3 +54,13 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
       url="https://github.com/coredns/coredns"
 
+
+# OCI image metadata
+ARG VERSION
+LABEL org.opencontainers.image.title="CoreDNS" \
+      org.opencontainers.image.description="CoreDNS (written in Go) chains plugins. Each plugin performs a DNS function." \
+      org.opencontainers.image.url="https://github.com/coredns/coredns" \
+      org.opencontainers.image.source="https://github.com/coredns/coredns" \
+      org.opencontainers.image.documentation="https://coredns.io/manual/toc/" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
