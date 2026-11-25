@@ -14,14 +14,15 @@
 
 The runtime image is the untagged `static-debian13` variant: the Dockerfile contains no `USER` instruction, so the container runs as the image's default user. It is not the `nonroot` tag, so do not assume UID 65532 or add `CAP_NET_BIND_SERVICE` for that reason.
 
-The image version is taken from [`VERSION`](VERSION) and passed as the `VERSION` build argument by `build.py`.
+The image version is taken from [`VERSION`](VERSION) and passed explicitly as the `VERSION` build argument.
 
 ## Build
 
 From the repository root:
 
 ```sh
-./build.py -d coredns
+docker build --build-arg VERSION="$(cat coredns/VERSION)" \
+  -t kometchtech/coredns:$(cat coredns/VERSION) coredns
 ```
 
 ## Run
