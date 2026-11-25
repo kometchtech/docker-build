@@ -24,11 +24,12 @@ runtime image.
 
 From the repository root:
 
-```bash
-./build.py -d dnscrypt-proxy
+```sh
+docker build --build-arg VERSION="$(cat dnscrypt-proxy/VERSION)" \
+  -t kometchtech/dnscrypt-proxy:$(cat dnscrypt-proxy/VERSION) dnscrypt-proxy
 ```
 
-`build.py` passes the version from `VERSION` (currently `2.2.21`) to the Dockerfile.
+Pass the version from `VERSION` (currently `2.2.21`) as the `VERSION` build argument.
 Git and `tzdata` are installed only in the builder stage.
 
 ## Quick Start
