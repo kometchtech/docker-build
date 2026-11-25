@@ -95,3 +95,13 @@ RUN chown -R zabbix:root /etc/zabbix \
     && chown -R zabbix:root /var/lib/zabbix \
     && chmod +x /usr/bin/entrypoint.sh \
     && ldconfig /
+
+# OCI image metadata
+ARG VERSION
+LABEL org.opencontainers.image.title="Zabbix agent" \
+      org.opencontainers.image.description="Zabbix agent deployed on a monitoring target to monitor local resources and applications" \
+      org.opencontainers.image.url="https://www.zabbix.com/" \
+      org.opencontainers.image.source="https://github.com/zabbix/zabbix" \
+      org.opencontainers.image.documentation="https://www.zabbix.com/documentation/5.4/en/manual/" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
