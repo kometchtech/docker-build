@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-FROM alpine:latest AS build
+FROM alpine:3.20 AS build
 
 # Environment
 ARG VERSION="master"
@@ -33,7 +33,7 @@ RUN cp /tmp/root/usr/local/share/doc/dibbler/examples/server.conf /tmp/root/etc/
 
 
 # runtime container build
-FROM alpine:latest AS runtime
+FROM alpine:3.20 AS runtime
 
 # install runtime dependencies
 ARG RUN_PKGS="libstdc++ libgcc tzdata"
