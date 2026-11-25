@@ -36,6 +36,7 @@ RUN cd /tmp/zabbix-${VERSION} \
        --prefix=/usr \
        --enable-agent \
        --enable-ipv6 \
+       --with-openssl \
        --silent \
        CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
     && make -j"$(nproc)" -s 1>/dev/null \
@@ -52,7 +53,7 @@ RUN cd /tmp/zabbix-${VERSION} \
 # Environment
 FROM alpine:latest AS runtime
 
-ARG RUN_PKGS="bash iputils libevent pcre tzdata"
+ARG RUN_PKGS="bash iputils libevent pcre openssl tzdata"
 
 # runtime build
 RUN addgroup zabbix && \

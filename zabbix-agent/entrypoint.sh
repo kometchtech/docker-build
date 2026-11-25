@@ -43,7 +43,7 @@ escape_spec_char() {
     var_value="${var_value//\[/\\[}"
     var_value="${var_value//\]/\\]}"
 
-    echo $var_value
+    printf '%s' "$var_value"
 }
 
 update_config_var() {
