@@ -27,12 +27,17 @@ only once a stable release ships with meson.
 From the repository root:
 
 ```bash
-./build.py -d pdnsrec                          # stable (VERSION)
-./build.py -f Dockerfile.alpha -d pdnsrec      # alpha  (VERSION.alpha)
-./build.py -f Dockerfile.beta -d pdnsrec       # beta   (VERSION.beta)
+docker build --build-arg VERSION="$(cat pdnsrec/VERSION)" \
+  -t kometchtech/pdnsrec:$(cat pdnsrec/VERSION) pdnsrec
+
+docker build --build-arg VERSION="$(cat pdnsrec/VERSION.alpha)" \
+  -f pdnsrec/Dockerfile.alpha -t kometchtech/pdnsrec:alpha pdnsrec
+
+docker build --build-arg VERSION="$(cat pdnsrec/VERSION.beta)" \
+  -f pdnsrec/Dockerfile.beta -t kometchtech/pdnsrec:beta pdnsrec
 ```
 
-`-f Dockerfile.<variant>` reads `VERSION.<variant>`. Do not use `-l` (local `latest` tag) for alpha / beta.
+Use the version file that matches the selected Dockerfile; do not tag alpha / beta as `latest`.
 
 In CI (`.github/workflows/docker-build.yml`), changes to `Dockerfile[.alpha|.beta]` / `VERSION[.alpha|.beta]`
 build the matching variant, and `workflow_dispatch` accepts `stable`, `alpha` or `beta`.
