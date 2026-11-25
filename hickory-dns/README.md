@@ -18,8 +18,9 @@ The binary is copied to `/usr/bin/hickory-dns` and checked with `hickory-dns --v
 
 The release tag comes from [`VERSION`](VERSION) and is passed as the `VERSION` build argument. Run from the repository root:
 
-```bash
-./build.py -d hickory-dns
+```sh
+docker build --build-arg VERSION="$(cat hickory-dns/VERSION)" \
+  -t kometchtech/hickory-dns:$(cat hickory-dns/VERSION) hickory-dns
 ```
 
 The source archive is downloaded from `https://github.com/hickory-dns/hickory-dns/archive/refs/tags/v${VERSION}.tar.gz`. The build uses `cargo build --release --no-default-features --features $FEATURES`; the `FEATURES` argument in the Dockerfile enables the TLS / HTTPS / QUIC / H3 providers (both `aws-lc-rs` and `ring`), `serde` and the `DEFAULT_FEATURES` set (`ascii-art`, `resolver`, `rustls-platform-verifier`, `sqlite`). The Dockerfile's own `ARG VERSION` default is only a fallback when no build argument is supplied.
