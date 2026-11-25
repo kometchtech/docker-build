@@ -26,8 +26,9 @@ The Stubby release tag comes from `stubby/VERSION` (the `VERSION` build argument
 in the Dockerfile). getdns is cloned and built from source in an earlier stage.
 Run from the repository root:
 
-```bash
-./build.py -d stubby
+```sh
+docker build --build-arg VERSION="$(cat stubby/VERSION)" \
+  -t kometchtech/stubby:$(cat stubby/VERSION) stubby
 ```
 
 ### Run
