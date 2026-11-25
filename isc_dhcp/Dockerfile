@@ -1,4 +1,4 @@
-FROM arm64v8/alpine:latest
+FROM alpine:latest
 
 RUN apk add --no-cache --update dhcp \
     && mkdir -p /var/lib/dhcpd/ \
