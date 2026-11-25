@@ -12,7 +12,7 @@
 - Build stage: `debian:stable`
 - Runtime stage: `debian:stable-slim`
 
-The image version is taken from [`VERSION`](VERSION) and passed as the `VERSION` build argument by `build.py`.
+The image version is taken from [`VERSION`](VERSION) and passed explicitly as the `VERSION` build argument.
 
 ## Features
 
@@ -28,7 +28,8 @@ The image version is taken from [`VERSION`](VERSION) and passed as the `VERSION`
 From the repository root:
 
 ```sh
-./build.py -d unbound
+docker build --build-arg VERSION="$(cat unbound/VERSION)" \
+  -t kometchtech/unbound:$(cat unbound/VERSION) unbound
 ```
 
 ## Run
