@@ -25,11 +25,12 @@ eBPF, SNMP and YAML support are enabled at build time, together with Cloudflare
 
 From the repository root:
 
-```bash
-./build.py -d dnsdist
+```sh
+docker build --build-arg VERSION="$(cat dnsdist/VERSION)" \
+  -t kometchtech/dnsdist:$(cat dnsdist/VERSION) dnsdist
 ```
 
-`build.py` passes the version from `VERSION` (currently `2.1.3`) to the Dockerfile.
+Pass the version from `VERSION` (currently `2.1.3`) as the `VERSION` build argument.
 
 ### minimum operating
 
