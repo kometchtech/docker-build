@@ -1,18 +1,13 @@
 # syntax = docker/dockerfile:experimental
-FROM arm64v8/alpine:latest AS build
+FROM alpine:latest AS build
 
 # source build
 ARG MAJOR_VERSION=4.2
 ARG VERSION=${MAJOR_VERSION}.3
 #ENV ZBX_SOURCES="https://sourceforge.net/projects/zabbix/files/ZABBIX Latest Stable/${VERSION}/zabbix-${VERSION}.tar.gz"
 ENV ZBX_SOURCES="https://github.com/zabbix/zabbix/archive/${VERSION}.tar.gz"
-<<<<<<< Updated upstream
 ENV BUILD_PKGS="build-base clang autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl lld llvm "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -D_FORTIFY_SOURCE=2 -fPIE "
-=======
-ENV BUILD_PKGS="alpine-sdk clang autoconf automake openssl-dev pcre-dev coreutils libevent-dev curl lld llvm "
-ARG CFLAGS="-O2 -pthread -pipe -fPIC -fPIC -FORTIFY_SOURCE=2 -fPIE "
->>>>>>> Stashed changes
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now -fuse-ld=lld "
 ENV CC="clang" \
@@ -55,7 +50,7 @@ RUN cd /tmp/zabbix-${VERSION} \
 
 
 # Environment
-FROM arm64v8/alpine:latest AS runtime
+FROM alpine:latest AS runtime
 
 ARG RUN_PKGS="bash iputils libevent pcre tzdata"
 
@@ -90,12 +85,12 @@ EXPOSE 10050/TCP
 WORKDIR /var/lib/zabbix
 
 VOLUME ["/etc/zabbix/zabbix_agentd.d", "/var/lib/zabbix/enc", "/var/lib/zabbix/modules"]
-COPY ["docker-entrypoint.sh", "/usr/bin/"]
-ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+COPY ["entrypoint.sh", "/usr/bin/"]
+ENTRYPOINT ["/usr/bin/entrypoint.sh"]
 
 # Fetch app and libraries from build image
 COPY --from=build /tmp/root /
 RUN chown -R zabbix:root /etc/zabbix \
     && chown -R zabbix:root /var/lib/zabbix \
-    && chmod +x /usr/bin/docker-entrypoint.sh \
+    && chmod +x /usr/bin/entrypoint.sh \
     && ldconfig /
