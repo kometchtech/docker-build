@@ -1,51 +1,65 @@
 # CoreDNS
 
-CoreDNS <https://coredns.io/>
-
-## description
-
-[![](https://images.microbadger.com/badges/image/kometchtech/coredns:20181112.svg)](https://microbadger.com/images/kometchtech/coredns:20181112 "Get your own image badge on microbadger.com")
-[![](https://images.microbadger.com/badges/version/kometchtech/coredns:20181112.svg)](https://microbadger.com/images/kometchtech/coredns:20181112 "Get your own version badge on microbadger.com")
 [![Docker Pulls](https://img.shields.io/docker/pulls/kometchtech/coredns.svg)](https://hub.docker.com/r/kometchtech/coredns/)
+[![Docker Version](https://img.shields.io/docker/v/kometchtech/coredns/latest.svg)](https://hub.docker.com/r/kometchtech/coredns/tags)
+[![Docker Image Size](https://img.shields.io/docker/image-size/kometchtech/coredns/latest.svg)](https://hub.docker.com/r/kometchtech/coredns/)
+[![GitHub last commit](https://img.shields.io/github/last-commit/kometchtech/docker-build.svg)](https://github.com/kometchtech/docker-build/commits/master/coredns)
 
-## !Announce!
+[CoreDNS](https://coredns.io/) is a DNS server written in Go, built from source with multi-architecture support.
 
-As the Arm64 image is released from the official, it will not be updated here.
+## Base images
 
-- [coredns/coredns](https://hub.docker.com/r/coredns/coredns/)  
- - tag: coredns-arm64
+- Build stage: `golang:latest`
+- Runtime stage: `gcr.io/distroless/static-debian13`
 
-### Baseimage
+The runtime image is the untagged `static-debian13` variant: the Dockerfile contains no `USER` instruction, so the container runs as the image's default user. It is not the `nonroot` tag, so do not assume UID 65532 or add `CAP_NET_BIND_SERVICE` for that reason.
 
-- arm64v8/alpine:latest
+The image version is taken from [`VERSION`](VERSION) and passed as the `VERSION` build argument by `build.py`.
 
-### Baseimage
+## Build
 
-- `gcr.io/distroless/static-debian13`
+From the repository root:
 
-> **Note:** distroless イメージは `nonroot` ユーザー (UID 65532) で実行されます。
-> ポート 53 などの特権ポート (< 1024) にバインドするには、コンテナ起動時に
-> `CAP_NET_BIND_SERVICE` ケーパビリティの付与が必要です。
-
-### minimum operating
-
-```bash
-docker run --rm -d \
-  --cap-add=NET_BIND_SERVICE \
-  -p 53:53/tcp -p 53:53/udp \
-  -v ${PWD}:/etc/coredns/corefile \
-  kometchtech/coredns
+```sh
+./build.py -d coredns
 ```
 
-### config
+## Run
 
-```cady
+```bash
+docker run -d --name coredns \
+  -p 53:53/tcp -p 53:53/udp \
+  -p 443:443/tcp -p 443:443/udp \
+  -v "$(pwd)/Corefile:/Corefile:ro" \
+  kometchtech/coredns:latest
+```
+
+The entrypoint is `["/coredns"]`. Timezone (`TZ`) defaults to `Asia/Tokyo`.
+
+## Exposed ports
+
+| Port | Protocol | Description |
+|---|---|---|
+| `53` | TCP/UDP | DNS queries |
+| `443` | TCP/UDP | Additional DNS listener (as configured in the `Corefile`) |
+
+## Configuration
+
+CoreDNS reads a `Corefile` from its working directory (mount it at `/Corefile` as above). Example:
+
+```corefile
 .:53 {
     forward . 8.8.8.8:53
     log
 }
 ```
 
-### document page
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `TZ` | `Asia/Tokyo` | Timezone setting |
+
+## Documentation
 
 <https://coredns.io/manual/toc/>
