@@ -92,3 +92,13 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="Unbound is a validating, recursive, caching DNS resolver." \
       url="https://nlnetlabs.nl/projects/unbound/about/"
 
+
+# OCI image metadata
+ARG VERSION
+org.opencontainers.image.title="Unbound" \
+org.opencontainers.image.description="Unbound is a validating, recursive, caching DNS resolver." \
+org.opencontainers.image.url="https://nlnetlabs.nl/projects/unbound/about/" \
+org.opencontainers.image.source="https://github.com/NLnetLabs/unbound" \
+org.opencontainers.image.documentation="https://www.unbound.net/documentation/index.html" \
+org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+org.opencontainers.image.version="${VERSION}"
