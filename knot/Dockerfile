@@ -104,3 +104,12 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="Knot DNS authoritative server" \
       url="https://www.knot-dns.cz/" \
       version="${VERSION}"
+
+# OCI image metadata
+LABEL org.opencontainers.image.title="Knot DNS" \
+      org.opencontainers.image.description="Knot DNS authoritative server" \
+      org.opencontainers.image.url="https://www.knot-dns.cz/" \
+      org.opencontainers.image.source="https://gitlab.nic.cz/knot/knot-dns" \
+      org.opencontainers.image.documentation="https://www.knot-dns.cz/documentation/" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
