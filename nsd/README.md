@@ -23,8 +23,9 @@ Multi-stage build:
 The release tag comes from `nsd/VERSION` (the `VERSION` build argument in the
 Dockerfile). Run from the repository root:
 
-```bash
-./build.py -d nsd
+```sh
+docker build --build-arg VERSION="$(cat nsd/VERSION)" \
+  -t kometchtech/nsd:$(cat nsd/VERSION) nsd
 ```
 
 ### Run
