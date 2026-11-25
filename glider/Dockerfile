@@ -2,9 +2,10 @@
 FROM golang:alpine as build
 
 # https://golang.org/doc/install/source#environment
+ARG TARGETARCH
 ENV CGO_ENABLED 0
 ENV GOOS linux
-ENV GOARCH arm64
+ENV GOARCH ${TARGETARCH}
 ARG VERSION="0.6.11"
 WORKDIR /go/src/github.com/nadoo/
 RUN apk add --update --no-cache git build-base
@@ -13,7 +14,7 @@ RUN cd /go/src/github.com/nadoo/glider \
     && go build -v -ldflags="-s -w"
 
 # 2nd build
-FROM arm64v8/alpine:latest AS runtime
+FROM alpine:latest AS runtime
 
 # Install runtime dependencies
 RUN apk --no-cache add tzdata zip ca-certificates
@@ -21,7 +22,7 @@ RUN apk --no-cache add tzdata zip ca-certificates
 # final build
 FROM scratch
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
-      arch="Aarch64" \
+      arch="multi-arch" \
       description="glider is a forward proxy with multiple protocols support, \
         and also a dns forwarding server with ipset management features(like dnsmasq)." \
       url="https://github.com/nadoo/glider"
