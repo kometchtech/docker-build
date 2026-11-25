@@ -44,10 +44,10 @@ COPY --from=build /go/src/github.com/nadoo/glider/glider /glider
 
 # OCI image metadata
 ARG VERSION
-org.opencontainers.image.title="glider" \
-org.opencontainers.image.description="glider is a forward proxy with multiple protocols support, and also a DNS forwarding server with ipset management features." \
-org.opencontainers.image.url="https://github.com/nadoo/glider" \
-org.opencontainers.image.source="https://github.com/nadoo/glider" \
-org.opencontainers.image.documentation="https://github.com/nadoo/glider" \
-org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
-org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.title="glider" \
+      org.opencontainers.image.description="glider is a forward proxy with multiple protocols support, and also a DNS forwarding server with ipset management features." \
+      org.opencontainers.image.url="https://github.com/nadoo/glider" \
+      org.opencontainers.image.source="https://github.com/nadoo/glider" \
+      org.opencontainers.image.documentation="https://github.com/nadoo/glider" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
