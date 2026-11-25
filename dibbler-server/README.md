@@ -29,11 +29,9 @@ docker run --rm -d -p 547:547/udp -v ${PWD}/server.conf:/etc/dibbler/server.conf
 
 ### Build
 
-From the repository root:
-
-```bash
-./build.py -d dibbler-server
-```
+The `dibbler-server` Dockerfile and `VERSION` file are only present in local
+checkouts and are not tracked in this repository, so no build command is
+provided here.
 
 ### config
 
