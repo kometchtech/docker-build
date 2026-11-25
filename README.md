@@ -14,34 +14,29 @@
 
 ## Build images
 
-Python 3 and Docker Buildx are required. Run from the repository root:
+Docker is required; Buildx is needed for multi-platform images. Run from the
+repository root. Each image directory contains a `Dockerfile` and a `VERSION`
+file, and the version must be passed explicitly as a build argument:
 
 ```bash
-./build.py -d unbound
-./build.py -d unbound -d nsd
-./build.py -c -d unbound
-./build.py -f Dockerfile.alpha -d pdnsrec
-./build.py -f Dockerfile.beta -d pdnsrec
+docker build --build-arg VERSION="$(cat unbound/VERSION)" \
+  -t kometchtech/unbound:$(cat unbound/VERSION) unbound
 ```
 
-`build.py` is a local helper and is not committed to Git; a git-ignored legacy
-`build.sh` may also exist in a local checkout but is not available in a fresh
-clone. The default platform is `linux/amd64`; use `-p` to select platforms.
-A single-platform build loads the image locally, while a comma-separated
-multi-platform build pushes `kometchtech/<image>:<version>` to Docker Hub.
-`-n` disables the cache, `-l` adds a local `latest` tag after a single-platform
-build (ignored in check-only mode), and `-s` skips checks. Check failures are
-warnings, including in check-only mode (`-c`). `-g` is accepted for
-compatibility but does not perform Git operations.
+For a multi-architecture manifest:
 
-`-f` selects a Dockerfile variant and reads the matching version file:
-`Dockerfile.beta` uses `VERSION.beta`. Only `pdnsrec` currently provides
-`Dockerfile.alpha` / `VERSION.alpha` and `Dockerfile.beta` / `VERSION.beta`;
-CI refers to the default `Dockerfile` / `VERSION` pair as the `stable` variant.
-Other `Dockerfile.*` files are local-only and have no matching `VERSION.*`.
-Run `./build.py -h` for all options.
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 \
+  --build-arg VERSION="$(cat nsd/VERSION)" \
+  -t kometchtech/nsd:$(cat nsd/VERSION) --push nsd
+```
 
-CI tags stable images as `latest` and variants as `alpha` / `beta`.
+Only `pdnsrec` provides extra variants: use `-f pdnsrec/Dockerfile.alpha` with
+`pdnsrec/VERSION.alpha`, or `-f pdnsrec/Dockerfile.beta` with
+`pdnsrec/VERSION.beta`. Other `Dockerfile.*` files are local-only and have no
+matching `VERSION.*`. CI refers to the default `Dockerfile` / `VERSION` pair as
+the `stable` variant, tags stable images as `latest` and variants as `alpha` /
+`beta`, publishes a multi-arch manifest to GHCR and syncs it to Docker Hub.
 
 ## base images
 
