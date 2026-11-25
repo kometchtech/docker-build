@@ -52,6 +52,10 @@ The default command is:
 pdns_recursor --disable-syslog --log-timestamp=yes --config-dir=/etc/powerdns
 ```
 
+This command is wrapped by `ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/sbin/entrypoint.sh"]`
+(the same entrypoint is used in `Dockerfile.alpha` and `Dockerfile.beta`), so `tini` and the
+entrypoint script run before `pdns_recursor`.
+
 | Item | Value |
 |---|---|
 | Config directory | `/etc/powerdns` |
