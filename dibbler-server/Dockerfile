@@ -67,10 +67,10 @@ RUN ldconfig /
 
 # OCI image metadata
 ARG VERSION
-org.opencontainers.image.title="Dibbler DHCPv6 Server" \
-org.opencontainers.image.description="Portable DHCPv6 implementation" \
-org.opencontainers.image.url="http://klub.com.pl/dhcpv6/" \
-org.opencontainers.image.source="https://github.com/tomaszmrugalski/dibbler" \
-org.opencontainers.image.documentation="http://klub.com.pl/dhcpv6/" \
-org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
-org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.title="Dibbler DHCPv6 Server" \
+      org.opencontainers.image.description="Portable DHCPv6 implementation" \
+      org.opencontainers.image.url="http://klub.com.pl/dhcpv6/" \
+      org.opencontainers.image.source="https://github.com/tomaszmrugalski/dibbler" \
+      org.opencontainers.image.documentation="http://klub.com.pl/dhcpv6/" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
