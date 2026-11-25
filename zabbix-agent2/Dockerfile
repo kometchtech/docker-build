@@ -8,7 +8,7 @@ ARG ZBX_SOURCES=https://git.zabbix.com/scm/zbx/zabbix.git
 
 # Install build dependencies
 RUN set -eux && \
-    apk add --no-cache --virtual .build-deps autoconf automake g++ git make pcre-dev zlib-dev coreutils go linux-headers
+    apk add --no-cache --virtual .build-deps autoconf automake g++ git make pcre-dev zlib-dev openssl-dev coreutils go linux-headers
 
 RUN set -eux && \
     cd /tmp/ && \
@@ -27,9 +27,9 @@ RUN set -eux && \
         --prefix=/usr \
         --sysconfdir=/etc/zabbix \
         --enable-ipv6 \
-        --enable-static \
         --enable-agent2 \
         --enable-agent \
+        --with-openssl \
         --silent && \
     make -j"$(nproc)" -s && \
     # Prepare files for the final image
@@ -65,7 +65,7 @@ RUN set -eux && \
     mkdir -p /var/lib/zabbix/modules && \
     chown --quiet -R zabbix:root /var/lib/zabbix && \
     # Install runtime dependencies only
-    apk add --no-cache --clean-protected tini bash pcre coreutils iputils && \
+    apk add --no-cache --clean-protected tini bash pcre openssl coreutils iputils && \
     rm -rf /var/cache/apk/*
 
 # Copy built binaries and config from builder stage
@@ -85,10 +85,10 @@ WORKDIR /var/lib/zabbix
 
 VOLUME ["/var/lib/zabbix/enc"]
 
-COPY ["docker-entrypoint.sh", "/usr/bin/"]
-RUN chmod +x /usr/bin/docker-entrypoint.sh
+COPY ["entrypoint.sh", "/usr/bin/"]
+RUN chmod +x /usr/bin/entrypoint.sh
 
-ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/sbin/tini", "--", "/usr/bin/entrypoint.sh"]
 
 USER zabbix
 
