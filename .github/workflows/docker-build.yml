@@ -208,6 +208,13 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Set VERSION environment variable
         id: set-version
         run: |
@@ -284,51 +291,17 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${AMD64_DIGEST} \
             ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}@${ARM64_DIGEST}
           
-          echo "Created and pushed manifest list for ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}"
-
-  sync-images:
-    needs: [prepare, merge]
-    if: needs.prepare.outputs.targets != '[]' && github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      packages: read
-    strategy:
-      matrix:
-        directory: ${{ fromJson(needs.prepare.outputs.directories) }}
-    steps:
-      - name: Get image name from directory
-        id: image-name
-        run: |
-          IMAGE_NAME=$(basename ${{ matrix.directory }})
-          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-      - name: Install cosign
-        uses: sigstore/cosign-installer@main
-
-      - name: Install regctl
-        uses: regclient/actions/regctl-installer@main
-
-      - name: regctl login docker hub
-        uses: regclient/actions/regctl-login@main
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: regctl login GitHub Container Registry
-        uses: regclient/actions/regctl-login@main
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: sync images
-        uses: it-bens/container-registry-sync-action@main
-        with:
-         sourceRepository: 'ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}'
-         loginToSourceRepository: 'true'
-         sourceRepositoryUsername: ${{ github.actor }}
-         sourceRepositoryPassword: ${{ secrets.GITHUB_TOKEN }}
-         targetRepository: '${{ github.repository_owner }}/${{ steps.image-name.outputs.image_name }}'
-         loginToTargetRepository: 'true'
-         targetRepositoryUsername: ${{ secrets.DOCKERHUB_USERNAME }}
-         targetRepositoryPassword: ${{ secrets.DOCKERHUB_TOKEN }}
+          # Publish the same manifest to Docker Hub so the current version and
+          # channel tag are available there too. Older tags remain untouched.
+          IMAGE=${{ steps.image-name.outputs.image_name }}
+          VERSION=${{ steps.set-version.outputs.release_version }}
+          echo "Creating Docker Hub manifests for ${IMAGE}:${VERSION} and ${IMAGE}:${CHANNEL_TAG}"
+          docker buildx imagetools create \
+            -t docker.io/${{ github.repository_owner }}/${IMAGE}:${VERSION} \
+            ghcr.io/${{ github.repository_owner }}/${IMAGE}@${AMD64_DIGEST} \
+            ghcr.io/${{ github.repository_owner }}/${IMAGE}@${ARM64_DIGEST}
+          docker buildx imagetools create \
+            -t docker.io/${{ github.repository_owner }}/${IMAGE}:${CHANNEL_TAG} \
+            ghcr.io/${{ github.repository_owner }}/${IMAGE}@${AMD64_DIGEST} \
+            ghcr.io/${{ github.repository_owner }}/${IMAGE}@${ARM64_DIGEST}
+          echo "Created and pushed manifest lists for ${IMAGE} on GHCR and Docker Hub"
