@@ -50,10 +50,10 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # OCI image metadata
 ARG VERSION
-org.opencontainers.image.title="dnscrypt-proxy" \
-org.opencontainers.image.description="A flexible DNS proxy, with support for modern encrypted DNS protocols such as DNSCrypt v2 and DNS-over-HTTP/2." \
-org.opencontainers.image.url="https://github.com/jedisct1/dnscrypt-proxy" \
-org.opencontainers.image.source="https://github.com/DNSCrypt/dnscrypt-proxy" \
-org.opencontainers.image.documentation="https://dnscrypt.info/" \
-org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
-org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.title="dnscrypt-proxy" \
+      org.opencontainers.image.description="A flexible DNS proxy, with support for modern encrypted DNS protocols such as DNSCrypt v2 and DNS-over-HTTP/2." \
+      org.opencontainers.image.url="https://github.com/jedisct1/dnscrypt-proxy" \
+      org.opencontainers.image.source="https://github.com/DNSCrypt/dnscrypt-proxy" \
+      org.opencontainers.image.documentation="https://dnscrypt.info/" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
