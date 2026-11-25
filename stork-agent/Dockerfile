@@ -40,10 +40,10 @@ ENTRYPOINT ["/usr/bin/stork-agent"]
 
 # OCI image metadata
 ARG VERSION
-org.opencontainers.image.title="ISC Stork Agent" \
-org.opencontainers.image.description="ISC Stork Agent for monitoring Kea and BIND 9" \
-org.opencontainers.image.url="https://stork.readthedocs.io/" \
-org.opencontainers.image.source="https://github.com/isc-projects/stork" \
-org.opencontainers.image.documentation="https://stork.readthedocs.io/" \
-org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
-org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.title="ISC Stork Agent" \
+      org.opencontainers.image.description="ISC Stork Agent for monitoring Kea and BIND 9" \
+      org.opencontainers.image.url="https://stork.readthedocs.io/" \
+      org.opencontainers.image.source="https://github.com/isc-projects/stork" \
+      org.opencontainers.image.documentation="https://stork.readthedocs.io/" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
