@@ -9,12 +9,8 @@ ARG BUILD_PKGS="${BUILD_BASE} ca-certificates linux-headers git  "
 ARG CFLAGS="-O2 -pthread -pipe -fPIC -D_FORTIFY_SOURCE=2 -fPIE "
 ARG CXXFLAGS="${CFLAGS}"
 ARG LDFLAGS="-Wl,-O2 -Wl,--as-needed -Wl,-z,relro -Wl,-z,now "
-ENV CC="clang"
-ENV CXX="clang++"
-ENV AR="llvm-ar"
-ENV NM="llvm-nm"
-ENV RANLIB="llvm-ranlib"
-ENV LD="ld.lld"
+# Use the default gcc/binutils toolchain. With clang, dibbler's
+# lowlevel-linux-link-state.c fails to declare pthread_kill on musl.
 
 # compile and install
 RUN mkdir -p /usr/src /tmp/root/etc/dibbler/ \
