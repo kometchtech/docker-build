@@ -23,8 +23,9 @@ resulting Debian packages in a slim runtime image.
 The release tag comes from `kresd/VERSION` (the `VERSION` build argument in the
 Dockerfile). Run from the repository root:
 
-```bash
-./build.py -d kresd
+```sh
+docker build --build-arg VERSION="$(cat kresd/VERSION)" \
+  -t kometchtech/kresd:$(cat kresd/VERSION) kresd
 ```
 
 ### Run
