@@ -92,3 +92,13 @@ CMD ["pdns_recursor", "--disable-syslog", "--log-timestamp=yes", "--config-dir=/
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="The PowerDNS Recursor is a high-end, high-performance resolving name server which powers the DNS resolution of at least a hundred million subscribers." \
       url="https://www.powerdns.com/recursor.html"
+
+# OCI image metadata
+ARG VERSION
+LABEL org.opencontainers.image.title="PowerDNS Recursor" \
+      org.opencontainers.image.description="The PowerDNS Recursor is a high-end, high-performance resolving name server." \
+      org.opencontainers.image.url="https://www.powerdns.com/recursor.html" \
+      org.opencontainers.image.source="https://github.com/PowerDNS/pdns" \
+      org.opencontainers.image.documentation="https://doc.powerdns.com/recursor/" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
