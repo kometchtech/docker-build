@@ -209,10 +209,10 @@ LABEL maintainer="kometchtech <kometch@gmail.com>" \
 
 # OCI image metadata
 ARG VERSION
-org.opencontainers.image.title="dnsdist" \
-org.opencontainers.image.description="dnsdist is a highly DNS-, DoS- and abuse-aware loadbalancer." \
-org.opencontainers.image.url="https://dnsdist.org/" \
-org.opencontainers.image.source="https://github.com/PowerDNS/pdns" \
-org.opencontainers.image.documentation="https://dnsdist.org/index_TOC.html" \
-org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
-org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.title="dnsdist" \
+      org.opencontainers.image.description="dnsdist is a highly DNS-, DoS- and abuse-aware loadbalancer." \
+      org.opencontainers.image.url="https://dnsdist.org/" \
+      org.opencontainers.image.source="https://github.com/PowerDNS/pdns" \
+      org.opencontainers.image.documentation="https://dnsdist.org/index_TOC.html" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${VERSION}"
