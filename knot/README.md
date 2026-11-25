@@ -23,12 +23,12 @@ systemd integration are disabled.
 
 From the repository root:
 
-```bash
-./build.py -d knot
+```sh
+docker build --build-arg VERSION="$(cat knot/VERSION)" \
+  -t kometchtech/knot:$(cat knot/VERSION) knot
 ```
 
-`build.py` passes the version from `VERSION` (currently `3.6.2`) to the Dockerfile.
-Building the Dockerfile directly without that argument uses its `ARG VERSION` default.
+Pass the version from `VERSION` (currently `3.6.2`) as the `VERSION` build argument. Without it, the Dockerfile uses its own `ARG VERSION` default.
 
 ## Quick Start
 
