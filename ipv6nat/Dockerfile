@@ -16,3 +16,12 @@ RUN apk add --no-cache --update ip6tables curl \
 
 ENTRYPOINT ["/docker-ipv6nat"]
 CMD ["--retry"]
+
+# OCI image metadata
+LABEL org.opencontainers.image.title="docker-ipv6nat" \
+      org.opencontainers.image.description="IPv6 NAT container using docker-ipv6nat" \
+      org.opencontainers.image.url="https://github.com/robbertkl/docker-ipv6nat" \
+      org.opencontainers.image.source="https://github.com/robbertkl/docker-ipv6nat" \
+      org.opencontainers.image.documentation="https://github.com/robbertkl/docker-ipv6nat" \
+      org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+      org.opencontainers.image.version="${DOCKER_IPV6NAT_VERSION}"
