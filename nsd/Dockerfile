@@ -108,3 +108,13 @@ CMD ["nsd", "-d", "-c", "/etc/nsd/nsd.conf"]
 LABEL maintainer="kometchtech <kometch@gmail.com>" \
       description="NLnet Labs Name Server Daemon (NSD) - Authoritative DNS server" \
       url="https://nlnetlabs.nl/projects/nsd/about/"
+
+# OCI image metadata
+ARG VERSION
+org.opencontainers.image.title="NSD" \
+org.opencontainers.image.description="NLnet Labs Name Server Daemon (NSD) - Authoritative DNS server" \
+org.opencontainers.image.url="https://nlnetlabs.nl/projects/nsd/about/" \
+org.opencontainers.image.source="https://github.com/NLnetLabs/nsd" \
+org.opencontainers.image.documentation="https://www.nlnetlabs.nl/projects/nsd/nsd.conf.5.html" \
+org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+org.opencontainers.image.version="${VERSION}"
