@@ -9,3 +9,10 @@ RUN apt-get update -qq \
 
 WORKDIR /etc/dhcp
 CMD ["dhcpd", "-6", "--no-pid", "-f", "-cf", "/etc/dhcp/dhcpd.conf", "eth0"]
+
+# OCI image metadata
+org.opencontainers.image.title="ISC DHCP Server" \
+org.opencontainers.image.description="ISC DHCPv6 server container" \
+org.opencontainers.image.url="https://www.isc.org/dhcp/" \
+org.opencontainers.image.documentation="https://www.isc.org/dhcp/" \
+org.opencontainers.image.authors="kometchtech <kometch@gmail.com>"
