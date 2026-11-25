@@ -29,9 +29,12 @@ docker run --rm -d -p 547:547/udp -v ${PWD}/server.conf:/etc/dibbler/server.conf
 
 ### Build
 
-The `dibbler-server` Dockerfile and `VERSION` file are only present in local
-checkouts and are not tracked in this repository, so no build command is
-provided here.
+From the repository root:
+
+```sh
+docker build --build-arg VERSION="$(cat dibbler-server/VERSION)" \
+  -t kometchtech/dibbler-server:$(cat dibbler-server/VERSION) dibbler-server
+```
 
 ### config
 
