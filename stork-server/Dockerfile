@@ -38,3 +38,13 @@ COPY --from=builder /src/stork/dist/server/ /
 ENV STORK_REST_HOST=0.0.0.0
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/stork-server"]
+
+# OCI image metadata
+ARG VERSION
+org.opencontainers.image.title="ISC Stork Server" \
+org.opencontainers.image.description="ISC Stork Server with web UI and management API" \
+org.opencontainers.image.url="https://stork.readthedocs.io/" \
+org.opencontainers.image.source="https://github.com/isc-projects/stork" \
+org.opencontainers.image.documentation="https://stork.readthedocs.io/" \
+org.opencontainers.image.authors="kometchtech <kometch@gmail.com>" \
+org.opencontainers.image.version="${VERSION}"
