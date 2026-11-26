@@ -5,6 +5,9 @@ release.sh*
 key
 Dockerfile.*
 !Dockerfile.alpha
+!Dockerfile.beta
 slim.report.json
 docker-build.yml*
 entrypoint.sh.*
+build.py
+__pycache__/
