@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "timezone": "Asia/Tokyo",
+  "schedule": ["* 0-5 * * 1"],
+  "labels": ["dependencies"],
+  "enabledManagers": ["github-actions", "dockerfile"],
+  "prConcurrentLimit": 5,
+  "ignorePaths": [
+    "**/Dockerfile.[0-9]*",
+    "**/Dockerfile.bak",
+    "**/Dockerfile.tmp",
+    ".claude/worktrees/**"
+  ]
+}
